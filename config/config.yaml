@@ -4,3 +4,18 @@ clip.py:
   aoi_shapefile: input/limiti_cantone_2012_shp_MN95/limiti_cantone_2012_MN95.shp
   detections_shapefile: input/dqry_detections/
   output_dir: output/
+
+# Track object in different datasets over years
+track_detections.py:  
+  working_dir: /mnt/c/Users/Clemence/Documents/git/STDL/proj-sda/
+  years: [1999, 2001, 2003, 2004, 2005, 2006, 2009, 2012, 2015, 2018, 2021]                         
+  detections_shapefile: output/dqry_detections_tessin.gpkg 
+  output_dir: output/
+
+# Plots
+plots.py:  
+  object_id: <[ID_OBJECT1, ID_OBJECT2, ID_OBJECT3,...]>   
+  plots: ['area-year'] 
+  datasets:
+    detection: ./output/output_track/oth_detections_at_0dot3_threshold_score-0dot95_area-5000_elevation-1200_distance-10/detections_years.geojson  # Object tracking file, produced by track_detections.py
+  output_folder: ./output/output_track/oth_detections_at_0dot3_threshold_score-0dot95_area-5000_elevation-1200_distance-10/plots
