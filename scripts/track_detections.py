@@ -56,8 +56,6 @@ if __name__ == "__main__":
             logger.info(f" Year: {YEAR} - {len(gdfx)} detections")
             gdf = pd.concat([gdf, gdfx])
 
-    print(gdf)
-
     # Create a dataframe with merged overlapping polygons
     print()
     logger.info(f"Merging overlapping polygons")
