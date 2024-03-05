@@ -1,5 +1,1 @@
-geopandas
-loguru
-matplotlib
-pyyaml
-tqdm
+stdl-object-detector @ git+https://github.com/swiss-territorial-data-lab/object-detector.git@v1.0.0
