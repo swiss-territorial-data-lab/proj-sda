@@ -1,3 +1,36 @@
+# 1-Produce tiles geometry according to the AoI extent and zoom level
+prepare_data.py: 
+  srs: "EPSG:2056"  # Projection of the input file
+  datasets:
+    shapefile: ./input/aoi_test_v2.gpkg
+  output_folder: ./output
+  zoom_level: 19  # z, keep between 15 and 18  
+
+# 2-Request tiles according to the provided AOI and tiles parameters
+generate_tilesets.py:
+  debug_mode: False  # sample of tiles
+  datasets:
+    aoi_tiles_geojson: ./output/tiles.geojson
+    orthophotos_web_service:
+      type: XYZ # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ
+      url: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/2005/3857/{z}/{x}/{y}.jpeg # !!! Assign the desired year !!! 
+  output_folder: ./output
+  tile_size: 256 # per side, in pixels
+  overwrite: False
+  n_jobs: 10
+  COCO_metadata:
+    year: 2021
+    version: 1.0
+    description: Swiss Image Hinterground w/ Quarries and Mineral Exploitation Sites detection
+    contributor: swisstopo
+    url: https://swisstopo.ch
+    license:
+      name: Unknown
+      url:
+    category:
+      name: "Quarry"
+      supercategory: "Land usage"
+
 # 
 clip.py:
   working_dir: .
