@@ -4,17 +4,16 @@ import rasterio as rio
 from pathlib import Path
 
 path = Path('/mnt/data-03/cherny/git/proj-sda/output/oth-images/')
-# Path('output').mkdir(parents=True, exist_ok=True)
 output_path = '/mnt/data-03/cherny/git/proj-sda/output/oth-images/mosaic_output.tif'
 
 raster_files = list(path.iterdir())
-raster_to_mosiac = []
+raster_to_mosaic = []
 
 for p in raster_files:
     raster = rio.open(p)
-    raster_to_mosiac.append(raster)
+    raster_to_mosaic.append(raster)
 
-mosaic, output = merge(raster_to_mosiac)
+mosaic, output = merge(raster_to_mosaic)
 
 output_meta = raster.meta.copy()
 output_meta.update(
