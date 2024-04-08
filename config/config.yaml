@@ -3,18 +3,18 @@ prepare_data.py:
   srs: "EPSG:2056"  # Projection of the input file
   datasets:
     shapefile: ./input/aoi_test_v2.gpkg
-  output_folder: ./output
-  zoom_level: 19  # z, keep between 15 and 18  
+  output_folder: ./input/images/tests/zoom_16/
+  zoom_level: 16  # z, keep between 15 and 18  
 
 # 2-Request tiles according to the provided AOI and tiles parameters
 generate_tilesets.py:
   debug_mode: False  # sample of tiles
   datasets:
-    aoi_tiles_geojson: ./output/tiles.geojson
+    aoi_tiles_geojson: ./input/images/tests/zoom_16/tiles.geojson
     orthophotos_web_service:
       type: XYZ # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ
-      url: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/2005/3857/{z}/{x}/{y}.jpeg # !!! Assign the desired year !!! 
-  output_folder: ./output
+      url: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/2022/3857/{z}/{x}/{y}.jpeg # !!! Assign the desired year !!! 
+  output_folder: ./input/images/tests/zoom_16/2022
   tile_size: 256 # per side, in pixels
   overwrite: False
   n_jobs: 10
@@ -52,3 +52,49 @@ plots.py:
   object_id: [1, 4, 43, 66]   
   detections_shapefile: output/detections_years.gpkg  
   output_dir: output/plots
+
+# 
+mosaic.py:  
+  working_dir: .
+  input_dir: /mnt/data-03/cherny/git/proj-sda/input/images/tests/zoom_16/2022/oth-images/
+  output_dir: /mnt/data-03/cherny/git/proj-sda/input/images/tests/zoom_16/
+
+# 2 - Segment Anything Model
+segment_images.py:
+  working_dir: .
+  image_dir:  input/images/tests/zoom_16/
+  output_dir: output/sam/zoom_16
+  vector_extension: gpkg      # 'gpkg' or 'shp'
+  image_crop:                 # activate the option to crop the input image according to pixel coordinates (for performing tests)
+    enable: False
+    size: [0, 1026, 0, 1026]  # crop image to perform test 
+  SAM:
+    dl_checkpoints: False     # True: automatic download from server, False: download manually files https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
+    checkpoints_dir: model/
+    checkpoints: sam_vit_h_4b8939.pth # sam_vit_h_4b8939.pth; sam_vit_l_0b3195.pth; sam_vit_b_01ec64.pth
+    large_tile:
+      method: batch           # choice 1:"batch", 2:"resample". Batch method subdivides the image into smaller tiles (tile_size). Resample method downscales the pixels to the given size (resample).
+      thd_size: 5500000       # pixels
+      tile_size: 512          # pixels (square). Will be ignored if method=resample
+      resample: 0.2           # m, pixel size. Will be ignore if method=batch
+    foreground: True          # if True, save only foreground masks, no background mask 
+    unique: True              # attribute unique ID to mask 
+    mask_multiplier: 255
+    custom_SAM:               # customize the parameters for Segment Anything (https://github.com/facebookresearch/segment-anything/blob/main/segment_anything/automatic_mask_generator.py) 
+      enable: False
+      custom_parameters: {
+        "points_per_side": 64,
+        "points_per_batch": 96,
+        "pred_iou_thresh": 0.65,
+        "stability_score_thresh": 0.8,
+        "stability_score_offset": 5.0,
+        "box_nms_thresh":  0.3,
+        "crop_n_layers": 0,
+        "crop_nms_thresh": 0.8,
+        "crop_overlap_ratio": 0.6,
+        "crop_n_points_downscale_factor": 9,
+        # "point_grids": None,
+        "min_mask_region_area": 250,
+        # "output_mode": str = "binary_mask",
+        }
+    visualization_masks: True          # save annotated masks
