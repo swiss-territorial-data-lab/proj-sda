@@ -51,7 +51,7 @@ if __name__ == "__main__":
     logger.info(f"Read the detections shapefiles")
     detections = glob(os.path.join(DETECTIONS_SHP, '*.geojson'))
 
-    feature_path = os.path.join(OUTPUT_DIR, 'dqry_detections_tessin.gpkg')
+    feature_path = os.path.join(OUTPUT_DIR, 'MES_detections.gpkg')
 
     for detection in tqdm(detections, desc='Clip detections with AoI', total=len(detections)):
 
@@ -64,3 +64,10 @@ if __name__ == "__main__":
 
         if not detection_clip.empty:
             detection_clip.to_file(feature_path, layer='detections_' + year)
+            written_files.append(feature_path) 
+
+    print()
+    logger.info("The following files were written. Let's check them out!")
+    for written_file in written_files:
+        logger.info(written_file)
+    print()
