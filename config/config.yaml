@@ -1,20 +1,20 @@
 # 1-Produce tiles geometry according to the AoI extent and zoom level
 prepare_data.py: 
-  srs: "EPSG:2056"  # Projection of the input file
   datasets:
-    shapefile: ./input/aoi_test_v2.gpkg
-  output_folder: ./output
-  zoom_level: 19  # z, keep between 15 and 18  
+    shapefile: ./input/limiti_cantone_2012_shp_MN95/limiti_cantone_2012_MN95.shp
+  output_folder: ./output/OD/zoom_14
+  zoom_level: 14  # z, keep between 15 and 18  
+  srs: "EPSG:2056"  # Projection of the input file 
 
 # 2-Request tiles according to the provided AOI and tiles parameters
 generate_tilesets.py:
   debug_mode: False  # sample of tiles
   datasets:
-    aoi_tiles_geojson: ./output/tiles.geojson
+    aoi_tiles_geojson: ./output/OD/zoom_14/tiles.geojson
     orthophotos_web_service:
       type: XYZ # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ
-      url: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/2005/3857/{z}/{x}/{y}.jpeg # !!! Assign the desired year !!! 
-  output_folder: ./output
+      url: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/2020/3857/{z}/{x}/{y}.jpeg # !!! Assign the desired year !!! 
+  output_folder: ./output/OD/zoom_14/
   tile_size: 256 # per side, in pixels
   overwrite: False
   n_jobs: 10
@@ -30,6 +30,12 @@ generate_tilesets.py:
     category:
       name: "Quarry"
       supercategory: "Land usage"
+
+# 
+rgb_to_grayscale.py: 
+  working_dir: ./output/OD/detections/zoom_14/
+  image_dir: ./oth-images
+  output_dir: './oth-images'
 
 # 
 clip.py:
