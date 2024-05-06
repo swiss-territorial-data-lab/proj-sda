@@ -1,20 +1,23 @@
 # 1-Produce tiles geometry according to the AoI extent and zoom level
 prepare_data.py: 
   datasets:
-    shapefile: ./input/limiti_cantone_2012_shp_MN95/limiti_cantone_2012_MN95.shp
+    shapefile: ./data/limiti_cantone_2012_shp_MN95/limiti_cantone_2012_MN95.shp
   output_folder: ./output/OD/zoom_14
-  zoom_level: 14  # z, keep between 15 and 18  
+  zoom_level: 16  # z, keep between 15 and 18  
   srs: "EPSG:2056"  # Projection of the input file 
 
 # 2-Request tiles according to the provided AOI and tiles parameters
 generate_tilesets.py:
-  debug_mode: False  # sample of tiles
+  debug_mode: 
+    enable: False  # sample of tiles
+    nb_tiles_max: 5000
+  working_directory: output
   datasets:
-    aoi_tiles_geojson: ./output/OD/zoom_14/tiles.geojson
-    orthophotos_web_service:
-      type: XYZ # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ
-      url: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/2020/3857/{z}/{x}/{y}.jpeg # !!! Assign the desired year !!! 
-  output_folder: ./output/OD/zoom_14/
+    aoi_tiles: OD/detections/zoom_16/tiles.geojson
+    image_source:
+      type: XYZ     # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ
+      location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/2020/3857/{z}/{x}/{y}.jpeg # !!! Assign the desired year !!! 
+  output_folder: OD/detections/zoom_16/
   tile_size: 256 # per side, in pixels
   overwrite: False
   n_jobs: 10
@@ -27,15 +30,41 @@ generate_tilesets.py:
     license:
       name: Unknown
       url:
-    category:
-      name: "Quarry"
-      supercategory: "Land usage"
 
 # 
 rgb_to_grayscale.py: 
-  working_dir: ./output/OD/detections/zoom_14/
+  working_dir: ./output/OD/detections/zoom_16/
   image_dir: ./oth-images
   output_dir: './oth-images'
+
+
+# 3-Object detection by inference with the optimised trained model
+make_detections.py:
+  working_directory: ./output/OD/detections/zoom_16/
+  log_subfolder: logs
+  sample_tagged_img_subfolder: sample_tagged_images
+  COCO_files:           # relative paths, w/ respect to the working_folder
+    oth: COCO_oth.json
+  detectron2_config_file: ../../../../config/detectron2_config.yaml # path relative to the working_folder
+  model_weights:
+    pth_file: ../../../../input/OD/models/zoom_16/replicate3/logs/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>) 
+  image_metadata_json: img_metadata.json
+  rdp_simplification:   # rdp = Ramer-Douglas-Peucker
+    enabled: True
+    epsilon: 2.0        # cf. https://rdp.readthedocs.io/en/latest/
+  score_lower_threshold: 0.3
+
+# 4-Filtering and merging detection polygons to improve results
+filter_detections.py:
+  year: 2020
+  detections: ./output/OD/detections/zoom_14/oth_detections_at_0dot3_threshold.gpkg
+  shapefile: ./data/limiti_cantone_2012_shp_MN95/limiti_cantone_2012_MN95.shp
+  dem: ./data/DEM/switzerland_dem_EPSG2056.tif
+  elevation: 1200.0   # m, altitude threshold
+  score: 0.95         # detection score (from 0 to 1) provided by detectron2
+  distance: 10        # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
+  area: 5000.0        # m2, area threshold under which polygons are discarded
+  output: ./output/OD/detections/zoom_14/oth_detections_at_0dot3_threshold_year-{year}_score-{score}_area-{area}_elevation-{elevation}_distance-{distance}.geojson
 
 # 
 clip.py:
