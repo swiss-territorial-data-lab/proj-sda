@@ -1,3 +1,6 @@
+#!/bin/python
+# -*- coding: utf-8 -*-
+
 import os
 import sys
 import time
@@ -9,12 +12,12 @@ import geopandas as gpd
 import morecantile
 import pandas as pd
 
-sys.path.insert(0, '.')
-from helpers import misc
+sys.path.insert(0, '../..')
+from helpers.misc import format_logger
 from helpers.constants import DONE_MSG
 
 from loguru import logger
-logger = misc.format_logger(logger)
+logger = format_logger(logger)
 
 
 def add_tile_id(row):
@@ -55,9 +58,11 @@ if __name__ == "__main__":
     # Prepare the tiles
 
     ## Convert datasets shapefiles into geojson format
-    logger.info('Convert label shapefile into GeoJSON format (EPSG:4326)...')
+    logger.info('Convert labels shapefile into GeoJSON format (EPSG:4326)...')
     labels = gpd.read_file(SHPFILE)
     labels_4326 = labels.to_crs(epsg=4326)
+    labels_4326['CATEGORY'] = "quarry"
+    labels_4326['SUPERCATEGORY'] = "land usage"
 
     nb_labels = len(labels)
     logger.info('There is/are ' + str(nb_labels) + ' polygon(s) in ' + SHPFILE)
@@ -79,7 +84,7 @@ if __name__ == "__main__":
 
     # Iterate on geometric coordinates to defined tiles for a given label at a given zoom level
     # A gpd is created for each label and are then concatenate into a single gpd 
-    logger.info('- Compute tiles for each label geometry') 
+    logger.info('- Compute tiles for each label(s) geometry') 
     tiles_4326_all = [] 
 
     for label_boundary in label_boundaries_df.itertuples():
@@ -89,7 +94,7 @@ if __name__ == "__main__":
         tiles_4326_all.append(tiles_4326)
     tiles_4326_aoi = gpd.GeoDataFrame(pd.concat(tiles_4326_all, ignore_index=True))
 
-    # Remove unrelevant tiles and reorganized the data set:
+    # Remove unrelevant tiles and reorganised the data set:
     logger.info('- Remove duplicated tiles and tiles that are not intersecting labels') 
 
     # - Keep only tiles that are actually intersecting labels
