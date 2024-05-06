@@ -14,9 +14,7 @@ affine==2.4.0
     #   stdl-object-detector
     #   supermercado
 annotated-types==0.5.0
-    # via
-    #   pydantic
-    #   stdl-object-detector
+    # via stdl-object-detector
 antlr4-python3-runtime==4.9.3
     # via
     #   hydra-core
@@ -87,7 +85,11 @@ cycler==0.11.0
     #   stdl-object-detector
 detectron2 @ https://dl.fbaipublicfiles.com/detectron2/wheels/cu113/torch1.10/detectron2-0.6%2Bcu113-cp38-cp38-linux_x86_64.whl
     # via stdl-object-detector
-fiona==1.9.4.post1
+et-xmlfile==1.1.0
+    # via
+    #   openpyxl
+    #   stdl-object-detector
+fiona==1.8.21
     # via
     #   geopandas
     #   stdl-object-detector
@@ -130,7 +132,6 @@ idna==3.4
     #   stdl-object-detector
 importlib-metadata==6.8.0
     # via
-    #   fiona
     #   markdown
     #   stdl-object-detector
 importlib-resources==6.0.1
@@ -151,9 +152,9 @@ kiwisolver==1.4.5
     # via
     #   matplotlib
     #   stdl-object-detector
-loguru==0.7.0
+loguru==0.7.2
     # via stdl-object-detector
-markdown==3.4.4
+markdown==3.4.1
     # via
     #   stdl-object-detector
     #   tensorboard
@@ -170,9 +171,13 @@ mercantile==1.2.1
     # via
     #   stdl-object-detector
     #   supermercado
-morecantile==5.0.0
+morecantile==3.2.5
     # via stdl-object-detector
-mypy-extensions==1.0.0
+munch==2.5.0
+    # via
+    #   fiona
+    #   stdl-object-detector
+mypy-extensions==0.4.3
     # via
     #   black
     #   stdl-object-detector
@@ -204,7 +209,9 @@ omegaconf==2.3.0
     #   stdl-object-detector
 opencv-python==4.8.0.76
     # via stdl-object-detector
-packaging==23.1
+openpyxl==3.0.10
+    # via stdl-object-detector
+packaging==21.3
     # via
     #   geopandas
     #   hydra-core
@@ -249,13 +256,9 @@ pycocotools==2.0.7
     # via
     #   detectron2
     #   stdl-object-detector
-pydantic==2.3.0
+pydantic==1.10.4
     # via
     #   morecantile
-    #   stdl-object-detector
-pydantic-core==2.6.3
-    # via
-    #   pydantic
     #   stdl-object-detector
 pydot==1.4.2
     # via
@@ -264,10 +267,11 @@ pydot==1.4.2
 pyparsing==3.0.9
     # via
     #   matplotlib
+    #   packaging
     #   pydot
     #   snuggs
     #   stdl-object-detector
-pyproj==3.5.0
+pyproj==3.4.0
     # via
     #   geopandas
     #   morecantile
@@ -326,13 +330,14 @@ six==1.16.0
     # via
     #   fiona
     #   google-auth
+    #   munch
     #   python-dateutil
     #   stdl-object-detector
 snuggs==1.4.7
     # via
     #   rasterio
     #   stdl-object-detector
-stdl-object-detector @ git+https://github.com/swiss-territorial-data-lab/object-detector.git@v1.0.0
+stdl-object-detector @ git+https://github.com/swiss-territorial-data-lab/object-detector.git@v.2.1.0
     # via -r requirements.in
 supermercado==0.2.0
     # via stdl-object-detector
@@ -378,27 +383,24 @@ tqdm==4.66.1
     #   fvcore
     #   iopath
     #   stdl-object-detector
-typing-extensions==4.7.1
+typing-extensions==4.4.0
     # via
     #   annotated-types
     #   pydantic
-    #   pydantic-core
     #   stdl-object-detector
     #   torch
-tzdata==2023.3
-    # via
-    #   pandas
-    #   stdl-object-detector
-urllib3==1.26.16
+tzdata==2024.1
+    # via pandas
+urllib3==1.26.12
     # via
     #   google-auth
     #   requests
     #   stdl-object-detector
-werkzeug==2.3.7
+werkzeug==2.2.2
     # via
     #   stdl-object-detector
     #   tensorboard
-wheel==0.41.2
+wheel==0.37.1
     # via
     #   stdl-object-detector
     #   tensorboard
