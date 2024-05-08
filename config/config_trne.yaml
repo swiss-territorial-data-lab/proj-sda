@@ -10,15 +10,18 @@ prepare_data.py:
 generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
-    nb_tiles_max: 50
-  working_directory: output
+    nb_tiles_max: 10
+  working_directory: .
   datasets:
-    aoi_tiles: OD/trne/zoom_16/tiles.geojson
-    ground_truth_labels: OD/trne/zoom_16/labels.geojson
+    aoi_tiles: output/OD/trne/zoom_16/tiles.geojson
+    ground_truth_labels: output/OD/trne/zoom_16/labels.geojson
     image_source:
-      type: XYZ       # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ
-      location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/2020/3857/{z}/{x}/{y}.jpeg
-  output_folder: OD/trne/zoom_16/
+      type: FOLDER
+      location: data/images/SWISSIMAGE/zoom_16/all-images/
+      srs: 3857
+      # type: XYZ       # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ
+      # location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/2020/3857/{z}/{x}/{y}.jpeg
+  output_folder: output/OD/trne/zoom_16/
   tile_size: 256      # per side, in pixels
   overwrite: False
   n_jobs: 10
@@ -31,6 +34,11 @@ generate_tilesets.py:
     license:
       name: Unknown
       url:
+
+rgb_to_grayscale.py: 
+  working_dir: .
+  image_dir: ./data/images/SWISSIMAGE/zoom_16/RGB_trne/2020
+  output_dir: ./data/images/SWISSIMAGE/zoom_16/Grayscale_trne/2020
 
 # 3-Train the model with the detectron2 algorithm
 train_model.py:
