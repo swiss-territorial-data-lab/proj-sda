@@ -17,7 +17,7 @@ generate_tilesets.py:
     ground_truth_labels: output/OD/trne/zoom_16/labels.geojson
     image_source:
       type: FOLDER
-      location: data/images/SWISSIMAGE/zoom_16/all-images/
+      location: data/images/SWISSIMAGE/zoom_16/Grayscale_trne/2020/
       srs: 3857
       # type: XYZ       # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ
       # location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/2020/3857/{z}/{x}/{y}.jpeg
