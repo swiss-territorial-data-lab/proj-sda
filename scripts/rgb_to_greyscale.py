@@ -44,6 +44,10 @@ def main(WORKING_DIR, OUTPUT_DIR, IMAGE_DIR):
             greyscale = 0.2990*R + 0.5870*G + 0.1140*B
             # rio.plot.show(greyscale, cmap='Greys_r')
 
+            # R = greyscale
+            # G = greyscale
+            # G = greyscale
+
         output_meta = src.meta.copy()
         output_meta.update(
             {"driver": "GTiff",
@@ -57,6 +61,11 @@ def main(WORKING_DIR, OUTPUT_DIR, IMAGE_DIR):
 
         with rio.open(os.path.join(OUTPUT_DIR, img_name), 'w', **output_meta) as dst:
             dst.write(greyscale, 1)
+
+        # list = [R, G, B] 
+        # with rio.open(os.path.join(OUTPUT_DIR, img_name), 'w', **output_meta) as dst:
+        #     for band_nr, src in enumerate(list, start=1):
+        #         dst.write(src, band_nr)
 
         # Alternative: works fine but no GeoTiff
         # img = Image.open(image).convert('L')
