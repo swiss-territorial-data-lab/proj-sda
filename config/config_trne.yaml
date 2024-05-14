@@ -3,7 +3,7 @@ prepare_data.py:
   srs: EPSG:2056
   datasets:
     shapefile: ./data/labels/MES/tlm-hr-trn-topo.shp
-  output_folder: ./output/OD/trne/zoom_16/
+  output_folder: ./output/OD/trne/zoom_16
   zoom_level: 16 
 
 # 2-Fetch of tiles (online server) and split into 3 datasets: train, test, validation
@@ -35,10 +35,10 @@ generate_tilesets.py:
       name: Unknown
       url:
 
-rgb_to_grayscale.py: 
+rgb_to_greyscale.py: 
   working_dir: .
   image_dir: ./data/images/SWISSIMAGE/zoom_16/RGB_trne/2020
-  output_dir: ./data/images/SWISSIMAGE/zoom_16/Grayscale_trne/2020
+  output_dir: ./data/images/SWISSIMAGE/zoom_16/Grayscale_trne_3bands/2020
 
 # 3-Train the model with the detectron2 algorithm
 train_model.py:
@@ -73,7 +73,7 @@ make_detections.py:
     
 # 5-Evaluate the quality of the detections for the different datasets by calculating metrics
 assess_detections.py:
-  working_directory: ./output/OD/trne/zoom_16/
+  working_directory: ./output/OD/trne/zoom_16/replicate4
   datasets:
     ground_truth_labels: labels.geojson
     image_metadata_json: img_metadata.json
