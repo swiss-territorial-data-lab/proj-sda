@@ -4,6 +4,7 @@ import sys
 import time
 import subprocess
 
+import numpy as np
 import rasterio as rio
 
 from glob import glob
@@ -14,14 +15,13 @@ from rasterio.plot import show
 from tqdm import tqdm
 from yaml import load, FullLoader
 
-# the following allows us to import modules from within this file's parent folder
 sys.path.insert(1, '.')
 import functions.fct_misc as misc
 
 logger = misc.format_logger(logger)
 
 
-def main(WORKING_DIR, OUTPUT_DIR, IMAGE_DIR):
+def main(WORKING_DIR, OUTPUT_DIR, IMAGE_DIR, BANDS):
 
     os.chdir(WORKING_DIR)
 
@@ -32,7 +32,7 @@ def main(WORKING_DIR, OUTPUT_DIR, IMAGE_DIR):
 
     images = glob(os.path.join(IMAGE_DIR, '*.tif'))
     # subprocess.call('gdal_calc.py -R ./data/images/SWISSIMAGE/zoom_16/16_33871_23265_RGB.tif --R_band=1 -G ./data/images/SWISSIMAGE/zoom_16/16_33871_23265_RGB.tif --G_band=2 -B ./data/images/SWISSIMAGE/zoom_16/16_33871_23265_RGB.tif --B_band=3 --outfile=./data/images/SWISSIMAGE/zoom_16/16_33871_23265_gray_gdal_calc.tif --calc="R*0.2989+G*0.5870+B*0.1140"')
-    for image in tqdm(images, desc='Convert RGB images to grayscale images', total=len(images)):
+    for image in tqdm(images, desc='Convert RGB images to greyscale images', total=len(images)):
 
         with rio.open(image) as src:
             r = src.read()
@@ -44,23 +44,37 @@ def main(WORKING_DIR, OUTPUT_DIR, IMAGE_DIR):
             greyscale = 0.2990*R + 0.5870*G + 0.1140*B
             # rio.plot.show(greyscale, cmap='Greys_r')
 
-            # R = greyscale
-            # G = greyscale
-            # G = greyscale
-
-        output_meta = src.meta.copy()
-        output_meta.update(
-            {"driver": "GTiff",
-                "height": r.shape[1],
-                "width": r.shape[2],
-                "count": 1,
-                "crs": src.crs
-            })
-        
         img_name = os.path.basename(image)
 
-        with rio.open(os.path.join(OUTPUT_DIR, img_name), 'w', **output_meta) as dst:
-            dst.write(greyscale, 1)
+        if BANDS == 1:
+            output_meta = src.meta.copy()
+            output_meta.update(
+                {"driver": "GTiff",
+                    "height": r.shape[1],
+                    "width": r.shape[2],
+                    "count": 1,
+                    "crs": src.crs
+                })
+            
+            with rio.open(os.path.join(OUTPUT_DIR, img_name), 'w', **output_meta) as dst:
+                dst.write(greyscale, 1)
+
+        elif BANDS == 3:
+            grey_image_arr = np.expand_dims(greyscale, -1)
+            grey_image_arr_3_channel = grey_image_arr.repeat(3, axis=-1)
+
+            output_meta = src.meta.copy()
+            output_meta.update(
+                {"driver": "GTiff",
+                    "height": r.shape[1],
+                    "width": r.shape[2],
+                    "count": 3,
+                    "crs": src.crs
+                })
+
+            with rio.open(os.path.join(OUTPUT_DIR, img_name), 'w', **output_meta) as dst:
+                dst.write(np.moveaxis(grey_image_arr_3_channel, [0, 1, 2], [2, 1, 0]))
+
 
         # list = [R, G, B] 
         # with rio.open(os.path.join(OUTPUT_DIR, img_name), 'w', **output_meta) as dst:
@@ -96,8 +110,9 @@ if __name__ == "__main__":
     WORKING_DIR = cfg['working_dir']
     IMAGE_DIR = cfg['image_dir']
     OUTPUT_DIR = cfg['output_dir']
+    BANDS = cfg['bands']
 
-    main(WORKING_DIR, OUTPUT_DIR, IMAGE_DIR)
+    main(WORKING_DIR, OUTPUT_DIR, IMAGE_DIR, BANDS)
 
     # Stop chronometer  
     toc = time.time()
