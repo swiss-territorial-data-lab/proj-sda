@@ -23,8 +23,11 @@ logger = format_logger(logger)
 def add_tile_id(row):
 
     re_search = re.search('(x=(?P<x>\d*), y=(?P<y>\d*), z=(?P<z>\d*))', row.title)
-    row['id'] = f"({re_search.group('x')}, {re_search.group('y')}, {re_search.group('z')})"
-    
+    if 'year' in row.keys():
+        row['id'] = f"({row.year}, {re_search.group('x')}, {re_search.group('y')}, {re_search.group('z')})"
+    else:
+        row['id'] = f"({re_search.group('x')}, {re_search.group('y')}, {re_search.group('z')})"
+ 
     return row
 
 
@@ -47,7 +50,9 @@ if __name__ == "__main__":
     # Load input parameters
     OUTPUT_DIR = cfg['output_folder']
     SHPFILE = cfg['datasets']['shapefile']
+    CATEGORY = cfg['datasets']['category'] if 'category' in cfg['datasets'].keys() else False
     ZOOM_LEVEL = cfg['zoom_level']
+
 
     # Create an output directory in case it doesn't exist
     if not os.path.exists(OUTPUT_DIR):
@@ -61,30 +66,32 @@ if __name__ == "__main__":
     logger.info('Convert labels shapefile into GeoJSON format (EPSG:4326)...')
     labels = gpd.read_file(SHPFILE)
     labels_4326 = labels.to_crs(epsg=4326)
-    labels_4326['CATEGORY'] = "quarry"
-    labels_4326['SUPERCATEGORY'] = "land usage"
-
     nb_labels = len(labels)
-    logger.info('There is/are ' + str(nb_labels) + ' polygon(s) in ' + SHPFILE)
+    logger.info(f'There are {nb_labels} polygons in {SHPFILE}')
+
+    if CATEGORY:
+        labels_4326['CATEGORY'] = labels_4326[CATEGORY]
+        category = labels_4326['CATEGORY'].unique()
+        logger.info(f'Working with {len(category)} classe.s: {category}')
+        labels_4326['SUPERCATEGORY'] = "anthropogenic soils"
 
     label_filename = 'labels.geojson'
     label_filepath = os.path.join(OUTPUT_DIR, label_filename)
     labels_4326.to_file(label_filepath, driver='GeoJSON')
     written_files.append(label_filepath)  
     logger.success(f"{DONE_MSG} A file was written: {label_filepath}")
-
     logger.info('Creating tiles for the Area of Interest (AoI)...')   
     
     # Grid definition
-    tms = morecantile.tms.get("WebMercatorQuad")    # epsg:3857
+    tms = morecantile.tms.get('WebMercatorQuad')    # epsg:3857
 
     # New gpd with only labels geometric info (minx, miny, maxx, maxy) 
-    logger.info('- Get geometric boundaries of the label(s)')  
+    logger.info('- Get geometric boundaries of the labels')  
     label_boundaries_df = labels_4326.bounds
 
     # Iterate on geometric coordinates to defined tiles for a given label at a given zoom level
     # A gpd is created for each label and are then concatenate into a single gpd 
-    logger.info('- Compute tiles for each label(s) geometry') 
+    logger.info('- Compute tiles for each labels geometry') 
     tiles_4326_all = [] 
 
     for label_boundary in label_boundaries_df.itertuples():
@@ -103,18 +110,18 @@ if __name__ == "__main__":
 
     # - Remove duplicated tiles
     if nb_labels > 1:
-        tiles_4326.drop_duplicates('title', inplace=True)
+        tiles_4326.drop_duplicates(['title', 'year'] if 'year' in tiles_4326.keys() else 'title', inplace=True)
 
     # - Remove useless columns, reset feature id and redefine it according to xyz format  
     logger.info('- Add tile IDs and reorganise data set')
-    tiles_4326 = tiles_4326[['geometry', 'title']].copy()
+    tiles_4326 = tiles_4326[['geometry', 'title', 'year'] if 'year' in tiles_4326.keys() else ['geometry', 'title']].copy()
     tiles_4326.reset_index(drop=True, inplace=True)
-
+    
     # Add the ID column
     tiles_4326 = tiles_4326.apply(add_tile_id, axis=1)
     
     nb_tiles = len(tiles_4326)
-    logger.info('There was/were ' + str(nb_tiles) + ' tiles(s) created')
+    logger.info(f'There was/were {nb_tiles} tiles created')
 
     # Export tiles to GeoJSON
     logger.info('Export tiles to GeoJSON (EPSG:4326)...')  

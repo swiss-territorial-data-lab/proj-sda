@@ -1,26 +1,27 @@
 # 1-Produce tiles geometry according to the AoI extent and zoom level
 prepare_data.py: 
   datasets:
-    shapefile: ./data/limiti_cantone_2012_shp_MN95/limiti_cantone_2012_MN95.shp
-  output_folder: ./output/OD/detections/zoom_16/Greyscale_model/1977
+    shapefile: ./data/AoI/Ticino/limiti_cantone_2012_MN95.shp
+  output_folder: ./output/OD/detections/z16/run05
   zoom_level: 16  # z, keep between 15 and 18  
   srs: "EPSG:2056"  # Projection of the input file 
 
 # 2-Request tiles according to the provided AOI and tiles parameters
 generate_tilesets.py:
   debug_mode: 
-    enable: False  # sample of tiles
-    nb_tiles_max: 5000
+    enable: True  # sample of tiles
+    nb_tiles_max: 500
   working_directory: .
   datasets:
-    aoi_tiles: output/OD/detections/zoom_16/Greyscale_model/1977/tiles.geojson
+    aoi_tiles: output/OD/detections/z16/run05/tiles.geojson
     image_source:
       # type: FOLDER
       # location: data/images/SWISSIMAGE/zoom_16/RGB_det/2020/
       # srs: 3857
-      type: XYZ     # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ
-      location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/1977/3857/{z}/{x}/{y}.jpeg # !!! Assign the desired year !!! 
-  output_folder: output/OD/detections/zoom_16/Greyscale_model/1977/
+      type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
+      year: 2020                     # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
+      location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
+  output_folder: output/OD/detections/z16/run05/
   tile_size: 256 # per side, in pixels
   overwrite: False
   n_jobs: 10
@@ -43,19 +44,19 @@ rgb_to_greyscale.py:
 
 # 3-Object detection by inference with the optimised trained model
 make_detections.py:
-  working_directory: ./output/OD/detections/zoom_16/Greyscale_model/1977
+  working_directory: ./output/OD/detections/z16/run05
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
     oth: COCO_oth.json
-  detectron2_config_file: ../../../../../../config/detectron2_config.yaml # path relative to the working_folder
+  detectron2_config_file: ../../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../../trne/zoom_16/replicate6/logs/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>) 
+    pth_file: ../../../trne/zoom16/run05/logs/model_0001999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>) 
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: True
     epsilon: 2.0        # cf. https://rdp.readthedocs.io/en/latest/
-  score_lower_threshold: 0.3
+  score_lower_threshold: 0.05
 
 # 4-Filtering and merging detection polygons to improve results
 filter_detections.py:

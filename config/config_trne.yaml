@@ -2,8 +2,9 @@
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
-    shapefile: ./data/labels/MES/tlm-hr-trn-topo.shp
-  output_folder: ./output/OD/trne/zoom_16
+    shapefile: ./data/ground_truth/20240708_GT_all.gpkg
+    category: 'Classe'
+  output_folder: ./output/OD/trne/zoom16/run19
   zoom_level: 16 
 
 # 2-Fetch of tiles (online server) and split into 3 datasets: train, test, validation
@@ -13,22 +14,28 @@ generate_tilesets.py:
     nb_tiles_max: 10
   working_directory: .
   datasets:
-    aoi_tiles: output/OD/trne/zoom_16/tiles.geojson
-    ground_truth_labels: output/OD/trne/zoom_16/labels.geojson
+    aoi_tiles: output/OD/trne/zoom16/run19/tiles.geojson
+    ground_truth_labels: output/OD/trne/zoom16/run19/labels.geojson
     image_source:
-      type: FOLDER
-      location: data/images/SWISSIMAGE/zoom_16/Grayscale_trne/2020/
-      srs: 3857
-      # type: XYZ       # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ
-      # location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/2020/3857/{z}/{x}/{y}.jpeg
-  output_folder: output/OD/trne/zoom_16/
+      # type: FOLDER
+      # location: data/images/SWISSIMAGE/zoom16/multi-year_greyscale_1bands
+      # srs: 3857
+      # year: multi-year
+      # type: WMS                               # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
+      # location: https://wms.geo.admin.ch/service
+      # layers: ch.swisstopo.swissimage
+      # srs: "EPSG:2056"
+      type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
+      year: multi-year                     # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
+      location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
+  output_folder: output/OD/trne/zoom16/run19/
   tile_size: 256      # per side, in pixels
-  overwrite: False
+  overwrite: True
   n_jobs: 10
   COCO_metadata:
-    year: 2021
+    year: 2024
     version: 1.0
-    description: Swiss Image Hinterground w/ Quarries and Mineral Exploitation Sites detection
+    description: Anthropogenic soils (Ticino, Vaud and swissTML3D 2024)
     contributor: swisstopo
     url: https://swisstopo.ch
     license:
@@ -37,32 +44,33 @@ generate_tilesets.py:
 
 rgb_to_greyscale.py: 
   working_dir: .
-  image_dir: ./data/images/SWISSIMAGE/zoom_16/RGB_trne/2020
-  output_dir: ./data/images/SWISSIMAGE/zoom_16/Grayscale_trne_3bands/2020
+  image_dir: ./data/images/SWISSIMAGE/zoom16/multi-year
+  output_dir: ./data/images/SWISSIMAGE/zoom16/multi-year_greyscale_1bands
+  bands: 1
 
 # 3-Train the model with the detectron2 algorithm
 train_model.py:
-  working_directory: ./output/OD/trne/zoom_16/
+  working_directory: ./output/OD/trne/zoom16/run19/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files: # relative paths, w/ respect to the working_folder
     trn: COCO_trn.json
     val: COCO_val.json
     tst: COCO_tst.json
-  detectron2_config_file: ../../../../config/detectron2_config.yaml # path relative to the working_folder
+  detectron2_config_file: ../../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
     model_zoo_checkpoint_url: COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml
 
 # 4-Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/OD/trne/zoom_16/
+  working_directory: ./output/OD/trne/zoom16/run19/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
     trn: COCO_trn.json
     val: COCO_val.json
     tst: COCO_tst.json
-  detectron2_config_file: ../../../../config/detectron2_config.yaml # path relative to the working_folder
+  detectron2_config_file: ../../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
     pth_file: ./logs/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
@@ -73,7 +81,7 @@ make_detections.py:
     
 # 5-Evaluate the quality of the detections for the different datasets by calculating metrics
 assess_detections.py:
-  working_directory: ./output/OD/trne/zoom_16/replicate4
+  working_directory: ./output/OD/trne/zoom16/run19/
   datasets:
     ground_truth_labels: labels.geojson
     image_metadata_json: img_metadata.json
@@ -83,3 +91,4 @@ assess_detections.py:
       val: val_detections_at_0dot05_threshold.gpkg
       tst: tst_detections_at_0dot05_threshold.gpkg
   output_folder: .
+  iou_threshold: 0.1
