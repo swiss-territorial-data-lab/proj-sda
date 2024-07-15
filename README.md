@@ -120,16 +120,16 @@ The workflow can be executed by running the following list of actions and comman
 
 ```
 $ python scripts/prepare_data.py config/config_trne.yaml
-$ python ../object-detector/scripts/generate_tilesets config/config_trne.yaml
-$ python ../object-detector/scripts/train_model config/config_trne.yaml
+$ python ../object-detector/scripts/generate_tilesets.py config/config_trne.yaml
+$ python ../object-detector/scripts/train_model.py config/config_trne.yaml
 $ tensorboard --logdir output/output_trne/logs
 ```
 
 Open the following link with a web browser: `http://localhost:6006` and identify the iteration minimising the validation loss and select the model accordingly (`model_*.pth`) in `config_trne`. For the provided parameters, `model_0002999.pth` is the default one.
 
 ```
-$ python ../object-detector/scripts/make_detections config/config_trne.yaml
-$ python ../object-detector/scripts/assess_detections config/config_trne.yaml
+$ python ../object-detector/scripts/make_detections.py config/config_trne.yaml
+$ python ../object-detector/scripts/assess_detections.py config/config_trne.yaml
 ```
 
 ## Disclaimer
