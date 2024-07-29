@@ -86,7 +86,7 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ./logs/model_0000999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ./logs/model_0001499.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: true
@@ -106,3 +106,16 @@ assess_detections.py:
       tst: tst_detections_at_0dot05_threshold.gpkg
   output_folder: .
   iou_threshold: 0.1
+
+
+# 4-Filtering and merging detection polygons to improve results
+post_processing.py:
+  # year: <YEAR>
+  detections: ./output/OD/trne/zoom16/run33/trn_detections_at_0dot05_threshold.gpkg
+  # shapefile: ./input/input_det/AoI/<AoI_shapefile>
+  dem: ./data/DEM/switzerland_dem_EPSG2056.tif
+  elevation: 600.0 # m, altitude threshold
+  score: 0.5 # detection score (from 0 to 1) provided by detectron2
+  distance: 1 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
+  area: 500.0 # m2, area threshold under which polygons are discarded
+  # output: ./output/output_det/oth_detections_at_0dot05_threshold_year-{year}_score-{score}_area-{area}_elevation-{elevation}_distance-{distance}.geojson
