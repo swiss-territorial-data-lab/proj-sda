@@ -3,8 +3,8 @@ prepare_data.py:
   srs: EPSG:2056
   datasets:
     shapefile: ./data/ground_truth/20240726_GT.gpkg
-    FP_shapefile: ./data/ground_truth/FP_list.gpkg                         # FP labels
-    empty_tiles_aoi: ./data/AoI/AoI_2020.shp                       # AOI in which additional empty tiles can be selected  
+    # FP_shapefile: ./data/ground_truth/FP_list.gpkg                         # FP labels
+    # empty_tiles_aoi: ./data/AoI/AoI_2020.shp                       # AOI in which additional empty tiles can be selected  
     category: 'Classe'
   output_folder: ./output/OD/trne/zoom16/run37
   zoom_level: 16 
