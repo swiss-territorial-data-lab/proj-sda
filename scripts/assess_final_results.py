@@ -5,7 +5,9 @@ import time
 import yaml
 
 import geopandas as gpd
-
+import pandas as pd
+import json
+from sklearn.metrics import confusion_matrix
 
 sys.path.insert(0, '.')
 
@@ -38,6 +40,7 @@ if __name__ == "__main__":
     LABELS = cfg['labels']
     DETECTIONS = cfg['detections']
     OUTPUT_DIR = cfg['output_dir']
+    CATEGORY_IDS_JSON = cfg['category_ids_json']
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}.')
@@ -53,65 +56,69 @@ if __name__ == "__main__":
     nb_labels = len(detections)
     logger.info(f'There are {nb_labels} polygons in {os.path.basename(LABELS)}')
 
+    labels['label_class'] = labels['Classe'].apply(lambda x: 0 if x == 'Activité non agricole' else 1)
+    
     detections = gpd.read_file(DETECTIONS)
     detections = detections.to_crs(2056)
     nb_detections = len(detections)
     logger.info(f'There are {nb_detections} polygons in {os.path.basename(DETECTIONS)}')
 
+    filepath = open(CATEGORY_IDS_JSON)
+    categories_json = json.load(filepath)
+    filepath.close()
+
     # Spatially compare shapfiles 
 
     logger.info('Tag detections and get metrics...')
 
-    print(detections)
-    print(labels)
-    exit()
-    metrics_dict_by_cl = {}
-    for dataset in datasets_list:
-        metrics_dict_by_cl[dataset] = []
+    # get classe ids
+    id_classes = range(len(categories_json))
+
+    # append class ids to labels
+    categories_info_df = pd.DataFrame()
+
+    IOU_THRESHOLD = 0.1
+    # metrics_dict_by_cl = {}
+    metrics_dict_by_cl = []
+    # for dataset in datasets_list:
+    #     metrics_dict_by_cl[dataset] = []
     metrics_cl_df_dict = {}
     tagged_dets_gdf = gpd.GeoDataFrame()
 
-    for dataset in datasets_list:
 
-        tmp_gdf = dets_gdf_dict[dataset].copy()
-        tmp_gdf.to_crs(epsg=clipped_labels_w_id_gdf.crs.to_epsg(), inplace=True)
 
-        tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf = metrics.get_fractional_sets(
-            tmp_gdf, 
-            clipped_labels_w_id_gdf[clipped_labels_w_id_gdf.dataset == dataset],
-            IOU_THRESHOLD
-        )
-        tp_gdf['tag'] = 'TP'
-        tp_gdf['dataset'] = dataset
-        fp_gdf['tag'] = 'FP'
-        fp_gdf['dataset'] = dataset
-        fn_gdf['tag'] = 'FN'
-        fn_gdf['dataset'] = dataset
-        mismatched_class_gdf['tag'] = 'wrong class'
-        mismatched_class_gdf['dataset'] = dataset
 
-        tagged_dets_gdf = pd.concat([tagged_dets_gdf, tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf], ignore_index=True)
-        tp_k, fp_k, fn_k, p_k, r_k, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes)
-        logger.info(f'Dataset = {dataset} => precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
+    tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf = metrics.get_fractional_sets(
+        detections, labels, IOU_THRESHOLD)
+    
+    tp_gdf['tag'] = 'TP'
+    fp_gdf['tag'] = 'FP'
+    fn_gdf['tag'] = 'FN'
+    mismatched_class_gdf['tag'] = 'wrong class'
 
-        # label classes starting at 1 and detection classes starting at 0.
-        for id_cl in id_classes:
-            metrics_dict_by_cl[dataset].append({
-                'class': id_cl,
-                'precision_k': p_k[id_cl],
-                'recall_k': r_k[id_cl],
-                'TP_k' : tp_k[id_cl],
-                'FP_k' : fp_k[id_cl],
-                'FN_k' : fn_k[id_cl],
-            })
 
-        metrics_cl_df_dict[dataset] = pd.DataFrame.from_records(metrics_dict_by_cl[dataset])
+    tagged_dets_gdf = pd.concat([tagged_dets_gdf, tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf], ignore_index=True)
+    tp_k, fp_k, fn_k, p_k, r_k, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes)
+    logger.info(f'precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
 
-    file_to_write = os.path.join(OUTPUT_DIR, f'{"dst_" if KEEP_DATASETS else ""}tagged_detections.gpkg')
-    tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'dataset', 'label_class', 'CATEGORY', 'det_class', 'det_category', 'cluster_id']]\
+    # label classes starting at 1 and detection classes starting at 0.
+    for id_cl in id_classes:
+        metrics_dict_by_cl.append({
+            'class': id_cl,
+            'precision_k': p_k[id_cl],
+            'recall_k': r_k[id_cl],
+            'TP_k' : tp_k[id_cl],
+            'FP_k' : fp_k[id_cl],
+            'FN_k' : fn_k[id_cl],
+        })
+
+    metrics_cl_df_dict = pd.DataFrame.from_records(metrics_dict_by_cl)
+
+    file_to_write = os.path.join(OUTPUT_DIR, f'vlov_detections.gpkg')
+    tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'label_class', 'det_class']]\
         .to_file(file_to_write, driver='GPKG', index=False)
     written_files.append(file_to_write)
-
+    exit()
     # Save the metrics by class for each dataset
     metrics_by_cl_df = pd.DataFrame()
     for dataset in datasets_list:
