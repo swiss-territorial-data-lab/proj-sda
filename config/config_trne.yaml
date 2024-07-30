@@ -2,9 +2,11 @@
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
-    shapefile: ./data/ground_truth/20240708_GT.gpkg
+    shapefile: ./data/ground_truth/20240726_GT.gpkg
+    FP_shapefile: ./data/ground_truth/FP_list.gpkg                         # FP labels
+    empty_tiles_aoi: ./data/AoI/AoI_2020.shp                       # AOI in which additional empty tiles can be selected  
     category: 'Classe'
-  output_folder: ./output/OD/trne/zoom16/run36
+  output_folder: ./output/OD/trne/zoom16/run37
   zoom_level: 16 
 
 # 2-Fetch of tiles (online server) and split into 3 datasets: train, test, validation
@@ -14,25 +16,25 @@ generate_tilesets.py:
     nb_tiles_max: 10
   working_directory: .
   datasets:
-    aoi_tiles: output/OD/trne/zoom16/run36/tiles.geojson
-    ground_truth_labels: output/OD/trne/zoom16/run36/labels.geojson
+    aoi_tiles: output/OD/trne/zoom16/run37/tiles.geojson
+    ground_truth_labels: output/OD/trne/zoom16/run37/labels.geojson
     image_source:
       # ############# 
-      type: FOLDER
-      location: data/images/SWISSIMAGE/zoom16/run25_color_adjustment/scikit/
-      srs: 3857
-      year: multi-year
+      # type: FOLDER
+      # location: data/images/SWISSIMAGE/zoom16/run25_color_adjustment/scikit/
+      # srs: 3857
+      # year: multi-year
       # ############# 
       # type: WMS                               # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
       # location: https://wms.geo.admin.ch/service
       # layers: ch.swisstopo.swissimage
       # srs: "EPSG:2056"
       # ############ 
-      # type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
-      # year: multi-year                     # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
-      # location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
+      type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
+      year: multi-year                     # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
+      location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
       # ############ 
-  output_folder: output/OD/trne/zoom16/run36/
+  output_folder: output/OD/trne/zoom16/run37/
   tile_size: 256      # per side, in pixels
   overwrite: True
   n_jobs: 10
@@ -64,7 +66,7 @@ match_colour.py:
 
 # 3-Train the model with the detectron2 algorithm
 train_model.py:
-  working_directory: ./output/OD/trne/zoom16/run36
+  working_directory: ./output/OD/trne/zoom16/run37
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files: # relative paths, w/ respect to the working_folder
@@ -77,7 +79,7 @@ train_model.py:
 
 # 4-Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run36
+  working_directory: ./output/OD/trne/zoom16/run37
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -86,7 +88,7 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ./logs/model_0000999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ./logs/model_0000499.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: true
@@ -95,7 +97,7 @@ make_detections.py:
     
 # 5-Evaluate the quality of the detections for the different datasets by calculating metrics
 assess_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run36
+  working_directory: ./output/OD/trne/zoom16/run37
   datasets:
     ground_truth_labels: labels.geojson
     image_metadata_json: img_metadata.json
@@ -125,5 +127,6 @@ post_processing.py:
 assess_final_results.py:
   working_dir: .
   labels: ./data/ground_truth/20240726_GT.gpkg
-  detections: ./output/OD/trne/zoom16/run33/trn_detections_at_0dot05_threshold.gpkg
-  output_dir: ./output/OD/trne/zoom16/run33/tagged_final_detections.gpkg
+  detections: ./output/OD/trne/zoom16/run33/trn_detections_at_0dot05_threshold_threshold_score-0dot5_area-500_elevation-600_distance-1.gpkg
+  output_dir: ./output/OD/trne/zoom16/run33/
+  category_ids_json: ./output/OD/trne/zoom16/run33/category_ids.json
