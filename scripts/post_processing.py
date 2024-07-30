@@ -24,7 +24,7 @@ if __name__ == "__main__":
     logger.info('Starting...')
 
     # Argument and parameter specification
-    parser = argparse.ArgumentParser(description="The script fpost-process the detection results obtained with the Object-Detector")
+    parser = argparse.ArgumentParser(description="The script post-process the detection results obtained with the Object-Detector")
     parser.add_argument('config_file', type=str, help='input geojson path')
     args = parser.parse_args()
 
