@@ -2,9 +2,9 @@
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
-    shapefile: ./data/ground_truth/20240726_GT.gpkg
+    shapefile: ./data/ground_truth/20240708_GT.gpkg
     category: 'Classe'
-  output_folder: ./output/OD/trne/zoom16/run34
+  output_folder: ./output/OD/trne/zoom16/run36
   zoom_level: 16 
 
 # 2-Fetch of tiles (online server) and split into 3 datasets: train, test, validation
@@ -14,25 +14,25 @@ generate_tilesets.py:
     nb_tiles_max: 10
   working_directory: .
   datasets:
-    aoi_tiles: output/OD/trne/zoom16/run34/tiles.geojson
-    ground_truth_labels: output/OD/trne/zoom16/run34/labels.geojson
+    aoi_tiles: output/OD/trne/zoom16/run36/tiles.geojson
+    ground_truth_labels: output/OD/trne/zoom16/run36/labels.geojson
     image_source:
       # ############# 
-      # type: FOLDER
-      # location: data/images/SWISSIMAGE/
-      # srs: 3857
-      # year: multi-year
+      type: FOLDER
+      location: data/images/SWISSIMAGE/zoom16/run25_color_adjustment/scikit/
+      srs: 3857
+      year: multi-year
       # ############# 
       # type: WMS                               # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
       # location: https://wms.geo.admin.ch/service
       # layers: ch.swisstopo.swissimage
       # srs: "EPSG:2056"
       # ############ 
-      type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
-      year: multi-year                     # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
-      location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
+      # type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
+      # year: multi-year                     # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
+      # location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
       # ############ 
-  output_folder: output/OD/trne/zoom16/run34/
+  output_folder: output/OD/trne/zoom16/run36/
   tile_size: 256      # per side, in pixels
   overwrite: True
   n_jobs: 10
@@ -64,7 +64,7 @@ match_colour.py:
 
 # 3-Train the model with the detectron2 algorithm
 train_model.py:
-  working_directory: ./output/OD/trne/zoom16/run34
+  working_directory: ./output/OD/trne/zoom16/run36
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files: # relative paths, w/ respect to the working_folder
@@ -77,7 +77,7 @@ train_model.py:
 
 # 4-Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run34
+  working_directory: ./output/OD/trne/zoom16/run36
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -86,7 +86,7 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ./logs/model_0001499.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ./logs/model_0000999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: true
@@ -95,7 +95,7 @@ make_detections.py:
     
 # 5-Evaluate the quality of the detections for the different datasets by calculating metrics
 assess_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run34
+  working_directory: ./output/OD/trne/zoom16/run36
   datasets:
     ground_truth_labels: labels.geojson
     image_metadata_json: img_metadata.json
@@ -119,3 +119,11 @@ post_processing.py:
   distance: 1 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
   area: 500.0 # m2, area threshold under which polygons are discarded
   # output: ./output/output_det/oth_detections_at_0dot05_threshold_year-{year}_score-{score}_area-{area}_elevation-{elevation}_distance-{distance}.geojson
+
+
+# 4-Filtering and merging detection polygons to improve results
+assess_final_results.py:
+  working_dir: .
+  labels: ./data/ground_truth/20240726_GT.gpkg
+  detections: ./output/OD/trne/zoom16/run33/trn_detections_at_0dot05_threshold.gpkg
+  output_dir: ./output/OD/trne/zoom16/run33/tagged_final_detections.gpkg
