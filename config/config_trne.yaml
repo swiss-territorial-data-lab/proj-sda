@@ -121,8 +121,8 @@ post_processing.py:
   dem: ./data/DEM/switzerland_dem_EPSG2056.tif
   elevation: 600.0 # m, altitude threshold
   score: 0.5 # detection score (from 0 to 1) provided by detectron2
-  distance: 1 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
-  area: 500.0 # m2, area threshold under which polygons are discarded
+  distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
+  area: 100.0 # m2, area threshold under which polygons are discarded
   # output: ./output/output_det/oth_detections_at_0dot05_threshold_year-{year}_score-{score}_area-{area}_elevation-{elevation}_distance-{distance}.geojson
 
 
@@ -130,6 +130,7 @@ post_processing.py:
 assess_final_results.py:
   working_dir: .
   labels: ./data/ground_truth/20240726_GT.gpkg
-  detections: ./output/OD/trne/zoom16/run33/trn_detections_at_0dot05_threshold_threshold_score-0dot5_area-500_elevation-600_distance-1.gpkg
-  output_dir: ./output/OD/trne/zoom16/run33/
-  category_ids_json: ./output/OD/trne/zoom16/run33/category_ids.json
+  detections: ./output/OD/trne/zoom16/run42/tagged_detections_threshold_score-0dot5_area-100_elevation-600_distance-10.gpkg
+  output_dir: ./output/OD/trne/zoom16/run42/
+  category_ids_json: ./output/OD/trne/zoom16/run42/category_ids.json
+  area_threshold: 50       # area under which the polygons are discarded from assessment

@@ -5,6 +5,7 @@ import time
 import yaml
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import rasterio
 
@@ -61,42 +62,50 @@ if __name__ == "__main__":
     logger.info(f"{total - te} detections were removed by elevation threshold: {ELEVATION} m")
 
     # Merge close features
-    detections_merge = detections.buffer(DISTANCE, resolution=2).geometry.unary_union
-    detections_merge = gpd.GeoDataFrame(geometry=[detections_merge], crs=detections.crs)  
-    detections_merge = detections_merge.explode(index_parts=True).reset_index(drop=True)   
-    detections_merge.geometry = detections_merge.geometry.buffer(-DISTANCE, resolution=2)  
-    detections_merge['index_merge'] = detections_merge.index
-    detections_join = gpd.sjoin(detections_merge, detections, how='inner', predicate='intersects')
+    detections_year = gpd.GeoDataFrame()
+    for year in detections.year_det.unique():
+        detections_gdf = detections.copy()
+        detections_temp = detections_gdf[detections_gdf['year_det']==year]
 
-    det_class_all = []
-    det_score_all = []
+        detections_merge = detections_temp.buffer(DISTANCE, resolution=2).geometry.unary_union
+        detections_merge = gpd.GeoDataFrame(geometry=[detections_merge], crs=detections.crs)  
+        detections_merge = detections_merge.explode(index_parts=True).reset_index(drop=True)   
+        detections_merge.geometry = detections_merge.geometry.buffer(-DISTANCE, resolution=2) 
+        detections_merge['index_merge'] = detections_merge.index
+        detections_join = gpd.sjoin(detections_merge, detections_temp, how='inner', predicate='intersects')
 
-    for id in detections_merge.index_merge.unique():
-        detections_temp = detections_join.copy()
-        detections_temp = detections_join[(detections_join['index_merge']==id)] 
-        det_score = detections_temp['score'].mean()
-        det_score_all.append(det_score)
+        det_class_all = []
+        det_score_all = []
 
-        detections_temp = detections_temp.dissolve(by='det_class', aggfunc='sum', as_index=False)
-        detections_temp['det_class'] = detections_temp.loc[detections_temp['area'] == detections_temp['area'].max(), 
-                                                           'det_class'].iloc[0]         
-        det_class = detections_temp['det_class'].drop_duplicates().tolist()
-        det_class_all.append(det_class[0])
+        for id in detections_merge.index_merge.unique():
+            detections_temp = detections_join.copy()
+            detections_temp = detections_temp[(detections_temp['index_merge']==id)]
+            det_score_all.append(detections_temp['score'].mean())
 
-    detections_merge['det_class'] = det_class_all
-    detections_merge['score'] = det_score_all
-    detections_join = detections_join.drop_duplicates(subset=['index_merge'])
-    detections_merge = pd.merge(detections_merge, detections_join[
-        ['index_merge', 'dataset', 'label_class', 'CATEGORY', 
-         'det_class', 'det_category', 'year_det', 'year_label']], 
-         on='index_merge')
-    detections_filtered = detections_merge.drop(labels='index_merge', axis=1)
+            detections_temp = detections_temp.dissolve(by='det_class', aggfunc='sum', as_index=False)
+            detections_temp['det_class'] = detections_temp.loc[detections_temp['area'] == detections_temp['area'].max(), 
+                                                            'det_class'].iloc[0]    
 
-    td = len(detections_filtered)
+            det_class = detections_temp['det_class'].drop_duplicates().tolist()
+            det_class_all.append(det_class[0])
+
+        detections_merge['det_class'] = det_class_all
+        detections_merge['score'] = det_score_all
+
+        # detections_year = detections_merge.drop_duplicates(subset=['index_merge'])
+
+        detections_merge = pd.merge(detections_merge, detections_join[
+            ['index_merge', 'dataset', 'label_class', 'CATEGORY', 
+            'year_det', 'year_label']], 
+            on='index_merge')
+        detections_year = pd.concat([detections_year, detections_merge])
+
+    detections_year = detections_year.drop_duplicates(subset='score')
+    td = len(detections_year)
     logger.info(f"{td} clustered detections remains after shape union (distance threshold = {DISTANCE} m)")
 
     # Filter dataframe by score value
-    detections_score = detections_filtered[detections_filtered.score > SCORE]
+    detections_score = detections_year[detections_year.score > SCORE]
     sc = len(detections_score)
     logger.info(f"{td - sc} detections were removed by score filtering (score threshold = {SCORE})")
 

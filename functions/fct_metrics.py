@@ -3,7 +3,7 @@ import pandas as pd
 
 
 
-def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25):
+def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold=None):
     """
     Find the intersecting detections and labels.
     Control their IoU and class to get the TP.
@@ -14,7 +14,7 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25):
         dets_gdf (geodataframe): geodataframe of the detections.
         labels_gdf (geodataframe): geodataframe of the labels.
         iou_threshold (float): threshold to apply on the IoU to determine if detections and labels can be matched. Defaults to 0.25.
-
+        area_threshold (float): threshold applied on clipped label and detection polygons to discard the smallest ones. Default None
     Raises:
         Exception: CRS mismatch
 
@@ -24,17 +24,20 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25):
         - geodataframe: false postive detection;
         - geodataframe: false negative labels;
         - geodataframe: intersections between a detection and a label with a mismatched class id.
-    """
+        - geodataframe: label and detection polygons with an area smaller than the threshold.
+        """
 
     _dets_gdf = dets_gdf.reset_index(drop=True)
     _labels_gdf = labels_gdf.reset_index(drop=True)
-    
+
+    small_poly_gdf = gpd.GeoDataFrame() 
+       
     if len(_labels_gdf) == 0:
         fp_gdf = _dets_gdf.copy()
         tp_gdf = gpd.GeoDataFrame()
         fn_gdf = gpd.GeoDataFrame()
         mismatched_classes_gdf = gpd.GeoDataFrame()
-        return tp_gdf, fp_gdf, fn_gdf, mismatched_classes_gdf
+        return tp_gdf, fp_gdf, fn_gdf, mismatched_classes_gdf, small_poly_gdf
     
     assert(_dets_gdf.crs == _labels_gdf.crs), f"CRS Mismatch: detections' CRS = {_dets_gdf.crs}, labels' CRS = {_labels_gdf.crs}"
 
@@ -45,6 +48,16 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25):
     # We need to keep both geometries after sjoin to check the best intersection over union
     _labels_gdf['label_geom'] = _labels_gdf.geometry
     
+    # Filter detection and labels with area less than thd value 
+    if area_threshold:
+        _dets_gdf['area'] = _dets_gdf.geometry.area
+        filter_dets_gdf = _dets_gdf[_dets_gdf['area']<area_threshold]
+        _dets_gdf = _dets_gdf[_dets_gdf['area']>=area_threshold]
+        _labels_gdf['area'] = _labels_gdf.geometry.area
+        filter_labels_gdf = _labels_gdf[_labels_gdf['area']<area_threshold]
+        _labels_gdf = _labels_gdf[_labels_gdf['area']>=area_threshold]
+        small_poly_gdf = pd.concat([filter_dets_gdf, filter_labels_gdf])
+
     # TRUE POSITIVES
     left_join = gpd.sjoin(_dets_gdf, _labels_gdf, how='left', predicate='intersects', lsuffix='left', rsuffix='right')
 
@@ -63,7 +76,7 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25):
 
     # Detection, resp labels, with IOU lower than threshold value are considered as FP, resp FN, and saved as such
     actual_matches_gdf = best_matches_gdf[best_matches_gdf['IOU'] >= iou_threshold].copy()
-    actual_matches_gdf = actual_matches_gdf.sort_values(by=['IOU'], ascending=False).drop_duplicates(subset=['label_id'])
+    actual_matches_gdf = actual_matches_gdf.sort_values(by=['IOU'], ascending=False).drop_duplicates(subset=['label_id', 'year'])
     actual_matches_gdf['IOU'] = actual_matches_gdf.IOU.round(3)
 
     matched_det_ids = actual_matches_gdf['det_id'].unique().tolist()
@@ -95,7 +108,7 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25):
     right_join = gpd.sjoin(_dets_gdf, _labels_gdf, how='right', predicate='intersects', lsuffix='left', rsuffix='right')
     right_join = right_join.rename(columns={"year_left": "year_label", "year_right": "year_tiles"})
     fn_gdf = right_join[right_join.score.isna()].copy()
-    fn_gdf.drop_duplicates(subset=['label_id'], inplace=True)
+    fn_gdf.drop_duplicates(subset=['label_id', 'year'], inplace=True)
     fn_gdf = pd.concat([fn_gdf_temp, fn_gdf], ignore_index=True)
     fn_gdf.drop(
         columns=_dets_gdf.drop(columns='geometry').columns.to_list() + ['dataset_left', 'index_right', 'x', 'y', 'z', 'label_geom', 'IOU', 'index_left'], 
@@ -105,7 +118,7 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25):
     fn_gdf.rename(columns={'dataset_right': 'dataset'}, inplace=True)
  
 
-    return tp_gdf, fp_gdf, fn_gdf, mismatched_classes_gdf
+    return tp_gdf, fp_gdf, fn_gdf, mismatched_classes_gdf, small_poly_gdf
 
 
 def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0):
