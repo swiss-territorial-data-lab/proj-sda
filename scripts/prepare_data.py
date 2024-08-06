@@ -121,7 +121,12 @@ if __name__ == "__main__":
         category = labels_4326['CATEGORY'].unique()
         logger.info(f'Working with {len(category)} classe.s: {category}')
         labels_4326['SUPERCATEGORY'] = "anthropogenic soils"
-
+    else:
+        labels_4326['CATEGORY'] = "anthropogenic soils"
+        category = labels_4326['CATEGORY'].unique()
+        logger.info(f'Working with {len(category)} classe.s: {category}')
+        labels_4326['SUPERCATEGORY'] = "anthropogenic soils"
+        
     label_filename = 'labels.geojson'
     label_filepath = os.path.join(OUTPUT_DIR, label_filename)
     labels_4326.to_file(label_filepath, driver='GeoJSON')
@@ -216,7 +221,7 @@ if __name__ == "__main__":
     tiles_4326.reset_index(drop=True, inplace=True)
 
     tiles_4326 = tiles_4326.apply(add_tile_id, axis=1)
-    
+
     # Add tile IDs and reorganise data set
     tiles_4326_all = tiles_4326
     nb_tiles = len(tiles_4326_all)
