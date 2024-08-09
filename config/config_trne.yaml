@@ -2,9 +2,9 @@
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
-    shapefile: ./data/ground_truth/20240726_GT.gpkg
+    shapefile: ./data/ground_truth/<GT_SHPFILE>
     category: 'Classe'
-  output_folder: ./output/OD/trne/zoom16/run34
+  output_folder: ./output/OD/trne/
   zoom_level: 16 
 
 # 2-Fetch of tiles (online server) and split into 3 datasets: train, test, validation
@@ -14,8 +14,8 @@ generate_tilesets.py:
     nb_tiles_max: 10
   working_directory: .
   datasets:
-    aoi_tiles: output/OD/trne/zoom16/run34/tiles.geojson
-    ground_truth_labels: output/OD/trne/zoom16/run34/labels.geojson
+    aoi_tiles: output/OD/trne/tiles.geojson
+    ground_truth_labels: output/OD/trne/labels.geojson
     image_source:
       # ############# 
       # type: FOLDER
@@ -32,7 +32,7 @@ generate_tilesets.py:
       year: multi-year                     # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
       location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
       # ############ 
-  output_folder: output/OD/trne/zoom16/run34/
+  output_folder: output/OD/trne/
   tile_size: 256      # per side, in pixels
   overwrite: True
   n_jobs: 10
@@ -49,22 +49,22 @@ generate_tilesets.py:
 # Optional-convert RGB to greyscale
 rgb_to_greyscale.py: 
   working_dir: .
-  image_dir: ./data/images/SWISSIMAGE
-  output_dir: ./data/images/SWISSIMAGE
+  image_dir: ./data/images/SWISSIMAGE/
+  output_dir: ./data/images/SWISSIMAGE/
   bands: 1
 
 # Optional-convert RGB to greyscale
 match_colour.py: 
   working_dir: .
-  image_dir: ./data/images/SWISSIMAGE/zoom16/run25/
-  output_dir: ./data/images/SWISSIMAGE/zoom16/run25_color_adjustment
-  reference: ./output/OD/trne/zoom16/run25/all-images/2022_16_34399_23224.tif
+  image_dir: ./data/images/SWISSIMAGE/
+  output_dir: ./data/images/SWISSIMAGE/color_adjustment
+  reference: ./output/OD/trne/<REF_IMAGE>
   method: scikit
   plot: False
 
 # 3-Train the model with the detectron2 algorithm
 train_model.py:
-  working_directory: ./output/OD/trne/zoom16/run34
+  working_directory: ./output/OD/trne/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files: # relative paths, w/ respect to the working_folder
@@ -77,7 +77,7 @@ train_model.py:
 
 # 4-Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run34
+  working_directory: ./output/OD/trne/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -95,7 +95,7 @@ make_detections.py:
     
 # 5-Evaluate the quality of the detections for the different datasets by calculating metrics
 assess_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run34
+  working_directory: ./output/OD/trne/
   datasets:
     ground_truth_labels: labels.geojson
     image_metadata_json: img_metadata.json
