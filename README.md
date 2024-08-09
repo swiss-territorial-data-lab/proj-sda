@@ -31,7 +31,7 @@ The project has been run on a 32 GiB RAM machine with a 16 GiB GPU (NVIDIA Tesla
 - CUDA version 11.3
 - GDAL version 3.0.4
 <!-- - `object-detector` version [2.1.0](https://github.com/swiss-territorial-data-lab/object-detector/releases/tag/v.2.1.0)  -->
-- `object-detector`: clone the repo in the same folder than `proj-sda` and switch to branch `ch/multi-year`. 
+- [`object-detector`](https://github.com/swiss-territorial-data-lab/object-detector): clone the repo in the same folder than `proj-sda` and switch to branch `ch/multi-year`. 
 
 ### Installation
 
@@ -54,7 +54,7 @@ $ source <dir_path>/<name of the virtual environment>/bin/activate
 $ pip install -r requirements.txt
 ```
 
-- _requirements.txt_ has been obtained by compiling _requirements.in_. Recompiling the file might lead to libraries version changes:
+- `requirements.txt` has been obtained by compiling `requirements.in`. Recompiling the file might lead to libraries version changes:
 ```
 $ pip-compile requirements.in
 ```
@@ -63,7 +63,7 @@ $ pip-compile requirements.in
 
 ### Files structure
 
-The folders/files of the project `proj-sda` (in combination with `object-detector`) is organised as follows. Path names can be customised by the user, and * indicates numbers which may vary:
+The folders/files of the project `proj-sda` (in combination with `object-detector`) are organised as follows. Path names can be customised by the user, and * indicates numbers which may vary:
 
 <pre>.
 ├── config                                          # configurations files folder
