@@ -28,8 +28,6 @@ def main(WORKING_DIR, OUTPUT_DIR, IMAGE_DIR, BANDS):
     # Create output directories in case they don't exist
     _ = misc.ensure_dir_exists(OUTPUT_DIR)
 
-    written_files = []
-
     images = glob(os.path.join(IMAGE_DIR, '*.tif'))
     # subprocess.call('gdal_calc.py -R ./data/images/SWISSIMAGE/zoom_16/16_33871_23265_RGB.tif --R_band=1 -G ./data/images/SWISSIMAGE/zoom_16/16_33871_23265_RGB.tif --G_band=2 -B ./data/images/SWISSIMAGE/zoom_16/16_33871_23265_RGB.tif --B_band=3 --outfile=./data/images/SWISSIMAGE/zoom_16/16_33871_23265_gray_gdal_calc.tif --calc="R*0.2989+G*0.5870+B*0.1140"')
     for image in tqdm(images, desc='Convert RGB images to greyscale images', total=len(images)):
