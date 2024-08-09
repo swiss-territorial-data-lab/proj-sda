@@ -99,7 +99,7 @@ make_detections.py:
 
 # 5-Evaluate the quality of the detections for the different datasets by calculating metrics
 assess_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run48
+  working_directory: ./output/OD/trne/zoom16/run42
   datasets:
     ground_truth_labels: labels.geojson
     image_metadata_json: img_metadata.json
@@ -116,7 +116,7 @@ assess_detections.py:
 # 4-Filtering and merging detection polygons to improve results
 post_processing.py:
   # year: <YEAR>
-  detections: ./output/OD/trne/zoom16/run42_1/tagged_detections.gpkg
+  detections: ./output/OD/trne/zoom16/run42/tagged_detections.gpkg
   # shapefile: ./input/input_det/AoI/<AoI_shapefile>
   dem: ./data/DEM/switzerland_dem_EPSG2056.tif
   elevation: 600.0 # m, altitude threshold
