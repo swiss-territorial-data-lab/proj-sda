@@ -3,7 +3,7 @@ prepare_data.py:
   srs: EPSG:2056
   datasets:
     shapefile: ./data/ground_truth/20240805_GT.gpkg             # GT labels
-    FP_shapefile: ./data/FP/FP_list.gpkg                        # FP labels
+    # FP_shapefile: ./data/FP/FP_list.gpkg                        # FP labels
     empty_tiles_aoi: ./data/AoI/AoI_2020.shp                    # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
     # empty_tiles_shp: ./data/EPT/20240726_EPT.gpkg             # Provided shpfile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
     category: 'Classe'
@@ -19,7 +19,7 @@ generate_tilesets.py:
   datasets:
     aoi_tiles: output/OD/trne/tiles.geojson
     ground_truth_labels: output/OD/trne/labels.geojson
-    FP_labels: output/OD/trne/FP.geojson
+    # FP_labels: output/OD/trne/FP.geojson
     image_source:
       # ############# 
       # type: FOLDER
@@ -32,7 +32,7 @@ generate_tilesets.py:
       # srs: "EPSG:2056"
       # ############ 
       type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
-      year: 2020                    # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
+      year: multi-year                    # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
       location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
       # ############ 
   empty_tiles:            # add empty tiles to datasets
@@ -102,7 +102,7 @@ make_detections.py:
     
 # 5-Evaluate the quality of the detections for the different datasets by calculating metrics
 assess_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run48/
+  working_directory: ./output/OD/trne/
   datasets:
     ground_truth_labels: labels.geojson
     image_metadata_json: img_metadata.json
