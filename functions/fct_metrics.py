@@ -62,8 +62,7 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
     left_join = gpd.sjoin(_dets_gdf, _labels_gdf, how='left', predicate='intersects', lsuffix='left', rsuffix='right')
 
     # Test that something is detected
-    candidates_tp_gdf = left_join[left_join.label_id.notnull()].copy()
-    candidates_tp_gdf_temp = left_join[left_join.label_id.notnull()].copy()
+    candidates_tp_gdf = candidates_tp_gdf_temp = left_join[left_join.label_id.notnull()].copy()
 
     # IoU computation between labels and detections
     geom1 = candidates_tp_gdf_temp['geometry'].to_numpy().tolist()
@@ -108,7 +107,7 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
     right_join = gpd.sjoin(_dets_gdf, _labels_gdf, how='right', predicate='intersects', lsuffix='left', rsuffix='right')
     right_join = right_join.rename(columns={"year_left": "year_label", "year_right": "year_tiles"})
     fn_gdf = right_join[right_join.score.isna()].copy()
-    fn_gdf.drop_duplicates(subset=['label_id', 'year'], inplace=True)
+    fn_gdf.drop_duplicates(subset=['label_id', 'tile_id'], inplace=True)
     fn_gdf = pd.concat([fn_gdf_temp, fn_gdf], ignore_index=True)
     fn_gdf.drop(
         columns=_dets_gdf.drop(columns='geometry').columns.to_list() + ['dataset_left', 'index_right', 'x', 'y', 'z', 'label_geom', 'IOU', 'index_left'], 
@@ -116,7 +115,7 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
         inplace=True
     )
     fn_gdf.rename(columns={'dataset_right': 'dataset'}, inplace=True)
- 
+
 
     return tp_gdf, fp_gdf, fn_gdf, mismatched_classes_gdf, small_poly_gdf
 

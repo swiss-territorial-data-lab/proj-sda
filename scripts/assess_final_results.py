@@ -8,7 +8,6 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import json
-from sklearn.metrics import confusion_matrix
 
 sys.path.insert(0, '.')
 
@@ -40,8 +39,10 @@ if __name__ == "__main__":
     WORKING_DIR = cfg['working_dir']
     LABELS = cfg['labels']
     DETECTIONS = cfg['detections']
-    OUTPUT_DIR = cfg['output_dir']
+    SPLIT_AOI_TILES = cfg['split_aoi_tiles']
     CATEGORY_IDS_JSON = cfg['category_ids_json']
+    OUTPUT_DIR = cfg['output_dir']
+    IOU_THRESHOLD = cfg['iou_threshold'] if 'iou_threshold' in cfg.keys() else 0.25
     AREA_THRESHOLD = cfg['area_threshold'] if 'area_threshold' in cfg.keys() else None
 
     os.chdir(WORKING_DIR)
@@ -52,19 +53,38 @@ if __name__ == "__main__":
 
     written_files = [] 
 
+    logger.info("Loading split AoI tiles as a GeoPandas DataFrame...")
+    split_aoi_tiles_gdf = gpd.read_file(SPLIT_AOI_TILES)
+    split_aoi_tiles_gdf = split_aoi_tiles_gdf.to_crs(3857)
+    if 'year' in split_aoi_tiles_gdf.keys(): 
+        split_aoi_tiles_gdf = split_aoi_tiles_gdf.rename(columns={"year": "year_tile"})    
+
+    logger.success(f"{DONE_MSG} {len(split_aoi_tiles_gdf)} records were found.")
+
     # Read shapefiles 
     labels = gpd.read_file(LABELS)
-    labels = labels.to_crs(2056)
+    labels = labels.to_crs(3857)
     labels.rename(columns={'name':'CATEGORY', 'id': 'label_class'},inplace=True)
-
     nb_labels = len(labels)
 
     logger.info(f'There are {nb_labels} polygons in {os.path.basename(LABELS)}')
 
-    # labels['label_class'] = labels['Classe'].apply(lambda x: 0 if x == 'Activité non agricole' else 1)
+    tiles_gdf = split_aoi_tiles_gdf
+    tiles_gdf['tile_geometry'] = tiles_gdf['geometry']    
     
+    labels_tiles_sjoined_gdf = gpd.sjoin(labels, tiles_gdf, how='inner', predicate='intersects')
+
+    if 'year_label' in labels.keys():
+        labels_tiles_sjoined_gdf = labels_tiles_sjoined_gdf[labels_tiles_sjoined_gdf.year_label == labels_tiles_sjoined_gdf.year_tile]  
+
+    labels_tiles_sjoined_gdf = labels_tiles_sjoined_gdf.drop_duplicates(subset=['geometry'], keep='first')
+    labels_tiles_sjoined_gdf.drop(columns=['tile_geometry', 'index_right'], inplace=True)
+    labels_tiles_sjoined_gdf.rename(columns={'id': 'tile_id'}, inplace=True)
+
+    tiles_gdf.drop('tile_geometry', inplace=True, axis=1)
+
     detections = gpd.read_file(DETECTIONS)
-    detections = detections.to_crs(2056)
+    detections = detections.to_crs(3857)
     detections = detections.drop(labels=['label_class', 'CATEGORY', 'year_label'], axis=1)
     nb_detections = len(detections)
     logger.info(f'There are {nb_detections} polygons in {os.path.basename(DETECTIONS)}')
@@ -74,8 +94,7 @@ if __name__ == "__main__":
     categories_json = json.load(filepath)
     filepath.close()
 
-    labels_gdf = labels.copy()
-    labels_gdf.rename(columns={'Classe':'CATEGORY'}, inplace=True)
+    labels_gdf = labels_tiles_sjoined_gdf.copy()
 
     # get classe ids
     id_classes = range(len(categories_json))
@@ -86,7 +105,6 @@ if __name__ == "__main__":
     for key in categories_json.keys():
 
         categories_tmp={sub_key: [value] for sub_key, value in categories_json[key].items()}
-        
         categories_info_df = pd.concat([categories_info_df, pd.DataFrame(categories_tmp)], ignore_index=True)
 
     categories_info_df.sort_values(by=['id'], inplace=True, ignore_index=True)
@@ -98,7 +116,6 @@ if __name__ == "__main__":
 
     logger.info('Tag detections and get metrics...')
 
-    IOU_THRESHOLD = 0.1
     metrics_dict = {}
     metrics_dict_by_cl = []
     metrics_df_dict = {}
@@ -107,14 +124,12 @@ if __name__ == "__main__":
 
     tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = metrics.get_fractional_sets(
         detections, labels_w_id_gdf, IOU_THRESHOLD, AREA_THRESHOLD)
-    
+
     tp_gdf['tag'] = 'TP'
     fp_gdf['tag'] = 'FP'
     fn_gdf['tag'] = 'FN'
     mismatched_class_gdf['tag'] = 'wrong class'
     small_poly_gdf['tag'] = 'small polygon'
-
-    print(len(tp_gdf), len(fp_gdf), len(fn_gdf), len(mismatched_class_gdf))
 
     tagged_dets_gdf = pd.concat([tagged_dets_gdf, tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf], ignore_index=True)
     tp_k, fp_k, fn_k, p_k, r_k, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes)
@@ -125,7 +140,6 @@ if __name__ == "__main__":
         if not np.isnan(det_class) else None
         for det_class in tagged_dets_gdf.det_class.to_numpy()
     ] 
-
 
     # label classes starting at 1 and detection classes starting at 0.
     for id_cl in id_classes:
@@ -161,33 +175,16 @@ if __name__ == "__main__":
     ].sort_values(by=['class']).to_csv(file_to_write, index=False)
     written_files.append(file_to_write)
 
-    # tmp_df = metrics_by_cl_df[['TP_k', 'FP_k', 'FN_k']].sum()
-    # tmp_df2 =  metrics_by_cl_df[['precision_k', 'recall_k']].mean()
-    # global_metrics_df = tmp_df.merge(tmp_df2)
-
-    # file_to_write = os.path.join(OUTPUT_DIR, 'global_metrics.csv')
-    # global_metrics_df.to_csv(file_to_write, index=False)
-    # written_files.append(file_to_write)
-
     # Save the confusion matrix
     na_value_category = tagged_dets_gdf.CATEGORY.isna()
     sorted_classes =  tagged_dets_gdf.loc[~na_value_category, 'CATEGORY'].sort_values().unique().tolist() + ['background']
     tagged_dets_gdf.loc[na_value_category, 'CATEGORY'] = 'background'
     tagged_dets_gdf.loc[tagged_dets_gdf.det_class.isna(), 'det_class'] = 'background'
 
-
     tagged_gdf = tagged_dets_gdf.copy()
 
     true_class = tagged_gdf.CATEGORY.to_numpy()
     detected_class = tagged_gdf.det_class.to_numpy()
-
-    # confusion_array = confusion_matrix(true_class, detected_class, labels=sorted_classes)
-    # confusion_df = pd.DataFrame(confusion_array, index=sorted_classes, columns=sorted_classes, dtype='int64')
-    # confusion_df.rename(columns={'background': 'missed labels'}, inplace=True)
-
-    # file_to_write = (os.path.join(OUTPUT_DIR, 'confusion_matrix.csv'))
-    # confusion_df.to_csv(file_to_write)
-    # written_files.append(file_to_write)
 
     print()
     logger.info("The following files were written. Let's check them out!")
