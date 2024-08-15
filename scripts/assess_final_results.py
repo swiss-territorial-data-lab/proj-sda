@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
     logger.info("Loading split AoI tiles as a GeoPandas DataFrame...")
     split_aoi_tiles_gdf = gpd.read_file(SPLIT_AOI_TILES)
-    split_aoi_tiles_gdf = split_aoi_tiles_gdf.to_crs(3857)
+    split_aoi_tiles_gdf = split_aoi_tiles_gdf.to_crs(2056)
     if 'year' in split_aoi_tiles_gdf.keys(): 
         split_aoi_tiles_gdf = split_aoi_tiles_gdf.rename(columns={"year": "year_tile"})    
 
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     # Read shapefiles 
     labels = gpd.read_file(LABELS)
-    labels = labels.to_crs(3857)
+    labels = labels.to_crs(2056)
     labels.rename(columns={'name':'CATEGORY', 'id': 'label_class'},inplace=True)
     nb_labels = len(labels)
 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     tiles_gdf.drop('tile_geometry', inplace=True, axis=1)
 
     detections = gpd.read_file(DETECTIONS)
-    detections = detections.to_crs(3857)
+    detections = detections.to_crs(2056)
     detections = detections.drop(labels=['label_class', 'CATEGORY', 'year_label'], axis=1)
     nb_detections = len(detections)
     logger.info(f'There are {nb_detections} polygons in {os.path.basename(DETECTIONS)}')
@@ -155,6 +155,7 @@ if __name__ == "__main__":
     metrics_cl_df_dict = pd.DataFrame.from_records(metrics_dict_by_cl)
 
     file_to_write = os.path.join(OUTPUT_DIR, f'tagged_detections_merged.gpkg')
+    tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
     tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'label_class', 'CATEGORY', 'year', 'year_det', 'det_class', 'det_category']]\
         .to_file(file_to_write, driver='GPKG', index=False)
     written_files.append(file_to_write)
