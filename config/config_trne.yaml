@@ -124,28 +124,26 @@ assess_detections.py:
   area_threshold: 50       # area under which the polygons are discarded from assessment
 
 
+# Assess the final results
+assess_postprocess_detections.py:
+  working_dir: ./output/OD/trne/zoom16/run53/
+  labels: labels.geojson
+  detections: tagged_detections.gpkg
+  distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
+  iou: 0.1
+  area: 50.0       # area under which the polygons are discarded from assessment
+
+
 # 4-Filtering and merging detection polygons to improve final results
-post_processing.py:
-  detections: ./output/OD/trne/zoom16/run53/tagged_detections.gpkg
-  aoi_tiles: ./output/OD/trne/zoom16/run53/tiles.geojson
+filter_results.py:
+  detections: ./output/OD/trne/zoom16/run53/tagged_detections_merged.gpkg
   ticino:
     cadastre: ./data/layers/Ticino/Zones_batir_Ind.shp
   dem: ./data/DEM/switzerland_dem_EPSG2056.tif
   elevation: 600.0 # m, altitude threshold
   slope: 100 # deg, slope threshold
   score: 0.1 # detection score (from 0 to 1) provided by detectron2
-  distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
   area: 50.0 # m2, area threshold under which polygons are discarded
-
-
-# Assess the final results
-assess_final_results.py:
-  working_dir: ./output/OD/trne/zoom16/run53/
-  labels: labels.geojson
-  detections: tagged_detections_threshold_score-0dot1_area-50_elevation-600_distance-10_slope-100.gpkg
-  iou: 0.1
-  area: 50.0       # area under which the polygons are discarded from assessment
-
 
 # Analysis of the results
 results_analysis.py:
