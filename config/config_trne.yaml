@@ -131,8 +131,7 @@ assess_postprocess_detections.py:
   detections: tagged_detections.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
   iou: 0.1
-  area: 50.0       # area under which the polygons are discarded from assessment
-
+  
 
 # 4-Filtering and merging detection polygons to improve final results
 filter_results.py:
@@ -144,6 +143,7 @@ filter_results.py:
   slope: 100 # deg, slope threshold
   score: 0.1 # detection score (from 0 to 1) provided by detectron2
   area: 50.0 # m2, area threshold under which polygons are discarded
+
 
 # Analysis of the results
 results_analysis.py:

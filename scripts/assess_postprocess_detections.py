@@ -66,7 +66,7 @@ if __name__ == "__main__":
     logger.info(f'There are {nb_detections} polygons in {os.path.basename(DETECTIONS)}')
 
     # Merge features
-    logger.info("Merging adjacent polygons spread over tiles")
+    logger.info("Merge adjacent polygons spread across tiles")
     detections_year = gpd.GeoDataFrame()
 
     # Process detection by year
