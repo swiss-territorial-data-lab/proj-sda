@@ -40,8 +40,8 @@ if __name__ == "__main__":
     LABELS = cfg['labels']
     DETECTIONS = cfg['detections']
     DISTANCE = cfg['distance']
-    IOU_THD = cfg['iou'] if 'iou' in cfg.keys() else 0.25
-    AREA_THD = cfg['area'] if 'area' in cfg.keys() else None
+    IOU_THD = cfg['iou_threshold'] if 'iou_threshold' in cfg.keys() else 0.25
+    AREA_THD = cfg['area_threshold'] if 'area_threshold' in cfg.keys() else None
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')

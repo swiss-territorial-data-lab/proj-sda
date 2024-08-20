@@ -132,6 +132,7 @@ if __name__ == "__main__":
     logger.info('Convert labels shapefile into GeoJSON format (EPSG:4326)...')
     labels = gpd.read_file(SHPFILE)
     labels_4326 = labels.to_crs(epsg=4326)
+    labels_4326 = labels_4326.drop_duplicates(subset='geometry')
     nb_labels = len(labels)
     logger.info(f'There are {nb_labels} polygons in {SHPFILE}')
 
