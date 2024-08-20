@@ -5,12 +5,8 @@ import time
 import yaml
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
-import rasterio
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
-import matplotlib.ticker as plticker
 
 sys.path.insert(0, '.')
 from helpers import misc
@@ -56,7 +52,6 @@ def plot_barchart(dir_plots, df, cat, data):
         ax.bar_label(c, label_type='center', color="black", labels=labels, fontsize=8)
 
     plt.gca().set_yticks(plt.gca().get_yticks().tolist())
-    # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
     plt.xticks(rotation=45, fontsize=8, ha='center')
     plt.xlabel(year.replace("_", " "), fontweight='bold')
@@ -71,6 +66,7 @@ def plot_barchart(dir_plots, df, cat, data):
 
     return plot_path
 
+
 if __name__ == "__main__":
 
     # Chronometer
@@ -78,7 +74,7 @@ if __name__ == "__main__":
     logger.info('Starting...')
 
     # Argument and parameter specification
-    parser = argparse.ArgumentParser(description="The script post-process the detections obtained with the object-detector")
+    parser = argparse.ArgumentParser(description="The script provide some plots to analyse the results")
     parser.add_argument('config_file', type=str, help='input geojson path')
     args = parser.parse_args()
 
@@ -89,22 +85,22 @@ if __name__ == "__main__":
 
     # Load input parameters
     DETECTIONS = cfg['detections']
-    OUTPUT = cfg['output']
+    OUTPUT = cfg['output_dir']
 
     written_files = [] 
 
     # Convert input detections to a geodataframe 
-    detections = gpd.read_file(DETECTIONS)
-    detections = detections.to_crs(2056)
-    detections['area'] = detections.geometry.area 
-    total = len(detections)
+    detections_gdf = gpd.read_file(DETECTIONS)
+    detections_gdf = detections_gdf.to_crs(2056)
+    detections_gdf['area'] = detections_gdf.geometry.area 
+    total = len(detections_gdf)
     logger.info(f"{total} input shapes")
 
-    for cat in filter(None, detections.CATEGORY.unique()): 
-        feature = plot_barchart(OUTPUT, detections, cat, data='label')
+    for cat in filter(None, detections_gdf.CATEGORY.unique()): 
+        feature = plot_barchart(OUTPUT, detections_gdf, cat, data='label')
         written_files.append(feature)
         logger.success(f"{DONE_MSG} A file was written: {feature}")  
-        feature = plot_barchart(OUTPUT, detections, cat, data='det')
+        feature = plot_barchart(OUTPUT, detections_gdf, cat, data='det')
         written_files.append(feature)
         logger.success(f"{DONE_MSG} A file was written: {feature}")  
     logger.info("The following files were written. Let's check them out!")
