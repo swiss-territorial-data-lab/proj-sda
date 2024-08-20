@@ -7,6 +7,7 @@ import yaml
 import geopandas as gpd
 import pandas as pd
 import rasterio
+from osgeo import gdal
 
 sys.path.insert(0, '.')
 from helpers import misc
@@ -14,6 +15,16 @@ from helpers.constants import DONE_MSG
 
 from loguru import logger
 logger = misc.format_logger(logger)
+
+
+def calculate_slope(DEM):
+
+    dir = os.path.dirname(DEM)
+    gdal.DEMProcessing(dir + '/switzerland_slope.tif', DEM, 'slope')
+    with rasterio.open(dir + '/switzerland_slope.tif') as dataset:
+        slope = dataset.read(1)
+
+    return slope
 
 
 if __name__ == "__main__":
@@ -35,12 +46,14 @@ if __name__ == "__main__":
     # Load input parameters
     DETECTIONS = cfg['detections']
     TILES = cfg['aoi_tiles']
-    TICINO_CAD = cfg['ticino']['cadaster']
+    TICINO_CAD = cfg['ticino']['cadastre']
     DEM = cfg['dem']
     SCORE = cfg['score']
     AREA = cfg['area']
     ELEVATION = cfg['elevation']
+    SLOPE = cfg['slope']
     DISTANCE = cfg['distance']
+
 
     written_files = [] 
 
@@ -59,29 +72,39 @@ if __name__ == "__main__":
     ticino_cad_gdf = gpd.read_file(TICINO_CAD)
     ticino_cad_gdf = ticino_cad_gdf.to_crs(2056)
 
-    # Discard polygons detected at/below 0 m and above the threshold elevation
-    r = rasterio.open(DEM)
+    # Discard polygons detected at/below 0 m and above the threshold elevation and above a given slope
+    dem = rasterio.open(DEM)
+
     detections = detections_gdf.loc[detections_gdf['geometry'].is_valid, :] 
-    row, col = r.index(detections.centroid.x, detections.centroid.y)
-    values = r.read(1)[row, col]
-    detections['elevation'] = values 
+    row, col = dem.index(detections.centroid.x, detections.centroid.y)
+    elevation = dem.read(1)[row, col]
+    detections['elevation'] = elevation 
+
+    logger.info("Slope computing")
+    dem_slope = calculate_slope(DEM)
+    slope = dem_slope[row, col]
+    detections['slope'] = slope
+
     detections = detections[(detections.elevation != 0) & (detections.elevation < ELEVATION)]
-    te = len(detections)
-    logger.info(f"{total - te} detections were removed by elevation threshold: {ELEVATION} m")
+    te1 = len(detections)
+    logger.info(f"{total - te1} detections were removed by elevation threshold: {ELEVATION} m")
+    detections = detections[(detections.elevation != -9999) & (detections.slope <= SLOPE)]
+    te2 = len(detections)
+    logger.info(f"{te1 - te2} detections were removed by slope threshold: {SLOPE}%")
 
     # Merge close features
     detections_year = gpd.GeoDataFrame()
 
+    # Process detection by year
     for year in detections.year_det.unique():
-    # for year in ['2004'] :
         detections_gdf = detections.copy()
         detections_temp_gdf = detections_gdf[detections_gdf['year_det']==year]
 
         detections_temp_buffer_gdf = detections_temp_gdf.copy()
         detections_temp_buffer_gdf['geometry'] = detections_temp_gdf.geometry.buffer(DISTANCE, resolution=2)
 
+        # Save id of the polygons totally contained in the tile (no merging with adjacent tiles), to prevent merging them together is they are within the thd distance 
         detections_tiles_join_gdf = gpd.sjoin(tiles_gdf, detections_temp_buffer_gdf, how='left', predicate='contains')
-        # detections_tiles_join_gdf.to_file(f'{DETECTIONS[:-5]}_test.gpkg')
      
         remove_det_list = []
 
@@ -94,6 +117,7 @@ if __name__ == "__main__":
         detections_temp2_gdf = detections_temp_gdf[~detections_temp_gdf.det_id.isin(remove_det_list)].drop_duplicates(subset=['det_id'], ignore_index=True)
         detections_temp3_gdf = detections_temp_gdf[detections_temp_gdf.det_id.isin(remove_det_list)].drop_duplicates(subset=['det_id'], ignore_index=True)
 
+        # Merge polygons within the thd distance
         detections_merge = detections_temp2_gdf.buffer(DISTANCE, resolution=2).geometry.unary_union
         detections_merge = gpd.GeoDataFrame(geometry=[detections_merge], crs=detections.crs)  
         if detections_merge.isnull().values.any():
@@ -106,9 +130,11 @@ if __name__ == "__main__":
        'det_category', 'year_det', 'year_label', 'area', 'det_id',
        'elevation'], axis=1)
 
+        # Concat polygons contained within a tile and saved previously
         detections_merge = pd.concat([detections_merge, detections_temp3_gdf], axis=0, ignore_index=True)
         detections_merge['index_merge'] = detections_merge.index
- 
+
+        # Spatially join merged detection with raw ones to retrieve relevant information (score, area,...)
         detections_join = gpd.sjoin(detections_merge, detections_temp_gdf, how='inner', predicate='intersects')
 
         det_class_all = []
@@ -125,7 +151,6 @@ if __name__ == "__main__":
                                                             'det_class'].iloc[0]    
 
             det_class = detections_temp_gdf['det_class'].drop_duplicates().tolist()
-
             det_class_all.append(det_class[0])
 
         detections_merge['det_class'] = det_class_all
@@ -151,8 +176,7 @@ if __name__ == "__main__":
     ta = len(detections_area)
     logger.info(f"{sc - ta} detections were removed by area filtering (area threshold = {AREA} m2)")
 
-    # # Discard polygons intersecting relevant layers
-
+    # Discard polygons intersecting relevant vector layers
     detections_area['det_id'] = detections_area.index
     detections_area['geometry'] = detections_area.geometry.buffer(-8)
     ticino_cad_gdf['cad_id'] = ticino_cad_gdf.index
@@ -160,12 +184,13 @@ if __name__ == "__main__":
     detections_join = gpd.sjoin(detections_area, ticino_cad_gdf, how='left', predicate='intersects')
     detections_filtered = detections_join[detections_join.cad_id.isnull()].copy()
     detections_filtered['geometry'] = detections_filtered.geometry.buffer(8)
+    detections_filtered = detections_filtered.drop(columns=['index_right', 'NAME'])
 
     # Final gdf
     logger.info(f"{len(detections_filtered)} detections remaining after filtering")
 
     # Formatting the output name of the filtered detection  
-    feature = f'{DETECTIONS[:-5]}_threshold_score-{SCORE}_area-{int(AREA)}_elevation-{int(ELEVATION)}_distance-{int(DISTANCE)}'.replace('0.', '0dot') + '.gpkg'
+    feature = f'{DETECTIONS[:-5]}_threshold_score-{SCORE}_area-{int(AREA)}_elevation-{int(ELEVATION)}_distance-{int(DISTANCE)}_slope-{int(SLOPE)}'.replace('0.', '0dot') + '.gpkg'
     detections_filtered.to_file(feature)
 
     written_files.append(feature)

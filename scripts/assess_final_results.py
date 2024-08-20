@@ -39,22 +39,16 @@ if __name__ == "__main__":
     WORKING_DIR = cfg['working_dir']
     LABELS = cfg['labels']
     DETECTIONS = cfg['detections']
-    SPLIT_AOI_TILES = cfg['split_aoi_tiles']
-    CATEGORY_IDS_JSON = cfg['category_ids_json']
-    OUTPUT_DIR = cfg['output_dir']
-    IOU_THRESHOLD = cfg['iou_threshold'] if 'iou_threshold' in cfg.keys() else 0.25
-    AREA_THRESHOLD = cfg['area_threshold'] if 'area_threshold' in cfg.keys() else None
+    IOU_THD = cfg['iou'] if 'iou' in cfg.keys() else 0.25
+    AREA_THD = cfg['area'] if 'area' in cfg.keys() else None
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}.')
-    # let's make the output directory in case it doesn't exist
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
 
     written_files = [] 
 
     logger.info("Loading split AoI tiles as a GeoPandas DataFrame...")
-    split_aoi_tiles_gdf = gpd.read_file(SPLIT_AOI_TILES)
+    split_aoi_tiles_gdf = gpd.read_file('split_aoi_tiles.geojson')
     split_aoi_tiles_gdf = split_aoi_tiles_gdf.to_crs(2056)
     if 'year' in split_aoi_tiles_gdf.keys(): 
         split_aoi_tiles_gdf = split_aoi_tiles_gdf.rename(columns={"year": "year_tile"})    
@@ -62,19 +56,19 @@ if __name__ == "__main__":
     logger.success(f"{DONE_MSG} {len(split_aoi_tiles_gdf)} records were found.")
 
     # Read shapefiles 
-    labels = gpd.read_file(LABELS)
-    labels = labels.to_crs(2056)
-    labels.rename(columns={'name':'CATEGORY', 'id': 'label_class'},inplace=True)
-    nb_labels = len(labels)
+    labels_gdf = gpd.read_file(LABELS)
+    labels_gdf = labels_gdf.to_crs(2056)
+    labels_gdf.rename(columns={'name':'CATEGORY', 'id': 'label_class'},inplace=True)
+    nb_labels = len(labels_gdf)
 
     logger.info(f'There are {nb_labels} polygons in {os.path.basename(LABELS)}')
 
     tiles_gdf = split_aoi_tiles_gdf
     tiles_gdf['tile_geometry'] = tiles_gdf['geometry']    
     
-    labels_tiles_sjoined_gdf = gpd.sjoin(labels, tiles_gdf, how='inner', predicate='intersects')
+    labels_tiles_sjoined_gdf = gpd.sjoin(labels_gdf, tiles_gdf, how='inner', predicate='intersects')
 
-    if 'year_label' in labels.keys():
+    if 'year_label' in labels_gdf.keys():
         labels_tiles_sjoined_gdf = labels_tiles_sjoined_gdf[labels_tiles_sjoined_gdf.year_label == labels_tiles_sjoined_gdf.year_tile]  
 
     labels_tiles_sjoined_gdf = labels_tiles_sjoined_gdf.drop_duplicates(subset=['geometry'], keep='first')
@@ -83,14 +77,14 @@ if __name__ == "__main__":
 
     tiles_gdf.drop('tile_geometry', inplace=True, axis=1)
 
-    detections = gpd.read_file(DETECTIONS)
-    detections = detections.to_crs(2056)
-    detections = detections.drop(labels=['label_class', 'CATEGORY', 'year_label'], axis=1)
-    nb_detections = len(detections)
+    detections_gdf = gpd.read_file(DETECTIONS)
+    detections_gdf = detections_gdf.to_crs(2056)
+    detections_gdf = detections_gdf.drop(labels=['label_class', 'CATEGORY', 'year_label'], axis=1)
+    nb_detections = len(detections_gdf)
     logger.info(f'There are {nb_detections} polygons in {os.path.basename(DETECTIONS)}')
 
     # get labels ids
-    filepath = open(os.path.join(OUTPUT_DIR, 'category_ids.json'))
+    filepath = open(os.path.join('category_ids.json'))
     categories_json = json.load(filepath)
     filepath.close()
 
@@ -123,7 +117,7 @@ if __name__ == "__main__":
     tagged_dets_gdf = gpd.GeoDataFrame()
 
     tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = metrics.get_fractional_sets(
-        detections, labels_w_id_gdf, IOU_THRESHOLD, AREA_THRESHOLD)
+        detections_gdf, labels_w_id_gdf, IOU_THD, AREA_THD)
 
     tp_gdf['tag'] = 'TP'
     fp_gdf['tag'] = 'FP'
@@ -154,11 +148,11 @@ if __name__ == "__main__":
 
     metrics_cl_df_dict = pd.DataFrame.from_records(metrics_dict_by_cl)
 
-    file_to_write = os.path.join(OUTPUT_DIR, f'tagged_detections_merged.gpkg')
+    feature = os.path.join('tagged_detections_merged.gpkg')
     tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
     tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'label_class', 'CATEGORY', 'year', 'year_det', 'det_class', 'det_category']]\
-        .to_file(file_to_write, driver='GPKG', index=False)
-    written_files.append(file_to_write)
+        .to_file(feature, driver='GPKG', index=False)
+    written_files.append(feature)
 
     # Save the metrics by class for each dataset
     metrics_by_cl_df = pd.DataFrame()
@@ -170,7 +164,7 @@ if __name__ == "__main__":
         for det_class in metrics_by_cl_df['class'].to_numpy()
     ] 
 
-    file_to_write = os.path.join(OUTPUT_DIR, 'metrics_by_class.csv')
+    file_to_write = os.path.join('metrics_by_class.csv')
     metrics_by_cl_df[
         ['class', 'category', 'TP_k', 'FP_k', 'FN_k', 'precision_k', 'recall_k']
     ].sort_values(by=['class']).to_csv(file_to_write, index=False)
