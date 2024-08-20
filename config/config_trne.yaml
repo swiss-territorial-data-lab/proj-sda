@@ -145,7 +145,7 @@ filter_results.py:
   area: 50.0 # m2, area threshold under which polygons are discarded
 
 
-# Analysis of the results
-results_analysis.py:
+# Plots
+result_analysis.py:
   detections: ./output/OD/trne/zoom16/run53/tagged_detections.gpkg
   output_dir: ./output/OD/trne/zoom16/run53/

@@ -44,7 +44,7 @@ if __name__ == "__main__":
     AREA_THD = cfg['area'] if 'area' in cfg.keys() else None
 
     os.chdir(WORKING_DIR)
-    logger.info(f'Working directory set to {WORKING_DIR}.')
+    logger.info(f'Working directory set to {WORKING_DIR}')
 
     written_files = [] 
 
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     tiles_gdf = tiles_gdf.to_crs(2056)
     if 'year' in tiles_gdf.keys(): 
         tiles_gdf = tiles_gdf.rename(columns={"year": "year_tile"})    
-    logger.success(f"{DONE_MSG} {len(tiles_gdf)} records were found.")
+    logger.success(f"{DONE_MSG} {len(tiles_gdf)} features were found.")
 
     logger.info("Loading detections as a GeoPandas DataFrame...")
     detections_gdf = gpd.read_file(DETECTIONS)
@@ -62,11 +62,10 @@ if __name__ == "__main__":
     detections_gdf = detections_gdf[detections_gdf['tag']!='FN']
     detections_gdf['area'] = detections_gdf.geometry.area 
     detections_gdf['det_id'] = detections_gdf.index
-    nb_detections = len(detections_gdf)
-    logger.info(f'There are {nb_detections} polygons in {os.path.basename(DETECTIONS)}')
+    logger.success(f"{DONE_MSG} {len(detections_gdf)} features were found.")
 
     # Merge features
-    logger.info("Merge adjacent polygons spread across tiles")
+    logger.info(f"Merge adjacent polygons spread across tiles with a buffer of {DISTANCE} m...")
     detections_year = gpd.GeoDataFrame()
 
     # Process detection by year
@@ -136,17 +135,16 @@ if __name__ == "__main__":
 
     detections_merged_gdf = detections_year.drop_duplicates(subset='score')
     td = len(detections_merged_gdf)
-    logger.info(f"{td} clustered detections remains after shape union (distance threshold = {DISTANCE} m)")
+    logger.info(f"... {td} clustered detections remains after shape union")
     
 
     logger.info("Loading labels as a GeoPandas DataFrame...")
     labels_gdf = gpd.read_file(LABELS)
     labels_gdf = labels_gdf.to_crs(2056)
     labels_gdf.rename(columns={'name':'CATEGORY', 'id': 'label_class'},inplace=True)
-    nb_labels = len(labels_gdf)
-    logger.info(f'There are {nb_labels} polygons in {os.path.basename(LABELS)}')
+    logger.success(f"{DONE_MSG} {len(labels_gdf)} features were found.")
 
-    logger.info("Assigned labels to dataset...")
+    logger.info("Assigned labels to dataset")
     tiles_gdf['tile_geometry'] = tiles_gdf['geometry']    
     labels_tiles_sjoined_gdf = gpd.sjoin(labels_gdf, tiles_gdf, how='inner', predicate='intersects')
 
@@ -158,7 +156,6 @@ if __name__ == "__main__":
     labels_tiles_sjoined_gdf.rename(columns={'id': 'tile_id'}, inplace=True)
 
     tiles_gdf.drop('tile_geometry', inplace=True, axis=1)
-
 
     # get labels ids
     filepath = open(os.path.join('category_ids.json'))
