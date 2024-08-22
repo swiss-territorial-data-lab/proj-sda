@@ -5,6 +5,7 @@ import time
 import yaml
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import rasterio
 from osgeo import gdal
@@ -96,15 +97,18 @@ if __name__ == "__main__":
     ta = len(detections_area)
     logger.info(f"{sc - ta} detections were removed by area filtering (area threshold = {AREA} m2)")
 
-    # Discard polygons intersecting relevant vector layers
+    # Indicate if polygons are intersecting relevant vector layers with a min thd of 20% of the detection covered
     detections_area['det_id'] = detections_area.index
     detections_area['geometry'] = detections_area.geometry.buffer(-8)
     ticino_cad_gdf['cad_id'] = ticino_cad_gdf.index
 
-    detections_join = gpd.sjoin(detections_area, ticino_cad_gdf, how='left', predicate='intersects')
-    detections_filtered = detections_join[detections_join.cad_id.isnull()].copy()
-    detections_filtered['geometry'] = detections_filtered.geometry.buffer(8)
-    detections_filtered = detections_filtered.drop(columns=['index_right', 'NAME'])
+    for gdf in [ticino_cad_gdf]: 
+        detections_join = gpd.sjoin(detections_area, gdf, how='left', predicate='intersects')
+        detections_join['test'] = np.where(detections_join.cad_id.isnull(), 'no', 'yes')
+        # detections_filtered = detections_join[detections_join.cad_id.isnull()].copy()
+    detections_join['geometry'] = detections_join.geometry.buffer(8)
+    detections_filtered = detections_join.drop(columns=['index_right', 'NAME'])
+    detections_filtered = detections_join.drop_duplicates(subset='det_id')
 
     # Final gdf
     logger.info(f"{len(detections_filtered)} detections remaining after filtering")

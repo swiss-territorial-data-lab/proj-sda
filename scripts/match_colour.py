@@ -26,8 +26,8 @@ def plot_histogram(img, ref, matched, output, img_name):
 
     for i, img in enumerate((img, ref, matched)):
         # axes[0, i].imshow(img)
-        # # axes[0, i].imshow(reference)
-        # # axes[0, i].imshow(matched)
+        # axes[0, i].imshow(reference)
+        # axes[0, i].imshow(matched)
         for c, c_color in enumerate(('red', 'green', 'blue')):
             img_hist, bins = exposure.histogram(img[..., c], source_range='dtype')
             axes[c + 1, i].plot(bins, img_hist / img_hist.max())

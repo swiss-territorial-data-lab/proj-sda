@@ -136,11 +136,15 @@ if __name__ == "__main__":
     nb_labels = len(labels)
     logger.info(f'There are {nb_labels} polygons in {SHPFILE}')
 
-    if CATEGORY:
+    if CATEGORY and CATEGORY in labels_4326.keys():
         labels_4326['CATEGORY'] = labels_4326[CATEGORY]
         category = labels_4326['CATEGORY'].unique()
         logger.info(f'Working with {len(category)} classe.s: {category}')
-        labels_4326['SUPERCATEGORY'] = "anthropogenic soils"
+        labels_4326['SUPERCATEGORY'] = 'anthropogenic soils'
+    else:
+        logger.warning(f'No category column in {SHPFILE}. A unique category will be assigned')
+        labels_4326['CATEGORY'] = 'anthropogenic soils'
+        labels_4326['SUPERCATEGORY'] = 'anthropogenic soils'
 
     label_filename = 'labels.geojson'
     label_filepath = os.path.join(OUTPUT_DIR, label_filename)
