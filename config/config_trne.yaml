@@ -138,13 +138,18 @@ merge_detections.py:
 # 4-Filtering and merging detection polygons to improve final results
 filter_results.py:
   detections: ./output/OD/trne/zoom16/run53/tagged_detections_merged.gpkg
-  zone_exclue:
-    vaud:
+  zones_exclues:
+    vaud: 
+      pistes_avion: ./data/layers/Vaud/Pistes_aviation_MO_CSDUR.shp
+      batiments: ./data/layers/Vaud/Batiments_en_surface_MO.shp
     ticino:
-  zone_info:
-    vaud:
+      batiments_batir: ./data/layers/Ticino/Zones_batir_Ind.shp
+  zones_infos:
+    vaud: 
+      sites_pollues: ./data/layers/Vaud/Sites_pollues_VD2022.shp
+      sda: ./data/layers/Vaud/SDA_v5_2.shp
     ticino:
-      cadastre: ./data/layers/Ticino/Zones_batir_Ind.shp
+      sda: ./data/layers/Ticino/Censimento_SAC_2023.shp
   dem: ./data/DEM/switzerland_dem_EPSG2056.tif
   elevation: 600.0 # m, altitude threshold
   slope: 100 # deg, slope threshold

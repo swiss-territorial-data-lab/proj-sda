@@ -13,12 +13,12 @@ import morecantile
 import pandas as pd
 from shapely.geometry import Polygon
 
-sys.path.insert(0, '../..')
-from helpers.misc import format_logger
-from helpers.constants import DONE_MSG
+sys.path.insert(0, '.')
+import functions.fct_misc as misc
+from functions.constants import DONE_MSG
 
 from loguru import logger
-logger = format_logger(logger)
+logger = misc.format_logger(logger)
 
 
 def add_tile_id(row):

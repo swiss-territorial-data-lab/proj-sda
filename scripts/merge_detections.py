@@ -10,10 +10,9 @@ import pandas as pd
 import json
 
 sys.path.insert(0, '.')
-
 import functions.fct_metrics as metrics
 import functions.fct_misc as misc
-from helpers.constants import DONE_MSG
+from functions.constants import DONE_MSG
 
 from loguru import logger
 logger = misc.format_logger(logger)

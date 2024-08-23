@@ -17,6 +17,7 @@ from skimage import exposure
 # the following allows us to import modules from within this file's parent folder
 sys.path.insert(1, '.')
 import functions.fct_misc as misc
+from functions.constants import DONE_MSG
 
 logger = misc.format_logger(logger)
 

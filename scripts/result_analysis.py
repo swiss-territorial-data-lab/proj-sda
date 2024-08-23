@@ -9,8 +9,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, '.')
-from helpers import misc
-from helpers.constants import DONE_MSG
+import functions.fct_misc as misc
+from functions.constants import DONE_MSG
 
 from loguru import logger
 logger = misc.format_logger(logger)
