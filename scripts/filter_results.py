@@ -11,8 +11,8 @@ import rasterio
 from osgeo import gdal
 
 sys.path.insert(0, '.')
-from helpers import misc
-from helpers.constants import DONE_MSG
+import functions.fct_misc as misc
+from functions.constants import DONE_MSG
 
 from loguru import logger
 logger = misc.format_logger(logger)
@@ -26,6 +26,21 @@ def calculate_slope(DEM):
         slope = dataset.read(1)
 
     return slope
+
+
+def compare_geom(gdf, key):
+
+    geom1 = gdf.geometry.values.tolist()
+    geom2 = gdf[f'{key}_geom'].values.tolist()    
+    overlap = []
+    for (i, ii) in zip(geom1, geom2):
+        if i == None or ii == None:
+            overlap.append(0)
+        else:
+            overlap.append(misc.overlap(i, ii))
+    gdf['overlap'] = overlap
+
+    return gdf
 
 
 if __name__ == "__main__":
@@ -46,7 +61,12 @@ if __name__ == "__main__":
 
     # Load input parameters
     DETECTIONS = cfg['detections']
-    TICINO_CAD = cfg['ticino']['cadastre']
+    PISTES_AVION_VD = cfg['zones_exclues']['vaud']['pistes_avion']
+    BAT_VD = cfg['zones_exclues']['vaud']['batiments']
+    BAT_BATIR_TC = cfg['zones_exclues']['ticino']['batiments_batir']
+    SITES_POLLUES_VD = cfg['zones_infos']['vaud']['sites_pollues']
+    SDA_VD = cfg['zones_infos']['vaud']['sda']
+    SDA_TC = cfg['zones_infos']['ticino']['sda']
     DEM = cfg['dem']
     SCORE = cfg['score']
     AREA = cfg['area']
@@ -64,8 +84,27 @@ if __name__ == "__main__":
     total = len(detections_gdf)
     logger.info(f"{total} detections")
 
-    ticino_cad_gdf = gpd.read_file(TICINO_CAD)
-    ticino_cad_gdf = ticino_cad_gdf.to_crs(2056)
+    pa_vd_gdf = gpd.read_file(PISTES_AVION_VD)
+    pa_vd_gdf = pa_vd_gdf.to_crs(2056)
+    pa_vd_gdf['pa_vd_id'] = pa_vd_gdf.index
+    bat_vd_gdf = gpd.read_file(BAT_VD)
+    bat_vd_gdf = bat_vd_gdf.to_crs(2056)
+    bat_vd_gdf['bat_vd_id'] = bat_vd_gdf.index
+    bat_tc_gdf = gpd.read_file(BAT_BATIR_TC)
+    bat_tc_gdf = bat_tc_gdf.to_crs(2056)
+    bat_tc_gdf['bat_tc_id'] = bat_tc_gdf.index
+    sites_pollues_vd_gdf = gpd.read_file(SITES_POLLUES_VD)
+    sites_pollues_vd_gdf = sites_pollues_vd_gdf.to_crs(2056)
+    sites_pollues_vd_gdf['sites_pollues_vd_id'] = sites_pollues_vd_gdf.index
+    sda_vd_gdf = gpd.read_file(SDA_VD)
+    sda_vd_gdf = sda_vd_gdf.to_crs(2056)
+    sda_vd_gdf['sda_vd_id'] = sda_vd_gdf.index
+    sda_tc_gdf = gpd.read_file(SDA_TC)
+    sda_tc_gdf = sda_tc_gdf.to_crs(2056)
+    sda_tc_gdf['sda_tc_id'] = sda_tc_gdf.index
+
+    exclude_dict = {'piste_avion_vd': pa_vd_gdf, 'batiment_batir_vd': bat_vd_gdf, 'batiment_batir_tc': bat_tc_gdf} 
+    info_dict = {'sites_pollues_vd': sites_pollues_vd_gdf, 'sda_vd': sda_vd_gdf, 'sda_tc': sda_tc_gdf}
 
     # Discard polygons detected at/below 0 m and above the threshold elevation and above a given slope
     dem = rasterio.open(DEM)
@@ -87,35 +126,57 @@ if __name__ == "__main__":
     tslope = len(detections_gdf)
     logger.info(f"{tdem - tslope} detections were removed by slope threshold: {SLOPE}%")
 
+    # Discard polygons with area under a given threshold 
+    detections_area_gdf = detections_gdf[detections_gdf.area > AREA]
+    ta = len(detections_area_gdf)
+    logger.info(f"{tslope - ta} detections were removed by area filtering (area threshold = {AREA} m2)")
+
+    # Remove polygons intersecting relevant vector layers with a min thd of 20% of the detection covered
+    detections_area_gdf['det_id'] = detections_area_gdf.index
+    detections_area_gdf['geometry'] = detections_area_gdf.geometry.buffer(-8)
+
+    for key in exclude_dict.keys():
+        gdf = exclude_dict[key] 
+        gdf[f'{key}_id'] = gdf.index
+        gdf[f'{key}_geom'] = gdf.geometry 
+        detections_join_gdf = gpd.sjoin(detections_area_gdf, gdf, how='left', predicate='intersects')
+        detections_join_gdf = detections_join_gdf[detections_join_gdf[f'{key}_id'].notnull()].copy()
+        detections_join_gdf = detections_join_gdf.drop_duplicates(subset='det_id') 
+
+        detections_join_gdf = compare_geom(detections_join_gdf, key)
+        detections_join_gdf = detections_join_gdf.drop(columns='index_right')
+        detections_gdf = detections_join_gdf[detections_join_gdf['overlap']<0.2] 
+        
     # Filter dataframe by score value
-    detections_score = detections_gdf[detections_gdf.score > SCORE]
-    sc = len(detections_score)
+    detections_gdf = detections_area_gdf.copy()
+    detections_score_gdf = detections_gdf[detections_gdf.score > SCORE]
+    sc = len(detections_score_gdf)
     logger.info(f"{tslope - sc} detections were removed by score filtering (score threshold = {SCORE})")
 
-    # Discard polygons with area under the threshold 
-    detections_area = detections_score[detections_score.area > AREA]
-    ta = len(detections_area)
-    logger.info(f"{sc - ta} detections were removed by area filtering (area threshold = {AREA} m2)")
-
     # Indicate if polygons are intersecting relevant vector layers with a min thd of 20% of the detection covered
-    detections_area['det_id'] = detections_area.index
-    detections_area['geometry'] = detections_area.geometry.buffer(-8)
-    ticino_cad_gdf['cad_id'] = ticino_cad_gdf.index
+    detections_infos_gdf = detections_score_gdf.copy()
+    for key in info_dict.keys():
+        gdf = info_dict[key]
+        gdf[f'{key}_geom'] = gdf.geometry 
 
-    for gdf in [ticino_cad_gdf]: 
-        detections_join = gpd.sjoin(detections_area, gdf, how='left', predicate='intersects')
-        detections_join['test'] = np.where(detections_join.cad_id.isnull(), 'no', 'yes')
-        # detections_filtered = detections_join[detections_join.cad_id.isnull()].copy()
-    detections_join['geometry'] = detections_join.geometry.buffer(8)
-    detections_filtered = detections_join.drop(columns=['index_right', 'NAME'])
-    detections_filtered = detections_join.drop_duplicates(subset='det_id')
+        detections_temp_gdf = detections_score_gdf.copy()    
+        detections_join_gdf = gpd.sjoin(detections_temp_gdf, gdf, how='left', predicate='intersects')
+        detections_join_gdf = detections_join_gdf.set_geometry('geometry') 
+        detections_join_gdf[f'{key}'] = np.where(detections_join_gdf[f'{key}_id'].notnull(), 'yes', 'no')
+        detections_join_gdf = detections_join_gdf.drop_duplicates(subset='det_id')
+        detections_infos_gdf = pd.merge(detections_infos_gdf, detections_join_gdf[[f'{key}', f'{key}_geom', 'det_id']], on='det_id', how='left')
+        detections_infos_gdf = compare_geom(detections_infos_gdf, key)
+        detections_infos_gdf[f'{key}'] = np.where(detections_infos_gdf['overlap']<0.2, 'no', 'yes')
+        detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom', 'overlap'])
+  
+    detections_infos_gdf['geometry'] = detections_infos_gdf.geometry.buffer(8)
 
     # Final gdf
-    logger.info(f"{len(detections_filtered)} detections remaining after filtering")
+    logger.info(f"{len(detections_infos_gdf)} detections remaining after filtering")
 
     # Formatting the output name of the filtered detection  
     feature = f'{DETECTIONS[:-5]}_threshold_score-{SCORE}_area-{int(AREA)}_elevation-{int(ELEVATION)}_slope-{int(SLOPE)}'.replace('0.', '0dot') + '.gpkg'
-    detections_filtered.to_file(feature)
+    detections_infos_gdf.to_file(feature)
 
     written_files.append(feature)
     logger.success(f"{DONE_MSG} A file was written: {feature}")  

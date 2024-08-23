@@ -41,3 +41,21 @@ def ensure_dir_exists(dirpath):
         logger.info(f"The directory {dirpath} was created.")
     
     return dirpath
+
+
+def overlap(polygon1_shape, polygon2_shape):
+    """Determine the overlap area of one polygon with another one
+
+    Args:
+        polygon1_shape (geometry): first polygon
+        polygon2_shape (geometry): second polygon
+
+    Returns:
+        float: ratio of overlapped area
+    """
+
+    # Calculate intersection area
+    polygon_intersection = polygon1_shape.intersection(polygon2_shape).area
+    polygon_area = polygon1_shape.area
+    
+    return polygon_intersection / polygon_area
