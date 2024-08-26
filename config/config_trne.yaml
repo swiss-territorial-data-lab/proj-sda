@@ -148,8 +148,10 @@ filter_results.py:
     vaud: 
       sites_pollues: ./data/layers/Vaud/Sites_pollues_VD2022.shp
       sda: ./data/layers/Vaud/SDA_v5_2.shp
+      slope: ./data/layers/Vaud/terrain_pente_VD.gpkg
     ticino:
       sda: ./data/layers/Ticino/Censimento_SAC_2023.shp
+      slope: ./data/layers/Ticino/terrain_pente_TC.gpkg
   dem: ./data/DEM/switzerland_dem_EPSG2056.tif
   elevation: 600.0 # m, altitude threshold
   slope: 100 # deg, slope threshold

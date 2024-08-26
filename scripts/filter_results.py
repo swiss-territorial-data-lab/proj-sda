@@ -67,6 +67,8 @@ if __name__ == "__main__":
     SITES_POLLUES_VD = cfg['zones_infos']['vaud']['sites_pollues']
     SDA_VD = cfg['zones_infos']['vaud']['sda']
     SDA_TC = cfg['zones_infos']['ticino']['sda']
+    SLOPE_VD = cfg['zones_infos']['vaud']['slope']
+    SLOPE_TC = cfg['zones_infos']['ticino']['slope']
     DEM = cfg['dem']
     SCORE = cfg['score']
     AREA = cfg['area']
@@ -102,9 +104,25 @@ if __name__ == "__main__":
     sda_tc_gdf = gpd.read_file(SDA_TC)
     sda_tc_gdf = sda_tc_gdf.to_crs(2056)
     sda_tc_gdf['sda_tc_id'] = sda_tc_gdf.index
+    feature = './data/layers/slope.gpkg'
+    if os.path.isfile(feature):
+        logger.info(f'{feature} already exists.')
+        slope_gdf = gpd.read_file(feature)
+    else:
+        logger.info(f'{feature} does not exist and will be created.')
+        slope_vd_gdf = gpd.read_file(SLOPE_VD)
+        slope_vd_gdf = slope_vd_gdf.to_crs(2056)
+        slope_vd_gdf = slope_vd_gdf[slope_vd_gdf['HL_Klasse']!='hang_18'] 
+        slope_tc_gdf = gpd.read_file(SLOPE_TC)
+        slope_tc_gdf = slope_tc_gdf.to_crs(2056)
+        slope_tc_gdf = slope_tc_gdf[slope_tc_gdf['HL_Klasse']!='hang_18'] 
+        slope_gdf = pd.concat([slope_vd_gdf, slope_tc_gdf], axis=0)
+        slope_gdf = slope_gdf.dissolve()
+        slope_gdf['slope_>18%_id'] = slope_gdf.index
+        slope_gdf.to_file(feature)
 
     exclude_dict = {'piste_avion_vd': pa_vd_gdf, 'batiment_batir_vd': bat_vd_gdf, 'batiment_batir_tc': bat_tc_gdf} 
-    info_dict = {'sites_pollues_vd': sites_pollues_vd_gdf, 'sda_vd': sda_vd_gdf, 'sda_tc': sda_tc_gdf}
+    info_dict = {'sites_pollues_vd': sites_pollues_vd_gdf, 'sda_vd': sda_vd_gdf, 'sda_tc': sda_tc_gdf, 'slope_>18%': slope_gdf}
 
     # Discard polygons detected at/below 0 m and above the threshold elevation and above a given slope
     dem = rasterio.open(DEM)
@@ -114,26 +132,26 @@ if __name__ == "__main__":
     elevation = dem.read(1)[row, col]
     detections_gdf['elevation'] = elevation 
 
-    logger.info("Slope computing")
-    dem_slope = calculate_slope(DEM)
-    slope = dem_slope[row, col]
-    detections_gdf['slope'] = slope
+    # logger.info("Slope computing")
+    # dem_slope = calculate_slope(DEM)
+    # slope = dem_slope[row, col]
+    # detections_gdf['slope'] = slope
 
     detections_gdf = detections_gdf[(detections_gdf.elevation != 0) & (detections_gdf.elevation < ELEVATION)]
     tdem = len(detections_gdf)
     logger.info(f"{total - tdem} detections were removed by elevation threshold: {ELEVATION} m")
-    detections_gdf = detections_gdf[(detections_gdf.elevation != -9999) & (detections_gdf.slope <= SLOPE)]
-    tslope = len(detections_gdf)
-    logger.info(f"{tdem - tslope} detections were removed by slope threshold: {SLOPE}%")
+    # detections_gdf = detections_gdf[(detections_gdf.elevation != -9999) & (detections_gdf.slope <= SLOPE)]
+    # tslope = len(detections_gdf)
+    # logger.info(f"{tdem - tslope} detections were removed by slope threshold: {SLOPE}%")
 
     # Discard polygons with area under a given threshold 
     detections_area_gdf = detections_gdf[detections_gdf.area > AREA]
     ta = len(detections_area_gdf)
-    logger.info(f"{tslope - ta} detections were removed by area filtering (area threshold = {AREA} m2)")
+    logger.info(f"{tdem - ta} detections were removed by area filtering (area threshold = {AREA} m2)")
 
     # Remove polygons intersecting relevant vector layers with a min thd of 20% of the detection covered
     detections_area_gdf['det_id'] = detections_area_gdf.index
-    detections_area_gdf['geometry'] = detections_area_gdf.geometry.buffer(-8)
+    # detections_area_gdf['geometry'] = detections_area_gdf.geometry.buffer(-8)
 
     for key in exclude_dict.keys():
         gdf = exclude_dict[key] 
@@ -151,7 +169,7 @@ if __name__ == "__main__":
     detections_gdf = detections_area_gdf.copy()
     detections_score_gdf = detections_gdf[detections_gdf.score > SCORE]
     sc = len(detections_score_gdf)
-    logger.info(f"{tslope - sc} detections were removed by score filtering (score threshold = {SCORE})")
+    logger.info(f"{tdem - ta - sc} detections were removed by score filtering (score threshold = {SCORE})")
 
     # Indicate if polygons are intersecting relevant vector layers with a min thd of 20% of the detection covered
     detections_infos_gdf = detections_score_gdf.copy()
@@ -169,7 +187,7 @@ if __name__ == "__main__":
         detections_infos_gdf[f'{key}'] = np.where(detections_infos_gdf['overlap']<0.2, 'no', 'yes')
         detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom', 'overlap'])
   
-    detections_infos_gdf['geometry'] = detections_infos_gdf.geometry.buffer(8)
+    # detections_infos_gdf['geometry'] = detections_infos_gdf.geometry.buffer(8)
 
     # Final gdf
     logger.info(f"{len(detections_infos_gdf)} detections remaining after filtering")
