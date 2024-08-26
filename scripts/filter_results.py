@@ -8,7 +8,6 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import rasterio
-from osgeo import gdal
 
 sys.path.insert(0, '.')
 import functions.fct_misc as misc
@@ -175,7 +174,7 @@ if __name__ == "__main__":
     logger.info(f"{len(detections_infos_gdf)} detections remaining after filtering")
 
     # Formatting the output name of the filtered detection  
-    feature = f'{DETECTIONS[:-5]}_threshold_score-{SCORE_THD}_area-{int(AREA_THD)}_elevation-{int(ELEVATION_THD)}'.replace('0.', '0dot') + '.gpkg'
+    feature = f'{DETECTIONS[:-5]}_threshold_score-{SCORE_THD}_area-{int(AREA_THD)}_elevation-{int(ELEVATION_THD)}_overlap-{int(OVERLAP_THD)}'.replace('0.', '0dot') + '.gpkg'
     detections_infos_gdf.to_file(feature)
 
     written_files.append(feature)
