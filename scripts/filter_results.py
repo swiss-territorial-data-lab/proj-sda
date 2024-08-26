@@ -50,6 +50,7 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
+    WORKING_DIR = cfg['working_dir']
     DETECTIONS = cfg['detections']
     PISTES_AVION_VD = cfg['zones_exclues']['vaud']['pistes_avion']
     BAT_VD = cfg['zones_exclues']['vaud']['batiments']
@@ -60,10 +61,13 @@ if __name__ == "__main__":
     SLOPE_VD = cfg['zones_infos']['vaud']['slope']
     SLOPE_TC = cfg['zones_infos']['ticino']['slope']
     DEM = cfg['dem']
-    SCORE = cfg['score']
-    AREA = cfg['area']
-    ELEVATION = cfg['elevation']
-    SLOPE = cfg['slope']
+    SCORE_THD = cfg['score_threshold']
+    AREA_THD = cfg['area_threshold']
+    ELEVATION_THD = cfg['elevation_threshold']
+    OVERLAP_THD = cfg['overlap_threshold']
+
+    os.chdir(WORKING_DIR)
+    logger.info(f'Working directory set to {WORKING_DIR}')
 
     written_files = [] 
 
@@ -94,7 +98,7 @@ if __name__ == "__main__":
     sda_tc_gdf = gpd.read_file(SDA_TC)
     sda_tc_gdf = sda_tc_gdf.to_crs(2056)
     sda_tc_gdf['sda_tc_id'] = sda_tc_gdf.index
-    feature = './data/layers/slope.gpkg'
+    feature = './layers/slope.gpkg'
     if os.path.isfile(feature):
         logger.info(f'{feature} already exists.')
         slope_gdf = gpd.read_file(feature)
@@ -122,14 +126,14 @@ if __name__ == "__main__":
     elevation = dem.read(1)[row, col]
     detections_gdf['elevation'] = elevation 
 
-    detections_gdf = detections_gdf[(detections_gdf.elevation != 0) & (detections_gdf.elevation < ELEVATION)]
+    detections_gdf = detections_gdf[(detections_gdf.elevation != 0) & (detections_gdf.elevation < ELEVATION_THD)]
     tdem = len(detections_gdf)
-    logger.info(f"{total - tdem} detections were removed by elevation threshold: {ELEVATION} m")
+    logger.info(f"{total - tdem} detections were removed by elevation threshold: {ELEVATION_THD} m")
 
     # Discard polygons with area under a given threshold 
-    detections_area_gdf = detections_gdf[detections_gdf.area > AREA]
+    detections_area_gdf = detections_gdf[detections_gdf.area > AREA_THD]
     ta = len(detections_area_gdf)
-    logger.info(f"{tdem - ta} detections were removed by area filtering (area threshold = {AREA} m2)")
+    logger.info(f"{tdem - ta} detections were removed by area filtering (area threshold = {AREA_THD} m2)")
 
     # Remove polygons intersecting relevant vector layers with a min thd of 20% of the detection covered
     detections_area_gdf['det_id'] = detections_area_gdf.index
@@ -147,9 +151,9 @@ if __name__ == "__main__":
         
     # Filter dataframe by score value
     detections_gdf = detections_area_gdf.copy()
-    detections_score_gdf = detections_gdf[detections_gdf.score > SCORE]
+    detections_score_gdf = detections_gdf[detections_gdf.score > SCORE_THD]
     sc = len(detections_score_gdf)
-    logger.info(f"{tdem - ta - sc} detections were removed by score filtering (score threshold = {SCORE})")
+    logger.info(f"{tdem - ta - sc} detections were removed by score filtering (score threshold = {SCORE_THD})")
 
     # Indicate if polygons are intersecting relevant vector layers with a min thd of 20% of the detection covered
     detections_infos_gdf = detections_score_gdf.copy()
@@ -164,14 +168,14 @@ if __name__ == "__main__":
         detections_join_gdf = detections_join_gdf.drop_duplicates(subset='det_id')
         detections_infos_gdf = pd.merge(detections_infos_gdf, detections_join_gdf[[f'{key}', f'{key}_geom', 'det_id']], on='det_id', how='left')
         detections_infos_gdf = compare_geom(detections_infos_gdf, key)
-        detections_infos_gdf[f'{key}'] = np.where(detections_infos_gdf['overlap']<0.2, 'no', 'yes')
+        detections_infos_gdf[f'{key}'] = np.where(detections_infos_gdf['overlap'] < OVERLAP_THD, 'no', 'yes')
         detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom', 'overlap'])
   
     # Final gdf
     logger.info(f"{len(detections_infos_gdf)} detections remaining after filtering")
 
     # Formatting the output name of the filtered detection  
-    feature = f'{DETECTIONS[:-5]}_threshold_score-{SCORE}_area-{int(AREA)}_elevation-{int(ELEVATION)}_slope-{int(SLOPE)}'.replace('0.', '0dot') + '.gpkg'
+    feature = f'{DETECTIONS[:-5]}_threshold_score-{SCORE_THD}_area-{int(AREA_THD)}_elevation-{int(ELEVATION_THD)}'.replace('0.', '0dot') + '.gpkg'
     detections_infos_gdf.to_file(feature)
 
     written_files.append(feature)
