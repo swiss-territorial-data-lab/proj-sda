@@ -18,16 +18,6 @@ from loguru import logger
 logger = misc.format_logger(logger)
 
 
-def calculate_slope(DEM):
-
-    dir = os.path.dirname(DEM)
-    gdal.DEMProcessing(dir + '/switzerland_slope.tif', DEM, 'slope')
-    with rasterio.open(dir + '/switzerland_slope.tif') as dataset:
-        slope = dataset.read(1)
-
-    return slope
-
-
 def compare_geom(gdf, key):
 
     geom1 = gdf.geometry.values.tolist()
@@ -132,17 +122,9 @@ if __name__ == "__main__":
     elevation = dem.read(1)[row, col]
     detections_gdf['elevation'] = elevation 
 
-    # logger.info("Slope computing")
-    # dem_slope = calculate_slope(DEM)
-    # slope = dem_slope[row, col]
-    # detections_gdf['slope'] = slope
-
     detections_gdf = detections_gdf[(detections_gdf.elevation != 0) & (detections_gdf.elevation < ELEVATION)]
     tdem = len(detections_gdf)
     logger.info(f"{total - tdem} detections were removed by elevation threshold: {ELEVATION} m")
-    # detections_gdf = detections_gdf[(detections_gdf.elevation != -9999) & (detections_gdf.slope <= SLOPE)]
-    # tslope = len(detections_gdf)
-    # logger.info(f"{tdem - tslope} detections were removed by slope threshold: {SLOPE}%")
 
     # Discard polygons with area under a given threshold 
     detections_area_gdf = detections_gdf[detections_gdf.area > AREA]
@@ -151,7 +133,6 @@ if __name__ == "__main__":
 
     # Remove polygons intersecting relevant vector layers with a min thd of 20% of the detection covered
     detections_area_gdf['det_id'] = detections_area_gdf.index
-    # detections_area_gdf['geometry'] = detections_area_gdf.geometry.buffer(-8)
 
     for key in exclude_dict.keys():
         gdf = exclude_dict[key] 
@@ -160,7 +141,6 @@ if __name__ == "__main__":
         detections_join_gdf = gpd.sjoin(detections_area_gdf, gdf, how='left', predicate='intersects')
         detections_join_gdf = detections_join_gdf[detections_join_gdf[f'{key}_id'].notnull()].copy()
         detections_join_gdf = detections_join_gdf.drop_duplicates(subset='det_id') 
-
         detections_join_gdf = compare_geom(detections_join_gdf, key)
         detections_join_gdf = detections_join_gdf.drop(columns='index_right')
         detections_gdf = detections_join_gdf[detections_join_gdf['overlap']<0.2] 
@@ -187,8 +167,6 @@ if __name__ == "__main__":
         detections_infos_gdf[f'{key}'] = np.where(detections_infos_gdf['overlap']<0.2, 'no', 'yes')
         detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom', 'overlap'])
   
-    # detections_infos_gdf['geometry'] = detections_infos_gdf.geometry.buffer(8)
-
     # Final gdf
     logger.info(f"{len(detections_infos_gdf)} detections remaining after filtering")
 
