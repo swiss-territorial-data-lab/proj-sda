@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     # Load input parameters
     WORKING_DIR = cfg['working_dir']
-    LABELS = cfg['labels']
+    LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
     DETECTIONS = cfg['detections']
     DISTANCE = cfg['distance']
     SCORE_THD = cfg['score_threshold'] if 'score_threshold' in cfg.keys() else 0.0
@@ -59,8 +59,11 @@ if __name__ == "__main__":
     logger.info("Loading detections as a GeoPandas DataFrame...")
     detections_gdf = gpd.read_file(DETECTIONS)
     detections_gdf = detections_gdf.to_crs(2056)
-    detections_gdf = detections_gdf.drop(labels=['label_class', 'CATEGORY', 'year_label'], axis=1)
-    detections_gdf = detections_gdf[detections_gdf['tag']!='FN']
+    if LABELS:
+        detections_gdf = detections_gdf.drop(labels=['label_class', 'CATEGORY', 'year_label'], axis=1)
+        detections_gdf = detections_gdf[detections_gdf['tag']!='FN']
+    else:
+        detections_gdf = detections_gdf.drop(labels=['index'], axis=1)
     detections_gdf['area'] = detections_gdf.geometry.area 
     detections_gdf['det_id'] = detections_gdf.index
     logger.success(f"{DONE_MSG} {len(detections_gdf)} features were found.")
@@ -114,8 +117,7 @@ if __name__ == "__main__":
             detections_merge = detections_merge.explode(index_parts=True).reset_index(drop=True)   
             detections_merge.geometry = detections_merge.geometry.buffer(-DISTANCE, resolution=2)
 
-        detections_temp3_gdf = detections_temp3_gdf.drop(['score', 'tag', 'dataset', 'det_class',
-       'year_det', 'area'], axis=1)
+        detections_temp3_gdf = detections_temp3_gdf.drop(['score', 'dataset', 'det_class', 'year_det', 'area'], axis=1)
         
         # Concat polygons contained within a tile and saved previously
         detections_merge = pd.concat([detections_merge, detections_temp3_gdf], axis=0, ignore_index=True)

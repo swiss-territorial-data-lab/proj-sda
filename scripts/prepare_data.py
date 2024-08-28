@@ -127,7 +127,6 @@ if __name__ == "__main__":
     written_files = []
     
     # Prepare the tiles
-
     ## Convert datasets shapefiles into geojson format
     logger.info('Convert labels shapefile into GeoJSON format (EPSG:4326)...')
     labels = gpd.read_file(SHPFILE)
@@ -217,9 +216,6 @@ if __name__ == "__main__":
         # Delete tiles outside of the AoI limits 
         tiles_4326_aoi = gpd.sjoin(tiles_4326_aoi, EPT_aoi_4326, how='inner', lsuffix='ept_tiles', rsuffix='ept_aoi', predicate='intersects')
 
-    # Compute labels intersecting tiles 
-    if FP_SHPFILE:
-        tiles_fp_4326 = gpd.sjoin(tiles_4326_aoi, fp_labels_4326, how='inner', predicate='intersects')
     if not EPT_SHPFILE or EPT_SHPFILE and aoi_bbox_contains == False:
         # Keep only tiles intersecting labels 
         tiles_4326_aoi = gpd.sjoin(tiles_4326_aoi, labels_4326, how='inner', predicate='intersects')

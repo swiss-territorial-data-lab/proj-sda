@@ -3,6 +3,23 @@ import sys
 from loguru import logger
 
 
+def ensure_dir_exists(dirpath):
+    """Test if a directory exists. If not, make it.  
+
+    Args:
+        dirpath (str): directory path to test
+
+    Returns:
+        dirpath (str): directory path that have been tested
+    """
+
+    if not os.path.exists(dirpath):
+        os.makedirs(dirpath)
+        logger.info(f"The directory {dirpath} was created.")
+    
+    return dirpath
+
+
 def format_logger(logger):
     """Format the logger from loguru
 
@@ -24,23 +41,6 @@ def format_logger(logger):
             level="ERROR")
 
     return logger
-
-
-def ensure_dir_exists(dirpath):
-    """Test if a directory exists. If not, make it.  
-
-    Args:
-        dirpath (str): directory path to test
-
-    Returns:
-        dirpath (str): directory path that have been tested
-    """
-
-    if not os.path.exists(dirpath):
-        os.makedirs(dirpath)
-        logger.info(f"The directory {dirpath} was created.")
-    
-    return dirpath
 
 
 def overlap(polygon1_shape, polygon2_shape):

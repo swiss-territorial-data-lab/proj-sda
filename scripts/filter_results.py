@@ -93,10 +93,10 @@ if __name__ == "__main__":
     sites_pollues_vd_gdf['sites_pollues_vd_id'] = sites_pollues_vd_gdf.index
     sda_vd_gdf = gpd.read_file(SDA_VD)
     sda_vd_gdf = sda_vd_gdf.to_crs(2056)
-    sda_vd_gdf['sda_vd_id'] = sda_vd_gdf.index
     sda_tc_gdf = gpd.read_file(SDA_TC)
     sda_tc_gdf = sda_tc_gdf.to_crs(2056)
-    sda_tc_gdf['sda_tc_id'] = sda_tc_gdf.index
+    sda_gdf = pd.concat([sda_vd_gdf, sda_tc_gdf], axis=0)
+    sda_gdf['sda_id'] = sda_gdf.index
     feature = './layers/slope.gpkg'
     if os.path.isfile(feature):
         logger.info(f'{feature} already exists.')
@@ -115,7 +115,8 @@ if __name__ == "__main__":
         slope_gdf.to_file(feature)
 
     exclude_dict = {'piste_avion_vd': pa_vd_gdf, 'batiment_batir_vd': bat_vd_gdf, 'batiment_batir_tc': bat_tc_gdf} 
-    info_dict = {'sites_pollues_vd': sites_pollues_vd_gdf, 'sda_vd': sda_vd_gdf, 'sda_tc': sda_tc_gdf, 'slope_>18%': slope_gdf}
+    # info_dict = {'sites_pollues_vd': sites_pollues_vd_gdf, 'sda': sda_gdf}
+    info_dict = {'slope_>18%': slope_gdf, 'sites_pollues_vd': sites_pollues_vd_gdf, 'sda': sda_gdf}
 
     # Discard polygons detected at/below 0 m and above the threshold elevation and above a given slope
     dem = rasterio.open(DEM)
@@ -153,24 +154,29 @@ if __name__ == "__main__":
     detections_score_gdf = detections_gdf[detections_gdf.score > SCORE_THD]
     sc = len(detections_score_gdf)
     logger.info(f"{tdem - ta - sc} detections were removed by score filtering (score threshold = {SCORE_THD})")
-
+ 
     # Indicate if polygons are intersecting relevant vector layers with a min thd of 20% of the detection covered
     detections_infos_gdf = detections_score_gdf.copy()
     for key in info_dict.keys():
         gdf = info_dict[key]
         gdf[f'{key}_geom'] = gdf.geometry 
 
-        detections_temp_gdf = detections_score_gdf.copy()    
+        detections_temp_gdf = detections_score_gdf.copy()   
         detections_join_gdf = gpd.sjoin(detections_temp_gdf, gdf, how='left', predicate='intersects')
-        detections_join_gdf = detections_join_gdf.set_geometry('geometry') 
         detections_join_gdf[f'{key}'] = np.where(detections_join_gdf[f'{key}_id'].notnull(), 'yes', 'no')
-        detections_join_gdf = detections_join_gdf.drop_duplicates(subset='det_id')
         detections_infos_gdf = pd.merge(detections_infos_gdf, detections_join_gdf[[f'{key}', f'{key}_geom', 'det_id']], on='det_id', how='left')
         detections_infos_gdf = compare_geom(detections_infos_gdf, key)
         detections_infos_gdf[f'{key}'] = np.where(detections_infos_gdf['overlap'] < OVERLAP_THD, 'no', 'yes')
         detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom', 'overlap'])
-  
-    # Final gdf
+        # detections_infos_gdf = detections_infos_gdf.drop_duplicates(subset=['det_id'])
+        detections_infos_gdf = detections_infos_gdf.groupby('det_id',sort=False).apply(lambda x: x if len(x)==1 else x.loc[x[f'{key}'].ne('no')]).reset_index(drop=True)
+
+    # Compute the nearest distance between detections and sda
+    detections_infos_gdf = gpd.sjoin_nearest(detections_infos_gdf, sda_gdf[['sda_id', 'geometry']], how='left', distance_col='distance_sda')
+    detections_infos_gdf = detections_infos_gdf.drop_duplicates(subset=['det_id', 'sda'])
+    detections_infos_gdf = detections_infos_gdf.drop(columns=['index_right', 'sda_id']) 
+
+    # # Final gdf
     logger.info(f"{len(detections_infos_gdf)} detections remaining after filtering")
 
     # Formatting the output name of the filtered detection  
