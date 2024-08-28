@@ -218,18 +218,11 @@ if __name__ == "__main__":
         tiles_4326_aoi = gpd.sjoin(tiles_4326_aoi, EPT_aoi_4326, how='inner', lsuffix='ept_tiles', rsuffix='ept_aoi', predicate='intersects')
 
     # Compute labels intersecting tiles 
-    tiles_gt_4326 = gpd.sjoin(tiles_4326_aoi, labels_4326, how='inner', predicate='intersects')
-    tiles_gt_4326.drop_duplicates('title', inplace=True)
-    logger.info(f"- Number of tiles intersecting GT labels = {len(tiles_gt_4326)}")
     if FP_SHPFILE:
         tiles_fp_4326 = gpd.sjoin(tiles_4326_aoi, fp_labels_4326, how='inner', predicate='intersects')
-        tiles_fp_4326.drop_duplicates('title', inplace=True)
-        logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_fp_4326)}")
-
     if not EPT_SHPFILE or EPT_SHPFILE and aoi_bbox_contains == False:
         # Keep only tiles intersecting labels 
         tiles_4326_aoi = gpd.sjoin(tiles_4326_aoi, labels_4326, how='inner', predicate='intersects')
-        tiles_4326_aoi.drop_duplicates('title', inplace=True)
  
     # Get all the tiles in one gdf 
     if EPT_SHPFILE and aoi_bbox_contains == False:

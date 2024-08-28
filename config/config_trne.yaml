@@ -2,12 +2,12 @@
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
-    shapefile: ./data/ground_truth/20240805_GT_MT_MES.gpkg       # GT labels
+    shapefile: ./data/ground_truth/20240805_GT.gpkg       # GT labels
     # FP_shapefile: ./data/FP/FP_list.gpkg                        # FP labels
     # empty_tiles_aoi: ./data/AoI/AoI_2020.shp                    # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
     # empty_tiles_shp: ./data/EPT/20240726_EPT.gpkg             # Provided shpfile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
     category: 'Classe'
-  output_folder: ./output/OD/trne/zoom16/run58/
+  output_folder: ./output/OD/trne/zoom16/run59/
   zoom_level: 16 
 
 
@@ -111,7 +111,7 @@ make_detections.py:
 
 # Evaluate the detection quality for the different datasets by calculating metrics
 assess_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run58
+  working_directory: ./output/OD/trne/zoom16/run53
   datasets:
     ground_truth_labels: labels.geojson
     split_aoi_tiles: split_aoi_tiles.geojson # aoi = Area of Interest
