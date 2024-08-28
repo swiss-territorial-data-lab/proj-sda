@@ -115,7 +115,6 @@ if __name__ == "__main__":
         slope_gdf.to_file(feature)
 
     exclude_dict = {'piste_avion_vd': pa_vd_gdf, 'batiment_batir_vd': bat_vd_gdf, 'batiment_batir_tc': bat_tc_gdf} 
-    # info_dict = {'sites_pollues_vd': sites_pollues_vd_gdf, 'sda': sda_gdf}
     info_dict = {'slope_>18%': slope_gdf, 'sites_pollues_vd': sites_pollues_vd_gdf, 'sda': sda_gdf}
 
     # Discard polygons detected at/below 0 m and above the threshold elevation and above a given slope

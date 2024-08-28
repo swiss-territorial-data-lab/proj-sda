@@ -37,7 +37,8 @@ if __name__ == "__main__":
     # Load input parameters
     WORKING_DIR = cfg['working_dir']
     LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
-    DETECTIONS = cfg['detections']
+    # DETECTIONS = cfg['detections']
+    DETECTION_FILES = cfg['detections']
     DISTANCE = cfg['distance']
     SCORE_THD = cfg['score_threshold'] if 'score_threshold' in cfg.keys() else 0.0
     IOU_THD = cfg['iou_threshold'] if 'iou_threshold' in cfg.keys() else 0.25
@@ -57,13 +58,19 @@ if __name__ == "__main__":
     logger.success(f"{DONE_MSG} {len(tiles_gdf)} features were found.")
 
     logger.info("Loading detections as a GeoPandas DataFrame...")
-    detections_gdf = gpd.read_file(DETECTIONS)
+
+    detections_gdf = gpd.GeoDataFrame()
+
+    for dataset, dets_file in DETECTION_FILES.items():
+        detections_ds_gdf = gpd.read_file(dets_file)    
+        detections_ds_gdf[f'dataset'] = dataset
+        detections_gdf = pd.concat([detections_gdf, detections_ds_gdf], axis=0)
     detections_gdf = detections_gdf.to_crs(2056)
-    if LABELS:
-        detections_gdf = detections_gdf.drop(labels=['label_class', 'CATEGORY', 'year_label'], axis=1)
-        detections_gdf = detections_gdf[detections_gdf['tag']!='FN']
-    else:
-        detections_gdf = detections_gdf.drop(labels=['index'], axis=1)
+    # if LABELS:
+    #     # detections_gdf = detections_gdf.drop(labels=['label_class', 'CATEGORY', 'year_label'], axis=1)
+    #     detections_gdf = detections_gdf[detections_gdf['tag']!='FN']
+    # else:
+    # detections_gdf = detections_gdf.drop(labels=['index'], axis=1)
     detections_gdf['area'] = detections_gdf.geometry.area 
     detections_gdf['det_id'] = detections_gdf.index
     logger.success(f"{DONE_MSG} {len(detections_gdf)} features were found.")
@@ -80,7 +87,6 @@ if __name__ == "__main__":
     categories_info_df.drop(['supercategory'], axis=1, inplace=True)
     categories_info_df.rename(columns={'name':'CATEGORY', 'id': 'label_class'},inplace=True)
     id_classes = range(len(categories_json))
-
 
     # Merge features
     logger.info(f"Merge adjacent polygons spread across tiles with a buffer of {DISTANCE} m...")
@@ -134,12 +140,13 @@ if __name__ == "__main__":
             detections_temp_gdf = detections_temp_gdf[(detections_temp_gdf['index_merge']==id)]
             detections_temp_gdf = detections_temp_gdf.rename(columns={'score_left': 'score'})
             det_score_all.append(detections_temp_gdf['score'].mean())
-
             detections_temp_gdf = detections_temp_gdf.dissolve(by='det_class', aggfunc='sum', as_index=False)
-            detections_temp_gdf['det_class'] = detections_temp_gdf.loc[detections_temp_gdf['area'] == detections_temp_gdf['area'].max(), 
-                                                            'det_class'].iloc[0]    
-
-            det_class = detections_temp_gdf['det_class'].drop_duplicates().tolist()
+            if len(detections_temp_gdf) > 0:
+                detections_temp_gdf['det_class'] = detections_temp_gdf.loc[detections_temp_gdf['area'] == detections_temp_gdf['area'].max(), 
+                                                                'det_class'].iloc[0]    
+                det_class = detections_temp_gdf['det_class'].drop_duplicates().tolist()
+            else:
+                det_class = [0]
             det_class_all.append(det_class[0])
 
         detections_merge['det_class'] = det_class_all
@@ -248,7 +255,7 @@ if __name__ == "__main__":
         written_files.append(file_to_write)
 
         # Save tagged processed results 
-        feature = os.path.join('tagged_detections_merged.gpkg')
+        feature = os.path.join(f'tagged_detections_merged_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
         tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
         tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category', 'year': 'year_label'}, errors='raise')
 
