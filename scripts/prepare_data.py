@@ -230,16 +230,13 @@ if __name__ == "__main__":
         tiles_4326_all = pd.concat([tiles_4326_aoi, empty_tiles_4326_aoi])
     else: 
         tiles_4326_all = tiles_4326_aoi
-    
-    # - Remove duplicated tiles
-    if nb_labels > 1:
-        tiles_4326_all.drop_duplicates(['title', 'year'] if 'year' in tiles_4326_all.keys() else 'title', inplace=True)
 
     # - Remove useless columns, reset feature id and redefine it according to xyz format  
     logger.info('- Add tile IDs and reorganise data set')
     tiles_4326_all = tiles_4326_all[['geometry', 'title', 'year'] if 'year' in tiles_4326_all.keys() else ['geometry', 'title']].copy()
-    tiles_4326_all.reset_index(drop=True, inplace=True)
     tiles_4326_all = tiles_4326_all.apply(add_tile_id, axis=1)
+    if nb_labels > 1:
+        tiles_4326_all.drop_duplicates(['id'], inplace=True)
     
     nb_tiles = len(tiles_4326_all)
     logger.info(f"There were {nb_tiles} tiles created")
