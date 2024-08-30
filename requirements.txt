@@ -189,6 +189,7 @@ numpy==1.23.3
     #   opencv-python
     #   pandas
     #   pycocotools
+    #   pygeos
     #   rasterio
     #   rdp
     #   scikit-learn
@@ -264,6 +265,8 @@ pydot==1.4.2
     # via
     #   detectron2
     #   stdl-object-detector
+pygeos==0.14
+    # via -r requirements.in
 pyparsing==3.0.9
     # via
     #   matplotlib
