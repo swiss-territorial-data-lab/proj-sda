@@ -2,6 +2,7 @@
 output*/
 input*/
 data*/
+config/config_det_*.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
