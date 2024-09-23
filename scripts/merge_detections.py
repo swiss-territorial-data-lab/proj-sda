@@ -96,6 +96,7 @@ if __name__ == "__main__":
     for year in detections_gdf.year_det.unique():
         detections_gdf = detections_gdf.copy()
         detections_temp_gdf = detections_gdf[detections_gdf['year_det']==year]
+        detections_temp_gdf = detections_temp_gdf.drop('index', axis=1)
 
         detections_temp_buffer_gdf = detections_temp_gdf.copy()
         detections_temp_buffer_gdf['geometry'] = detections_temp_gdf.geometry.buffer(DISTANCE, resolution=2)

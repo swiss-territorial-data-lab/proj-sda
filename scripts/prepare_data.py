@@ -133,7 +133,7 @@ if __name__ == "__main__":
     labels_4326 = labels.to_crs(epsg=4326)
     labels_4326 = labels_4326.drop_duplicates(subset='geometry')
     nb_labels = len(labels)
-    logger.info(f'There are {nb_labels} polygons in {SHPFILE}')
+    logger.info(f'{nb_labels} polygons in {SHPFILE}')
 
     if CATEGORY and CATEGORY in labels_4326.keys():
         labels_4326['CATEGORY'] = labels_4326[CATEGORY]
@@ -235,7 +235,7 @@ if __name__ == "__main__":
         tiles_4326_all.drop_duplicates(['id'], inplace=True)
     
     nb_tiles = len(tiles_4326_all)
-    logger.info(f"There were {nb_tiles} tiles created")
+    logger.info(f"{nb_tiles} tiles were created")
 
     # Save tile shapefile
     logger.info("Export tiles to GeoJSON (EPSG:4326)...")  
