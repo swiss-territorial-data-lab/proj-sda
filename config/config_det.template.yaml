@@ -5,9 +5,6 @@ prepare_data.py:
     shapefile: ./data/AoI/Vaud/MN95_CAD_TPR_LAD_MO_CANTON.shp                
   output_folder: ./output/OD/det/SWISSIMAGE_YEAR
   zoom_level: 16 
-  # elevation_filter: # Comment if not needed
-  #   dem: ./data/DEM/switzerland_dem.tif
-  #   elevation_threshold: 1200.0 # m, altitude threshold
 
 
 # 2-Fetch of tiles (online server) and split into 3 datasets: train, test, validation
@@ -38,6 +35,7 @@ generate_tilesets.py:
     license:
       name: Unknown
       url:
+    categories_file: ./output/OD/trne/category_ids.json
 
 
 # Object detection with the optimised trained model
@@ -73,12 +71,13 @@ merge_detections.py:
 filter_results.py:
   working_dir: ./data
   detections: ../output/OD/det/SWISSIMAGE_YEAR/tagged_detections_merged_at_0dot05_threshold.gpkg
+  canton: vaud
   zones_exclues:
     vaud: 
       pistes_avion: ./layers/Vaud/Pistes_aviation_MO_CSDUR.shp
       batiments: ./layers/Vaud/Batiments_en_surface_MO.shp
     ticino:
-      batiments_batir: ./layers/Ticino/Zones_batir_Ind.shp
+      batiments: ./layers/Ticino/Zones_batir_Ind.shp
   zones_infos:
     vaud: 
       sites_pollues: ./layers/Vaud/Sites_pollues_VD2022.shp
