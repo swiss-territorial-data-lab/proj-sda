@@ -67,12 +67,16 @@ The folders/files of the project `proj-sda` (in combination with `object-detecto
 
 <pre>.
 ├── config                                          # configurations files folder
+│   ├── config_det.template.yaml                    # detection workflow template
 │   ├── config_det.yaml                             # detection workflow
+│   ├── config_sandbox.yaml                         # sandbox workflow
 │   ├── config_trne.yaml                            # training and evaluation workflow
 │   └── detectron2_config_dqry.yaml                 # detectron 2
 ├── data                                            # folder containing the input data
 │   └── ground_truth                                # available on S3/proj-sda/data/ground_truth
 ├── functions
+│   ├── constants.py                  
+│   ├── fct_metrics.py                             
 │   └── fct_misc.py                                
 ├── output                                          # outputs folders
 ├── sandbox
@@ -84,7 +88,13 @@ The folders/files of the project `proj-sda` (in combination with `object-detecto
 │   ├── rgb_to_greyscale.sh                         # script converting RGB images to greyscale images
 │   └── track_detections.py                         # script tracking the detections in multiple years dataset 
 ├── scripts
+│   ├── batch_process.sh                            # script to execute several commands
+│   ├── filter_results.py                           # script filtering detections
+│   ├── get_dem.sh                                  # script downloading swiss DEM and converting it to EPSG:2056
+│   ├── merge_detections.py                         # script merging adjacent detections and attributing class
+│   ├── merge_years.py                              # script merging all year detections layers
 │   ├── prepare_data.py                             # script preparing data to be processed by the object-detector scripts
+│   ├── result_analysis.py                          # script plotting some parameters
 │   └── rgb_to_greyscale.py                         # script converting RGB images to greyscale images
 ├── .gitignore                                      
 ├── LICENSE
@@ -108,6 +118,11 @@ The `proj-sda` repository contains scripts to prepare and post-process the data 
 
 1. `prepare_data.py`: format labels and produce tiles to be processed in the OD 
 2. `rgb_to_greyscale.py`: convert RGB images to  greyscale images
+3. `results_analysis.py`: plot some parameters of the detections to help understand the results
+4. `merge_detection.py`: merge adjacent detections cut by tiles into a single detection and attribute the class (the class of the maximum area)
+5. `filter_results.py`: filter results according to given layers and add new attributes to the layer if a detection is overlaps an area of interest. Other information such as score, elevation, slope are also displayed.
+6. `merge_years.py`: merge all the detection layers obtained during inference by year.
+
 
 Object detection is performed with tools present in the [`object-detector`](https://github.com/swiss-territorial-data-lab/object-detector) git repository. 
 
@@ -118,18 +133,47 @@ The workflow can be executed by running the following list of actions and comman
 
 **Training and evaluation**: 
 
+Prepare the data and train the model:
 ```
 $ python scripts/prepare_data.py config/config_trne.yaml
 $ python ../object-detector/scripts/generate_tilesets.py config/config_trne.yaml
 $ python ../object-detector/scripts/train_model.py config/config_trne.yaml
-$ tensorboard --logdir output/output_trne/logs
+$ tensorboard --logdir output/trne/logs
 ```
 
 Open the following link with a web browser: `http://localhost:6006` and identify the iteration minimising the validation loss and select the model accordingly (`model_*.pth`) in `config_trne`. For the provided parameters, `model_0002999.pth` is the default one.
 
+Perform and assess detections:
 ```
 $ python ../object-detector/scripts/make_detections.py config/config_trne.yaml
 $ python ../object-detector/scripts/assess_detections.py config/config_trne.yaml
+```
+
+Some characteristics of the detections can be analysed with the help of plots:
+```
+$ python scripts/result_analysis.py config/config_trne.yaml
+```
+
+Finally, the detection obtained by tiles can be merged when adjacent and a new assessment is performed:
+```
+$ python scripts/merge_detections.py config/config_trne.yaml
+```
+
+**Inference**: 
+
+```
+$ python scripts/prepare_data.py config/config_det.yaml
+$ python ../object-detector/scripts/generate_tilesets.py config/config_det.yaml
+$ python ../object-detector/scripts/make_detections.py config/config_det.yaml
+$ python scripts/merge_detections.py config/config_det.yaml
+$ scripts/get_dem.sh
+$ python scripts/filter_results.py config/config_det.yaml
+```
+
+The Detection workflow has been automated and can be run for a batch of years by executing these commands:
+```
+$ scripts/get_dem.sh
+$ scripts/batch_process.sh
 ```
 
 ## Disclaimer

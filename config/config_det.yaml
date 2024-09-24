@@ -5,15 +5,12 @@ prepare_data.py:
     shapefile: ./data/AoI/Vaud/MN95_CAD_TPR_LAD_MO_CANTON.shp                
   output_folder: ./output/OD/det/vaud/run59/
   zoom_level: 16 
-  # elevation_filter: # Comment if not needed
-  #   dem: ./data/DEM/switzerland_dem.tif
-  #   elevation_threshold: 1200.0 # m, altitude threshold
 
 
 # 2-Fetch of tiles (online server) and split into 3 datasets: train, test, validation
 generate_tilesets.py:
   debug_mode: 
-    enable: True  # sample of tiles
+    enable: False  # sample of tiles
     nb_tiles_max: 5000
   working_directory: .
   datasets:
