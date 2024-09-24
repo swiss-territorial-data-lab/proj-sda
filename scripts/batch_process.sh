@@ -6,7 +6,7 @@
 
 echo 'Run batch processes to make quarries detection over several years'
 
-for year in 2018       # list of years to process (no comma: YEAR1 YEAR2 YEAR3 ...) 
+for year in YEAR1 YEAR2 YEAR3       # list of years to process (no comma: YEAR1 YEAR2 YEAR3 ...) 
 do
     echo ' '
     echo '-----------'
@@ -14,9 +14,9 @@ do
     sed 's/#YEAR#/$year/g' config/config_det.template.yaml > config/config_det_$year.yaml
     sed -i "s/SWISSIMAGE_YEAR/$year/g" config/config_det_$year.yaml
     echo ' '
-    # echo 'prepare_data.py'
-    # python3 ./scripts/prepare_data.py config/config_det_$year.yaml
-    # echo ' '
+    echo 'prepare_data.py'
+    python3 ./scripts/prepare_data.py config/config_det_$year.yaml
+    echo ' '
     echo 'generate_tilesets.py'
     stdl-objdet generate_tilesets config/config_det_$year.yaml
     echo ' '
