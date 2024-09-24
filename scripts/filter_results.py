@@ -72,7 +72,8 @@ if __name__ == "__main__":
     # Convert input detections to a geodataframe 
     detections_gdf = gpd.read_file(DETECTIONS)
     detections_gdf = detections_gdf.to_crs(2056)
-    detections_gdf = detections_gdf[detections_gdf['tag']!='FN']
+    if 'tag' in detections_gdf.keys():
+        detections_gdf = detections_gdf[detections_gdf['tag']!='FN']
     detections_gdf['area'] = detections_gdf.geometry.area 
     detections_gdf['det_id'] = detections_gdf.index
     total = len(detections_gdf)
@@ -82,18 +83,26 @@ if __name__ == "__main__":
         pa_gdf = gpd.read_file(PISTES_AVION)
         pa_gdf = pa_gdf.to_crs(2056)
         pa_gdf['pa_id'] = pa_gdf.index
+    else:
+        pa_gdf = None
     if BAT:
         bat_gdf = gpd.read_file(BAT)
         bat_gdf = bat_gdf.to_crs(2056)
         bat_gdf['bat_id'] = bat_gdf.index
+    else:
+        bat_gdf = None
     if SITES_POLLUES:
         sites_pollues_gdf = gpd.read_file(SITES_POLLUES)
         sites_pollues_gdf = sites_pollues_gdf.to_crs(2056)
         sites_pollues_gdf['sites_pollues_id'] = sites_pollues_gdf.index
+    else:
+        sites_pollues_gdf = None
     if SDA:
         sda_gdf = gpd.read_file(SDA)
         sda_gdf = sda_gdf.to_crs(2056)
         sda_gdf['sda_id'] = sda_gdf.index
+    else:
+        sda_gdf = None
     feature = f'./layers/{CANTON[0].upper() + CANTON[1:]}/slope.gpkg'
     if os.path.isfile(feature):
         logger.info(f'{feature} already exists.')
@@ -128,7 +137,7 @@ if __name__ == "__main__":
     logger.info(f"{tdem - ta} detections were removed by area filtering (area threshold = {AREA_THD} m2)")
 
     # Remove polygons intersecting relevant vector layers with a min thd of 20% of the detection covered
-    detections_area_gdf['det_id'] = detections_area_gdf.index
+    # detections_area_gdf['det_id'] = detections_area_gdf.index
 
     for key in exclude_dict.keys():
         gdf = exclude_dict[key] 
