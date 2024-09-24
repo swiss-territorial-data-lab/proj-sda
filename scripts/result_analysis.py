@@ -63,6 +63,23 @@ def plot_barchart(dir_plots, df, cat, data):
     plt.savefig(plot_path, bbox_inches='tight')
     plt.close(fig)
 
+    return plot_path
+
+
+def plot_boxplot(dir_plots, df, param):
+
+    ax = df.boxplot(column=[param], by=['tag'], grid=False)
+    if param == 'area':
+        ax.set_yscale('symlog')
+        ax.yaxis.set_major_formatter(lambda x, p: f'{int(x):,}')
+    
+    ax.set_xlabel('Detection tags', fontweight='bold')
+    ax.set_ylabel(param.capitalize(), fontweight='bold')
+    ax.get_figure().suptitle('')
+    ax.set_title('')
+
+    plot_path = os.path.join(dir_plots, f'{param}_boxplot.png')  
+    plt.savefig(plot_path, bbox_inches='tight')
 
     return plot_path
 
@@ -93,8 +110,14 @@ if __name__ == "__main__":
     detections_gdf = gpd.read_file(DETECTIONS)
     detections_gdf = detections_gdf.to_crs(2056)
     detections_gdf['area'] = detections_gdf.geometry.area 
+
     total = len(detections_gdf)
     logger.info(f"{total} input shapes")
+
+    for parameter in ['area', 'score']:  
+        feature = plot_boxplot(OUTPUT, detections_gdf, param=parameter)
+        written_files.append(feature)
+        logger.success(f"{DONE_MSG} A file was written: {feature}") 
 
     for cat in filter(None, detections_gdf.CATEGORY.unique()): 
         feature = plot_barchart(OUTPUT, detections_gdf, cat, data='label')
