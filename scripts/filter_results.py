@@ -177,7 +177,7 @@ if __name__ == "__main__":
     detections_infos_gdf = detections_infos_gdf.drop_duplicates(subset=['det_id', 'sda'])
     detections_infos_gdf = detections_infos_gdf.drop(columns=['index_right', 'sda_id']) 
 
-    # # Final gdf
+    # Final gdf
     logger.info(f"{len(detections_infos_gdf)} detections remaining after filtering")
 
     # Formatting the output name of the filtered detection  
