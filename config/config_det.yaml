@@ -94,3 +94,9 @@ filter_results.py:
   score_threshold: 0.1 # detection score (from 0 to 1) provided by detectron2
   area_threshold: 50.0 # m2, area threshold under which polygons are discarded
   overlap_threshold: 0.2 # surface ratio overlapped by another polygon from zones_infos 
+
+merge_years.py:
+  canton: vaud
+  working_dir: ./output/OD/det/{canton}/
+  years: [2020, 2024]
+  layer: inference_detections_merged_threshold_score-0dot1_area-50_elevation-600_overlap-0.gpkg 
