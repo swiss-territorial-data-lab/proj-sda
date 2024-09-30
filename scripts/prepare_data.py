@@ -108,7 +108,7 @@ if __name__ == "__main__":
     if 'empty_tiles_aoi' in cfg['datasets'].keys() and 'empty_tiles_shp' in cfg['datasets'].keys():
         logger.error("Choose one option between providing an AoI shapefile ('empty_tiles_aoi') in which empty tiles will be selected and a shapefile with selected empty tiles ('empty_tiles_shp')")
         sys.exit(1)    
-    if 'empty_tiles_aoi' in cfg['datasets'].keys():
+    elif 'empty_tiles_aoi' in cfg['datasets'].keys():
         EPT_SHPFILE = cfg['datasets']['empty_tiles_aoi']
         EPT = 'aoi'
     elif 'empty_tiles_shp' in cfg['datasets'].keys():
@@ -164,8 +164,6 @@ if __name__ == "__main__":
         logger.success(f"{DONE_MSG} A file was written: {filepath}")
 
         labels_4326 = pd.concat([labels_4326, fp_labels_4326], ignore_index=True)
-    else:
-        labels_4326 = labels_4326
 
     # Keep only label boundary geometry info (minx, miny, maxx, maxy) 
     logger.info("- Get the label boundaries")  
@@ -210,21 +208,23 @@ if __name__ == "__main__":
 
     if EPT_SHPFILE and aoi_bbox_contains:
         # Delete tiles outside of the AoI limits 
-        tiles_4326_aoi = gpd.sjoin(tiles_4326_aoi, EPT_aoi_4326, how='inner', lsuffix='ept_tiles', rsuffix='ept_aoi', predicate='intersects')
+        tiles_4326_aoi = gpd.sjoin(tiles_4326_aoi, EPT_aoi_4326, how='inner', lsuffix='ept_tiles', rsuffix='ept_aoi', predicate='intersects')#CM:is the ept_aoi needed ? Because this is not necessary after boundaries_df = EPT_aoi_boundaries_df (1. 192)
 
     # Compute labels intersecting tiles 
     tiles_gt_4326 = gpd.sjoin(tiles_4326_aoi, labels_4326, how='inner', predicate='intersects')
     tiles_gt_4326.drop_duplicates('title', inplace=True)
-    logger.info(f"- Number of tiles intersecting GT labels = {len(tiles_gt_4326)}")
+
     if FP_SHPFILE:
         tiles_fp_4326 = gpd.sjoin(tiles_4326_aoi, fp_labels_4326, how='inner', predicate='intersects')
         tiles_fp_4326.drop_duplicates('title', inplace=True)
         logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_fp_4326)}")
+        logger.info(f"- Number of tiles intersecting GT labels = {len(tiles_gt_4326)-len(tiles_fp_4326)}")
+    else:
+        logger.info(f"- Number of tiles intersecting GT labels = {len(tiles_gt_4326)}")        
 
     if not EPT_SHPFILE or EPT_SHPFILE and aoi_bbox_contains == False:
         # Keep only tiles intersecting labels 
-        tiles_4326_aoi = gpd.sjoin(tiles_4326_aoi, labels_4326, how='inner', predicate='intersects')
-        tiles_4326_aoi.drop_duplicates('title', inplace=True)
+        tiles_4326_aoi = tiles_gt_4326
  
     # Get all the tiles in one gdf 
     if EPT_SHPFILE and aoi_bbox_contains == False:
