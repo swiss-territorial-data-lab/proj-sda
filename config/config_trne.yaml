@@ -1,25 +1,25 @@
-# 1-Produce tile geometries based on the AoI extent and zoom level
+# Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
-    shapefile: ./data/ground_truth/20240916_GT_MT_MES.gpkg       # GT labels
+    shapefile: ./data/ground_truth/20240916_GT.gpkg       # GT labels
     # FP_shapefile: ./data/FP/FP_list.gpkg                        # FP labels
     # empty_tiles_aoi: ./data/AoI/AoI_2020.shp                    # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
     # empty_tiles_shp: ./data/EPT/20240726_EPT.gpkg             # Provided shpfile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
     category: 'Classe'
-  output_folder: ./output/OD/trne/zoom16/run65/
+  output_folder: ./output/OD/trne/zoom16/run66/
   zoom_level: 16
 
 
-# 2-Fetch of tiles (online server) and split into 3 datasets: train, test, validation
+# Fetch of tiles (online server) and split into 3 datasets: train, test, validation
 generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
     nb_tiles_max: 10
   working_directory: .
   datasets:
-    aoi_tiles: output/OD/trne/zoom16/run65/tiles.geojson
-    ground_truth_labels: output/OD/trne/zoom16/run65/labels.geojson
+    aoi_tiles: output/OD/trne/zoom16/run66/tiles.geojson
+    ground_truth_labels: output/OD/trne/zoom16/run66/labels.geojson
     # FP_labels: output/OD/trne/FP.geojson
     image_source:
       # ############# 
@@ -40,7 +40,7 @@ generate_tilesets.py:
   #   tiles_frac: 0.5       # fraction (relative to the number of tiles intersecting labels) of empty tiles to add
   #   frac_trn: 0.75        # fraction of empty tiles to add to the trn dataset, then the remaining tiles will be split in 2 and added to tst and val datasets
   #   keep_oth_tiles: False # keep tiles in oth dataset not intersecting oth labels
-  output_folder: output/OD/trne/zoom16/run65/
+  output_folder: output/OD/trne/zoom16/run66/
   tile_size: 512      # per side, in pixels
   overwrite: True
   n_jobs: 10
@@ -76,7 +76,7 @@ match_colour.py:
 
 # Train the model with the detectron2 algorithm
 train_model.py:
-  working_directory: ./output/OD/trne/zoom16/run65/
+  working_directory: ./output/OD/trne/zoom16/run66/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files: # relative paths, w/ respect to the working_folder
@@ -90,7 +90,7 @@ train_model.py:
 
 # Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run65/
+  working_directory: ./output/OD/trne/zoom16/run66/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -99,4 +99,71 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ./logs/model_0001999.pth # 
+    pth_file: ./logs/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+  image_metadata_json: img_metadata.json
+  rdp_simplification:   # rdp = Ramer-Douglas-Peucker
+    enabled: true
+    epsilon: 2.0        # cf. https://rdp.readthedocs.io/en/latest/
+  score_lower_threshold: 0.05
+  remove_det_overlap: True
+
+
+# Evaluate the detection quality for the different datasets by calculating metrics
+assess_detections.py:
+  working_directory: ./output/OD/trne/zoom16/run66/
+  datasets:
+    ground_truth_labels: labels.geojson
+    split_aoi_tiles: split_aoi_tiles.geojson # aoi = Area of Interest
+    detections:
+      trn: trn_detections_at_0dot05_threshold.gpkg
+      val: val_detections_at_0dot05_threshold.gpkg
+      tst: tst_detections_at_0dot05_threshold.gpkg
+  output_folder: .
+  iou_threshold: 0.1
+  area_threshold: 50       # area under which the polygons are discarded from assessment
+
+
+# Assess the final results
+merge_detections.py:
+  working_dir: ./output/OD/trne/zoom16/run66/
+  labels: labels.geojson
+  detections:
+    trn: trn_detections_at_0dot05_threshold.gpkg
+    val: val_detections_at_0dot05_threshold.gpkg
+    tst: tst_detections_at_0dot05_threshold.gpkg
+  distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
+  iou_threshold: 0.1
+  score_threshold: 0.05
+  assess: True
+  
+
+# # Filtering and merging detection polygons to improve final results
+# filter_results.py:
+#   working_dir: ./data
+#   detections: ../output/OD/trne/zoom16/run60/tagged_detections_merged_at_0dot05_threshold.gpkg
+#   canton: Vaud
+#   zones_exclues:
+#     vaud: 
+#       pistes_avion: ./layers/Vaud/Pistes_aviation_MO_CSDUR.shp
+#       batiments: ./layers/Vaud/Batiments_en_surface_MO.shp
+#     ticino:
+#       batiments: ./layers/Ticino/Zones_batir_Ind.shp
+#   zones_infos:
+#     vaud: 
+#       sites_pollues: ./layers/Vaud/Sites_pollues_VD2022.shp
+#       sda: ./layers/Vaud/SDA_v5_2.shp
+#       slope: ./layers/Vaud/terrain_pente_VD.gpkg
+#     ticino:
+#       sda: ./layers/Ticino/Censimento_SAC_2023.shp
+#       slope: ./layers/Ticino/terrain_pente_TC.gpkg
+#   dem: ./DEM/switzerland_dem_EPSG2056.tif
+#   elevation_threshold: 600.0 # m, altitude threshold
+#   score_threshold: 0.1 # detection score (from 0 to 1) provided by detectron2
+#   area_threshold: 50.0 # m2, area threshold under which polygons are discarded
+#   overlap_threshold: 0.2 # surface ratio overlapped by another polygon from zones_infos 
+
+
+# Plots (optional)
+result_analysis.py:
+  working_dir: ./output/OD/trne/zoom16/run59/
+  detections: tagged_detections.gpkg

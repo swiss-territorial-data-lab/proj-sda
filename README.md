@@ -161,6 +161,8 @@ $ python scripts/merge_detections.py config/config_trne.yaml
 
 **Inference**: 
 
+Copy the file category_ids.json and the model to be used
+ 
 ```
 $ python scripts/prepare_data.py config/config_det.yaml
 $ python ../object-detector/scripts/generate_tilesets.py config/config_det.yaml

@@ -1,4 +1,4 @@
-# 1-Produce tile geometries based on the AoI extent and zoom level
+# Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
@@ -7,7 +7,7 @@ prepare_data.py:
   zoom_level: 16 
 
 
-# 2-Fetch of tiles (online server) and split into 3 datasets: train, test, validation
+# Fetch of tiles (online server) and split into 3 datasets: train, test, validation
 generate_tilesets.py:
   debug_mode: 
     enable: True  # sample of tiles
@@ -35,7 +35,7 @@ generate_tilesets.py:
     license:
       name: Unknown
       url:
-    categories_file: ./output/OD/trne/category_ids.json
+    categories_file: ./output/OD/det/SWISSIMAGE_YEAR/category_ids.json
 
 
 # Object detection with the optimised trained model
@@ -47,7 +47,7 @@ make_detections.py:
     oth: COCO_oth.json
   detectron2_config_file: ../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../trne/logs/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../../../model/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: true
@@ -67,7 +67,7 @@ merge_detections.py:
   assess: False
   
 
-# 4-Filtering and merging detection polygons to improve final results
+# Filtering and merging detection polygons to improve final results
 filter_results.py:
   working_dir: ./data
   detections: ../output/OD/det/SWISSIMAGE_YEAR/tagged_detections_merged_at_0dot05_threshold.gpkg

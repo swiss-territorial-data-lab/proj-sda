@@ -51,8 +51,8 @@ if __name__ == "__main__":
     WORKING_DIR = cfg['working_dir']
     DETECTIONS = cfg['detections']
     CANTON = cfg['canton'][0].lower() + cfg['canton'][1:]
-    PISTES_AVION = cfg['zones_exclues'][CANTON]['pistes_avion'] if 'pistes_avion' in cfg['zones_exclues'][CANTON].keys() else None
-    BAT = cfg['zones_exclues'][CANTON]['batiments'] if 'pistes_avion' in cfg['zones_exclues'][CANTON].keys() else None
+    PISTES_AVION = cfg['zones_infos'][CANTON]['pistes_avion'] if 'pistes_avion' in cfg['zones_infos'][CANTON].keys() else None
+    BAT = cfg['zones_infos'][CANTON]['batiments'] if 'pistes_avion' in cfg['zones_infos'][CANTON].keys() else None
     SITES_POLLUES = cfg['zones_infos'][CANTON]['sites_pollues'] if 'sites_pollues' in cfg['zones_infos'][CANTON].keys() else None
     SDA = cfg['zones_infos'][CANTON]['sda'] if 'sda' in cfg['zones_infos'][CANTON].keys() else None
     SLOPE = cfg['zones_infos'][CANTON]['slope'] if 'slope' in cfg['zones_infos'][CANTON].keys() else None
@@ -60,7 +60,6 @@ if __name__ == "__main__":
     SCORE_THD = cfg['score_threshold']
     AREA_THD = cfg['area_threshold']
     ELEVATION_THD = cfg['elevation_threshold']
-    OVERLAP_THD = cfg['overlap_threshold']
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')
@@ -156,7 +155,7 @@ if __name__ == "__main__":
     sc = len(detections_score_gdf)
     logger.info(f"{tdem - ta - sc} detections were removed by score filtering (score threshold = {SCORE_THD})")
  
-    # Indicate if polygons are intersecting relevant vector layers with a min thd of 20% of the detection covered
+    # Indicate if polygons are intersecting relevant vector layers
     detections_infos_gdf = detections_score_gdf.copy()
     for key in info_dict.keys():
         gdf = info_dict[key]
@@ -167,7 +166,8 @@ if __name__ == "__main__":
         detections_join_gdf[f'{key}'] = np.where(detections_join_gdf[f'{key}_id'].notnull(), 'yes', 'no')
         detections_infos_gdf = pd.merge(detections_infos_gdf, detections_join_gdf[[f'{key}', f'{key}_geom', 'det_id']], on='det_id', how='left')
         detections_infos_gdf = compare_geom(detections_infos_gdf, key)
-        detections_infos_gdf[f'{key}'] = np.where(detections_infos_gdf['overlap'] < OVERLAP_THD, 'no', 'yes')
+        # detections_infos_gdf[f'{key}'] = np.where(detections_infos_gdf['overlap'] < OVERLAP_THD, 'no', 'yes')
+        detections_infos_gdf[f'{key}'] = detections_infos_gdf['overlap']
         detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom', 'overlap'])
         # detections_infos_gdf = detections_infos_gdf.drop_duplicates(subset=['det_id'])
         detections_infos_gdf = detections_infos_gdf.groupby('det_id',sort=False).apply(lambda x: x if len(x)==1 else x.loc[x[f'{key}'].ne('no')]).reset_index(drop=True)
