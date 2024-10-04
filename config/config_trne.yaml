@@ -1,4 +1,4 @@
-# 1-Produce tile geometries based on the AoI extent and zoom level
+# Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
@@ -7,18 +7,18 @@ prepare_data.py:
     # empty_tiles_aoi: ./data/AoI/AoI_2020.shp                    # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
     empty_tiles_shp: ./data/EPT/20240726_EPT.gpkg             # Provided shpfile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
     category: 'Classe'
-  output_folder: ./output/OD/trne/zoom16/run49/
+  output_folder: ./output/OD/trne/
   zoom_level: 16 
 
-# 2-Fetch of tiles (online server) and split into 3 datasets: train, test, validation
+# Fetch of tiles (online server) and split into 3 datasets: train, test, validation
 generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
     nb_tiles_max: 10
   working_directory: .
   datasets:
-    aoi_tiles: output/OD/trne/zoom16/run49/tiles.geojson
-    ground_truth_labels: output/OD/trne/zoom16/run49/labels.geojson
+    aoi_tiles: output/OD/trne/tiles.geojson
+    ground_truth_labels: output/OD/trne/labels.geojson
     # FP_labels: output/OD/trne/FP.geojson
     image_source:
       # ############# 
@@ -39,7 +39,7 @@ generate_tilesets.py:
     tiles_frac: 0.5       # fraction (relative to the number of tiles intersecting labels) of empty tiles to add
     frac_trn: 0.75        # fraction of empty tiles to add to the trn dataset, then the remaining tiles will be split in 2 and added to tst and val datasets
     keep_oth_tiles: False # keep tiles in oth dataset not intersecting oth labels
-  output_folder: output/OD/trne/zoom16/run49/
+  output_folder: output/OD/trne/
   tile_size: 256      # per side, in pixels
   overwrite: True
   n_jobs: 10
@@ -70,9 +70,9 @@ match_colour.py:
   method: scikit
   plot: False
 
-# 3-Train the model with the detectron2 algorithm
+# Train the model with the detectron2 algorithm
 train_model.py:
-  working_directory: ./output/OD/trne/zoom16/run49/
+  working_directory: ./output/OD/trne/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files: # relative paths, w/ respect to the working_folder
@@ -83,9 +83,9 @@ train_model.py:
   model_weights:
     model_zoo_checkpoint_url: COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml
 
-# 4-Object detection with the optimised trained model
+# Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run49/
+  working_directory: ./output/OD/trne/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -101,9 +101,9 @@ make_detections.py:
     epsilon: 2.0        # cf. https://rdp.readthedocs.io/en/latest/
   score_lower_threshold: 0.05
     
-# 5-Evaluate the quality of the detections for the different datasets by calculating metrics
+# Evaluate the quality of the detections for the different datasets by calculating metrics
 assess_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run49/
+  working_directory: ./output/OD/trne/
   datasets:
     ground_truth_labels: labels.geojson
     image_metadata_json: img_metadata.json
