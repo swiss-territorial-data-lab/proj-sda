@@ -108,7 +108,7 @@ if __name__ == "__main__":
     if 'empty_tiles_aoi' in cfg['datasets'].keys() and 'empty_tiles_shp' in cfg['datasets'].keys():
         logger.error("Choose one option between providing an AoI shapefile ('empty_tiles_aoi') in which empty tiles will be selected and a shapefile with selected empty tiles ('empty_tiles_shp')")
         sys.exit(1)    
-    if 'empty_tiles_aoi' in cfg['datasets'].keys():
+    elif 'empty_tiles_aoi' in cfg['datasets'].keys():
         EPT_SHPFILE = cfg['datasets']['empty_tiles_aoi']
         EPT = 'aoi'
     elif 'empty_tiles_shp' in cfg['datasets'].keys():
@@ -162,10 +162,7 @@ if __name__ == "__main__":
         fp_labels_4326.to_file(filepath, driver='GeoJSON')
         written_files.append(filepath)  
         logger.success(f"{DONE_MSG} A file was written: {filepath}")
-
         labels_4326 = pd.concat([labels_4326, fp_labels_4326], ignore_index=True)
-    else:
-        labels_4326 = labels_4326
 
     # Keep only label boundary geometry info (minx, miny, maxx, maxy) 
     logger.info("- Get the label boundaries")  
@@ -191,7 +188,7 @@ if __name__ == "__main__":
 
             if aoi_bbox_contains:
                 logger.info("- The surface area occupied by the bbox of the AoI used to find empty tiles is bigger than the label's one. The AoI boundaries will be used for tiling") 
-                boundaries_df = EPT_aoi_boundaries_df
+                boundaries_df = EPT_aoi_boundaries_df.copy()
             else:
                 logger.info("- The surface area occupied by the bbox of the AoI used to find empty tiles is smaller than the label's one. Both the AoI and labels area will be used for tiling") 
                 # Get tiles coordinates and shapes
@@ -213,9 +210,9 @@ if __name__ == "__main__":
         tiles_4326_aoi = gpd.sjoin(tiles_4326_aoi, EPT_aoi_4326, how='inner', lsuffix='ept_tiles', rsuffix='ept_aoi', predicate='intersects')
 
     # Compute labels intersecting tiles 
-    tiles_gt_4326 = gpd.sjoin(tiles_4326_aoi, labels_4326, how='inner', predicate='intersects')
-    tiles_gt_4326.drop_duplicates('title', inplace=True)
-    logger.info(f"- Number of tiles intersecting GT labels = {len(tiles_gt_4326)}")
+    tiles_4326_gt = gpd.sjoin(tiles_4326_aoi, labels_4326, how='inner', predicate='intersects')
+    tiles_4326_gt.drop_duplicates('title', inplace=True)
+    logger.info(f"- Number of tiles intersecting GT labels = {len(tiles_4326_gt)}")
     if FP_SHPFILE:
         tiles_fp_4326 = gpd.sjoin(tiles_4326_aoi, fp_labels_4326, how='inner', predicate='intersects')
         tiles_fp_4326.drop_duplicates('title', inplace=True)
@@ -223,15 +220,14 @@ if __name__ == "__main__":
 
     if not EPT_SHPFILE or EPT_SHPFILE and aoi_bbox_contains == False:
         # Keep only tiles intersecting labels 
-        tiles_4326_aoi = gpd.sjoin(tiles_4326_aoi, labels_4326, how='inner', predicate='intersects')
-        tiles_4326_aoi.drop_duplicates('title', inplace=True)
+        tiles_4326_aoi = tiles_4326_gt.copy()
  
     # Get all the tiles in one gdf 
     if EPT_SHPFILE and aoi_bbox_contains == False:
         logger.info("- Add label tiles to empty AoI tiles") 
         tiles_4326_all = pd.concat([tiles_4326_aoi, empty_tiles_4326_aoi])
     else: 
-        tiles_4326_all = tiles_4326_aoi
+        tiles_4326_all = tiles_4326_aoi.copy()
     
     # - Remove duplicated tiles
     if nb_labels > 1:
