@@ -40,7 +40,7 @@ def add_tile_id(row):
     return row
 
 
-def aoi_tiling(gdf):
+def aoi_tiling(gdf, tms='WebMercatorQuad'):
     """Tiling of an AoI
 
     Args:
@@ -51,7 +51,7 @@ def aoi_tiling(gdf):
     """
 
     # Grid definition
-    tms = morecantile.tms.get('WebMercatorQuad')    # epsg:3857
+    tms = morecantile.tms.get(tms)    # epsg:3857
 
     tiles_all = [] 
     for boundary in gdf.itertuples():
