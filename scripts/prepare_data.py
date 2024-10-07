@@ -168,15 +168,13 @@ if __name__ == "__main__":
         logger.success(f"{DONE_MSG} A file was written: {filepath}")
 
         labels_4326 = pd.concat([labels_4326, fp_labels_4326], ignore_index=True)
-    else:
-        labels_4326 = labels_4326
 
     # Keep only label boundary geometry info (minx, miny, maxx, maxy) 
     logger.info("- Get the label boundaries")  
     boundaries_df = labels_4326.bounds
 
     # Get the boundaries for all the labels (minx, miny, maxx, maxy) 
-    global_boundaries_gdf = labels_4326.dissolve() if len(labels_4326) > 0 else labels_4326
+    global_boundaries_gdf = labels_4326.copy()
     labels_bbox = bbox(global_boundaries_gdf.iloc[0].geometry.bounds)
 
     # Get tiles for a given AoI from which empty tiles will be selected when the images are retrieved
@@ -186,7 +184,7 @@ if __name__ == "__main__":
         
         if EPT == 'aoi':
             logger.info("- Get AoI boundaries")  
-            EPT_aoi_boundaries_df = EPT_aoi_4326.bounds
+            EPT_aoi_boundaries_df = pd.DataFrame(EPT_aoi_boundaries_gdf.iloc[0].geometry.bounds).T
 
             # Get the boundaries for all the AoI (minx, miny, maxx, maxy) 
             EPT_aoi_boundaries_gdf = EPT_aoi_4326.dissolve() if len(EPT_aoi_4326) > 0 else EPT_aoi_4326
@@ -203,7 +201,7 @@ if __name__ == "__main__":
                 # Delete tiles outside of the AoI limits 
                 empty_tiles_4326_aoi = gpd.sjoin(empty_tiles_4326_all, EPT_aoi_4326, how='inner', lsuffix='ept_tiles', rsuffix='ept_aoi')
         elif EPT == 'shp':
-            empty_tiles_4326_aoi = EPT_aoi_4326
+            empty_tiles_4326_aoi = EPT_aoi_4326.copy()
             aoi_bbox = None
             aoi_bbox_contains = False
 
@@ -225,7 +223,7 @@ if __name__ == "__main__":
         logger.info("- Add label tiles to empty AoI tiles") 
         tiles_4326_all = pd.concat([tiles_4326_aoi, empty_tiles_4326_aoi])
     else: 
-        tiles_4326_all = tiles_4326_aoi
+        tiles_4326_all = tiles_4326_aoi.copy()
 
     # - Remove useless columns, reset feature id and redefine it according to xyz format  
     logger.info('- Add tile IDs and reorganise data set')
