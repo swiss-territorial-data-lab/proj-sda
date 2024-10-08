@@ -169,7 +169,7 @@ if __name__ == "__main__":
     boundaries_df = labels_4326.bounds
 
     # Get the boundaries for all the labels (minx, miny, maxx, maxy) 
-    global_boundaries_gdf = labels_4326.dissolve() if len(labels_4326) > 0 else labels_4326
+    global_boundaries_gdf = labels_4326.copy()
     labels_bbox = bbox(global_boundaries_gdf.iloc[0].geometry.bounds)
 
     # Get tiles for a given AoI from which empty tiles will be selected when the images are retrieved
@@ -182,13 +182,13 @@ if __name__ == "__main__":
             EPT_aoi_boundaries_df = EPT_aoi_4326.bounds
 
             # Get the boundaries for all the AoI (minx, miny, maxx, maxy) 
-            EPT_aoi_boundaries_gdf = EPT_aoi_4326.dissolve() if len(EPT_aoi_4326) > 0 else EPT_aoi_4326
+            EPT_aoi_boundaries_gdf = EPT_aoi_4326.copy()
             aoi_bbox = bbox(EPT_aoi_boundaries_gdf.iloc[0].geometry.bounds)
             aoi_bbox_contains = aoi_bbox.contains(labels_bbox)
 
             if aoi_bbox_contains:
                 logger.info("- The surface area occupied by the bbox of the AoI used to find empty tiles is bigger than the label's one. The AoI boundaries will be used for tiling") 
-                boundaries_df = EPT_aoi_boundaries_df.copy()
+                boundaries_df = pd.DataFrame(EPT_aoi_boundaries_df.iloc[0].geometry.bounds).T
             else:
                 logger.info("- The surface area occupied by the bbox of the AoI used to find empty tiles is smaller than the label's one. Both the AoI and labels area will be used for tiling") 
                 # Get tiles coordinates and shapes
