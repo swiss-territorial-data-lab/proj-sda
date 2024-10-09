@@ -135,32 +135,6 @@ merge_detections.py:
   iou_threshold: 0.1
   score_threshold: 0.05
   assess: True
-  
-
-# # Filtering and merging detection polygons to improve final results
-# filter_results.py:
-#   working_dir: ./data
-#   detections: ../output/OD/trne/zoom16/run60/tagged_detections_merged_at_0dot05_threshold.gpkg
-#   canton: Vaud
-#   zones_exclues:
-#     vaud: 
-#       pistes_avion: ./layers/Vaud/Pistes_aviation_MO_CSDUR.shp
-#       batiments: ./layers/Vaud/Batiments_en_surface_MO.shp
-#     ticino:
-#       batiments: ./layers/Ticino/Zones_batir_Ind.shp
-#   zones_infos:
-#     vaud: 
-#       sites_pollues: ./layers/Vaud/Sites_pollues_VD2022.shp
-#       sda: ./layers/Vaud/SDA_v5_2.shp
-#       slope: ./layers/Vaud/terrain_pente_VD.gpkg
-#     ticino:
-#       sda: ./layers/Ticino/Censimento_SAC_2023.shp
-#       slope: ./layers/Ticino/terrain_pente_TC.gpkg
-#   dem: ./DEM/switzerland_dem_EPSG2056.tif
-#   elevation_threshold: 600.0 # m, altitude threshold
-#   score_threshold: 0.1 # detection score (from 0 to 1) provided by detectron2
-#   area_threshold: 50.0 # m2, area threshold under which polygons are discarded
-#   overlap_threshold: 0.2 # surface ratio overlapped by another polygon from zones_infos 
 
 
 # Plots (optional)
