@@ -18,6 +18,19 @@ logger = misc.format_logger(logger)
 
 
 def compare_geom(gdf, key):
+    geom1 = gdf.geometry.values.tolist()
+    geom2 = gdf[f'{key}_geom'].values.tolist()    
+    overlap = []
+    for n in range(len(gdf)):
+        i = geom1[n] 
+        ii = geom2[n] 
+        if i == None or ii == None:
+            overlap.append(0)
+        else:
+            overlap.append(misc.overlap(i, ii))
+            print(overlap)
+    gdf['overlap'] = overlap
+    print(gdf['overlap'])
 
     gdf['overlap'] = gdf.apply(lambda row: misc.overlap(row['geometry'], row[f'{key}_geom']) if row['geometry'] and row[f'{key}_geom'] != None else 0, axis=1)
     # print(gdf['overlap'])
@@ -101,12 +114,12 @@ if __name__ == "__main__":
     aoi_gdf = gpd.read_file(AOI)
     aoi_gdf = aoi_gdf.to_crs(2056)
 
-    if LANDING_STRIP:
-        pa_gdf = gpd.read_file(LANDING_STRIP)
-        pa_gdf = pa_gdf.to_crs(2056)
-        pa_gdf['pistes_avion_id'] = pa_gdf.index
+    if AGRI_AREA:
+        agri_gdf = gpd.read_file(AGRI_AREA)
+        agri_gdf = agri_gdf.to_crs(2056)
+        agri_gdf['agri_id'] = agri_gdf.index
     else:
-        pa_gdf = gpd.GeoDataFrame()
+        agri_gdf = gpd.GeoDataFrame()
     if BAT:
         bat_gdf = gpd.read_file(BAT)
         bat_gdf = bat_gdf.to_crs(2056)
@@ -119,18 +132,49 @@ if __name__ == "__main__":
         bat_bat_gdf['batiments_batir_id'] = bat_bat_gdf.index
     else:
         bat_bat_gdf = gpd.GeoDataFrame()
-    if SITES_POLLUES:
-        sites_pollues_gdf = gpd.read_file(SITES_POLLUES)
-        sites_pollues_gdf = sites_pollues_gdf.to_crs(2056)
-        sites_pollues_gdf['sites_pollues_id'] = sites_pollues_gdf.index
+    if GRANDS_COURS_EAU:
+        gd_cours_eau_gdf = gpd.read_file(GRANDS_COURS_EAU)
+        gd_cours_eau_gdf = gd_cours_eau_gdf.to_crs(2056)
+        gd_cours_eau_gdf['gd_cours_eau_id'] = gd_cours_eau_gdf.index
     else:
-        sites_pollues_gdf = gpd.GeoDataFrame()
+        gd_cours_eau_gdf = gpd.GeoDataFrame()
+    if FORESTS:
+        forests_gdf = gpd.read_file(FORESTS)
+        forests_gdf = forests_gdf.to_crs(2056)
+        forests_gdf['forests_id'] = forests_gdf.index
+    else:
+        forests_gdf = gpd.GeoDataFrame() 
+    if LANDING_STRIP:
+        ls_gdf = gpd.read_file(LANDING_STRIP)
+        ls_gdf = ls_gdf.to_crs(2056)
+        ls_gdf['pistes_avion_id'] = ls_gdf.index
+    else:
+        ls_gdf = gpd.GeoDataFrame()
+    if PROTECTED_AREA:
+        protected_gdf = gpd.read_file(PROTECTED_AREA)
+        protected_gdf = protected_gdf.to_crs(2056)
+        protected_gdf['protected_id'] = protected_gdf.index
+    else:
+        protected_gdf = gpd.GeoDataFrame()
+    if PROTECTED_UG_WATER:
+        protected_water_gdf = gpd.read_file(PROTECTED_UG_WATER)
+        protected_water_gdf = protected_water_gdf.to_crs(2056)
+        protected_water_gdf['protected_water_id'] = protected_water_gdf.index
+    else:
+        protected_water_gdf = gpd.GeoDataFrame()
     if SDA:
         sda_gdf = gpd.read_file(SDA)
         sda_gdf = sda_gdf.to_crs(2056)
         sda_gdf['sda_id'] = sda_gdf.index
     else:
         sda_gdf = gpd.GeoDataFrame()
+    if SITES_POLLUES:
+        sites_pollues_gdf = gpd.read_file(SITES_POLLUES)
+        sites_pollues_gdf = sites_pollues_gdf.to_crs(2056)
+        sites_pollues_gdf['sites_pollues_id'] = sites_pollues_gdf.index
+    else:
+        sites_pollues_gdf = gpd.GeoDataFrame()
+
     feature = f'./layers/{CANTON[0].upper() + CANTON[1:]}/slope.gpkg'
     if os.path.isfile(feature):
         logger.info(f'{feature} already exists.')
@@ -144,23 +188,9 @@ if __name__ == "__main__":
         slope_gdf['slope_>18%_id'] = slope_gdf.index
         slope_gdf.to_file(feature)
 
-    info_dict = {'batiments': bat_gdf, 'batiments_batir': bat_bat_gdf, 'landing_strip': pa_gdf, 'sda': sda_gdf,
-    'sites_pollues': sites_pollues_gdf, 'slope_>18%': slope_gdf}
-
-
-    AGRI_AREA = cfg['zones_infos'][CANTON]['agri_area'] if 'agri_area' in cfg['zones_infos'][CANTON].keys() else None
-    BAT = cfg['zones_infos'][CANTON]['batiments'] if 'batiments' in cfg['zones_infos'][CANTON].keys() else None
-    BAT_BATIR = cfg['zones_infos'][CANTON]['batiments_batir'] if 'batiments_batir' in cfg['zones_infos'][CANTON].keys() else None
-    FORESTS = cfg['zones_infos'][CANTON]['forests'] if 'forests' in cfg['zones_infos'][CANTON].keys() else None
-    GRANDS_COURS_EAU = cfg['zones_infos'][CANTON]['grands_cours_eau'] if 'grands_cours_eau' in cfg['zones_infos'][CANTON].keys() else None
-    LANDING_STRIP = cfg['zones_infos'][CANTON]['landing_strip'] if 'landing_strip' in cfg['zones_infos'][CANTON].keys() else None
-    PROTECTED_AREA = cfg['zones_infos'][CANTON]['protected_area'] if 'protected_area' in cfg['zones_infos'][CANTON].keys() else None
-    PROTECTED_UG_WATER = cfg['zones_infos'][CANTON]['protected_underground_water'] if 'protected_underground_water' in cfg['zones_infos'][CANTON].keys() else None
-    SDA = cfg['zones_infos'][CANTON]['sda'] if 'sda' in cfg['zones_infos'][CANTON].keys() else None
-    SITES_POLLUES 
-
-
-
+    info_dict = {'agri_area': agri_gdf, 'batiments': bat_gdf, 'batiments_batir': bat_bat_gdf, 'forests': forests_gdf,
+    'gd_cours_eau': gd_cours_eau_gdf, 'landing_strip': ls_gdf, 'protected_area': protected_gdf, 'protected_water': protected_water_gdf, 
+    'sda': sda_gdf, 'sites_pollues': sites_pollues_gdf, 'slope_>18%': slope_gdf}
 
 
     # Discard polygons detected at/below 0 m and above the threshold elevation and above a given slope
@@ -196,11 +226,17 @@ if __name__ == "__main__":
             gdf = info_dict[key].copy()
             gdf = gpd.clip(gdf, aoi_gdf)
             gdf[f'{key}_geom'] = gdf.geometry 
+            print('0')
             detections_temp_gdf = detections_score_gdf.copy() 
-            detections_join_gdf = gpd.sjoin(detections_temp_gdf, gdf, how='left', predicate='intersects')      
+            print('1')
+            detections_join_gdf = gpd.sjoin(detections_temp_gdf, gdf, how='left', predicate='intersects')  
+            print('2')    
             detections_infos_gdf = pd.merge(detections_infos_gdf, detections_join_gdf[[f'{key}_geom', 'det_id']], on='det_id', how='left')
+            print('3')
             detections_infos_gdf[f'{key}'] = detections_infos_gdf.apply(lambda x: misc.overlap(x['geometry'], x[f'{key}_geom']) if x['geometry'] and x[f'{key}_geom'] != None else 0, axis=1)
+            print('4')
             detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom'])
+            print('5')
             detections_infos_gdf = detections_infos_gdf.groupby('det_id',sort=False).apply(lambda x: x if len(x)==1 else x.loc[x[f'{key}'].ne('no')]).reset_index(drop=True)
     # Compute the nearest distance between detections and sda
     detections_infos_gdf = gpd.sjoin_nearest(detections_infos_gdf, sda_gdf[['sda_id', 'geometry']], how='left', distance_col='distance_sda')

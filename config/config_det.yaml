@@ -3,7 +3,7 @@ prepare_data.py:
   srs: EPSG:2056
   datasets:
     shapefile: ./data/AoI/Ticino/Secteur_test_TC.gpkg               
-  output_folder: ./output/OD/det/ticino/test/1995/
+  output_folder: ./output/OD/det/ticino/test/2020/
   zoom_level: 16 
 
 
@@ -14,14 +14,14 @@ generate_tilesets.py:
     nb_tiles_max: 500
   working_directory: .
   datasets:
-    aoi_tiles: ./output/OD/det/ticino/test/1995/tiles.geojson
+    aoi_tiles: ./output/OD/det/ticino/test/2020/tiles.geojson
     image_source:
       # ############ 
       type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
-      year: 1995                  # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
+      year: 2020                  # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
       location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
       # ############ 
-  output_folder: ./output/OD/det/ticino/test/1995/
+  output_folder: ./output/OD/det/ticino/test/2020/
   tile_size: 256      # per side, in pixels
   overwrite: True
   n_jobs: 10
@@ -40,7 +40,7 @@ generate_tilesets.py:
 
 # Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/OD/det/ticino/test/1995/
+  working_directory: ./output/OD/det/ticino/test/2020/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -58,7 +58,7 @@ make_detections.py:
 
 # Assess the final results
 merge_detections.py:
-  working_dir: ./output/OD/det/ticino/test/1995/
+  working_dir: ./output/OD/det/ticino/test/2020/
   detections:
     oth: oth_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
@@ -75,7 +75,7 @@ filter_results.py:
   canton: vaud
   zones_infos:
     vaud: 
-      landing_strip: ./layers/Vaud/Pistes_aviation_MO_CSDUR.shp
+      pistes_avion: ./layers/Vaud/Pistes_aviation_MO_CSDUR.shp
       batiments: ./layers/Vaud/Batiments_en_surface_MO.shp
       batiments_batir: ./layers/Vaud/Affectation_Zone_a_batir.gpkg
       sites_pollues: ./layers/Vaud/Sites_pollues_VD2022.shp
@@ -89,7 +89,7 @@ filter_results.py:
       protected_underground_water: ./layers/Ticino/Protezione_acque_sott.shp
       sites_pollues: ./layers/Ticino/Siti_inquinati.shp
       sda: ./layers/Ticino/Censimento_SAC_2023.shp
-      slope: ./layers/Ticino/terrain_pente_TC.gpkg
+      slope: ./layers/Ticino/terrain_pente_TC_SA.gpkg
   dem: ./DEM/switzerland_dem_EPSG2056.tif
   elevation_threshold: 5000.0 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
