@@ -18,17 +18,28 @@ logger = misc.format_logger(logger)
 
 
 def compare_geom(gdf, key):
-    geom1 = gdf.geometry.values.tolist()
-    geom2 = gdf[f'{key}_geom'].values.tolist()    
-    overlap = []
-    for n in range(len(gdf)):
-        i = geom1[n] 
-        ii = geom2[n] 
-        if i == None or ii == None:
-            overlap.append(0)
-        else:
-            overlap.append(misc.overlap(i, ii))
-    gdf['overlap'] = overlap
+
+    gdf['overlap'] = gdf.apply(lambda row: misc.overlap(row['geometry'], row[f'{key}_geom']) if row['geometry'] and row[f'{key}_geom'] != None else 0, axis=1)
+    # print(gdf['overlap'])
+    # print()
+    # exit(gdf['overlap'])
+    # geom1 = gdf.geometry.values.tolist()
+    # print('*****')
+    # print(key)
+    # print(len(gdf[f'{key}_geom']))
+    # geom2 = gdf[f'{key}_geom'].values.tolist() 
+    # print('-----')   
+    # overlap = []
+    # for n in range(len(gdf)):
+    #     i = geom1[n] 
+    #     ii = geom2[n] 
+    #     if i == None or ii == None:
+    #         overlap.append(0)
+    #     else:
+    #         overlap.append(misc.overlap(i, ii))
+    # gdf['overlap'] = overlap
+    # # print(gdf['overlap'])
+    # print('hello')
 
     return gdf
 
@@ -54,11 +65,16 @@ if __name__ == "__main__":
     AOI = cfg['aoi']
     DETECTIONS = cfg['detections']
     CANTON = cfg['canton'][0].lower() + cfg['canton'][1:]
-    PISTES_AVION = cfg['zones_infos'][CANTON]['pistes_avion'] if 'pistes_avion' in cfg['zones_infos'][CANTON].keys() else None
+    AGRI_AREA = cfg['zones_infos'][CANTON]['agri_area'] if 'agri_area' in cfg['zones_infos'][CANTON].keys() else None
     BAT = cfg['zones_infos'][CANTON]['batiments'] if 'batiments' in cfg['zones_infos'][CANTON].keys() else None
     BAT_BATIR = cfg['zones_infos'][CANTON]['batiments_batir'] if 'batiments_batir' in cfg['zones_infos'][CANTON].keys() else None
-    SITES_POLLUES = cfg['zones_infos'][CANTON]['sites_pollues'] if 'sites_pollues' in cfg['zones_infos'][CANTON].keys() else None
+    FORESTS = cfg['zones_infos'][CANTON]['forests'] if 'forests' in cfg['zones_infos'][CANTON].keys() else None
+    GRANDS_COURS_EAU = cfg['zones_infos'][CANTON]['grands_cours_eau'] if 'grands_cours_eau' in cfg['zones_infos'][CANTON].keys() else None
+    LANDING_STRIP = cfg['zones_infos'][CANTON]['landing_strip'] if 'landing_strip' in cfg['zones_infos'][CANTON].keys() else None
+    PROTECTED_AREA = cfg['zones_infos'][CANTON]['protected_area'] if 'protected_area' in cfg['zones_infos'][CANTON].keys() else None
+    PROTECTED_UG_WATER = cfg['zones_infos'][CANTON]['protected_underground_water'] if 'protected_underground_water' in cfg['zones_infos'][CANTON].keys() else None
     SDA = cfg['zones_infos'][CANTON]['sda'] if 'sda' in cfg['zones_infos'][CANTON].keys() else None
+    SITES_POLLUES = cfg['zones_infos'][CANTON]['sites_pollues'] if 'sites_pollues' in cfg['zones_infos'][CANTON].keys() else None
     SLOPE = cfg['zones_infos'][CANTON]['slope'] if 'slope' in cfg['zones_infos'][CANTON].keys() else None
     DEM = cfg['dem']
     SCORE_THD = cfg['score_threshold']
@@ -85,8 +101,8 @@ if __name__ == "__main__":
     aoi_gdf = gpd.read_file(AOI)
     aoi_gdf = aoi_gdf.to_crs(2056)
 
-    if PISTES_AVION:
-        pa_gdf = gpd.read_file(PISTES_AVION)
+    if LANDING_STRIP:
+        pa_gdf = gpd.read_file(LANDING_STRIP)
         pa_gdf = pa_gdf.to_crs(2056)
         pa_gdf['pistes_avion_id'] = pa_gdf.index
     else:
@@ -128,8 +144,24 @@ if __name__ == "__main__":
         slope_gdf['slope_>18%_id'] = slope_gdf.index
         slope_gdf.to_file(feature)
 
-    info_dict = {'pistes_avion': pa_gdf, 'batiments': bat_gdf, 'batiments_batir': bat_bat_gdf, 'slope_>18%': slope_gdf, 
-    'sites_pollues': sites_pollues_gdf, 'sda': sda_gdf}
+    info_dict = {'batiments': bat_gdf, 'batiments_batir': bat_bat_gdf, 'landing_strip': pa_gdf, 'sda': sda_gdf,
+    'sites_pollues': sites_pollues_gdf, 'slope_>18%': slope_gdf}
+
+
+    AGRI_AREA = cfg['zones_infos'][CANTON]['agri_area'] if 'agri_area' in cfg['zones_infos'][CANTON].keys() else None
+    BAT = cfg['zones_infos'][CANTON]['batiments'] if 'batiments' in cfg['zones_infos'][CANTON].keys() else None
+    BAT_BATIR = cfg['zones_infos'][CANTON]['batiments_batir'] if 'batiments_batir' in cfg['zones_infos'][CANTON].keys() else None
+    FORESTS = cfg['zones_infos'][CANTON]['forests'] if 'forests' in cfg['zones_infos'][CANTON].keys() else None
+    GRANDS_COURS_EAU = cfg['zones_infos'][CANTON]['grands_cours_eau'] if 'grands_cours_eau' in cfg['zones_infos'][CANTON].keys() else None
+    LANDING_STRIP = cfg['zones_infos'][CANTON]['landing_strip'] if 'landing_strip' in cfg['zones_infos'][CANTON].keys() else None
+    PROTECTED_AREA = cfg['zones_infos'][CANTON]['protected_area'] if 'protected_area' in cfg['zones_infos'][CANTON].keys() else None
+    PROTECTED_UG_WATER = cfg['zones_infos'][CANTON]['protected_underground_water'] if 'protected_underground_water' in cfg['zones_infos'][CANTON].keys() else None
+    SDA = cfg['zones_infos'][CANTON]['sda'] if 'sda' in cfg['zones_infos'][CANTON].keys() else None
+    SITES_POLLUES 
+
+
+
+
 
     # Discard polygons detected at/below 0 m and above the threshold elevation and above a given slope
     dem = rasterio.open(DEM)
@@ -157,19 +189,18 @@ if __name__ == "__main__":
     # Indicate if polygons are intersecting relevant vector layers
     detections_infos_gdf = detections_score_gdf.copy()
     for key in info_dict.keys():
+        print(key)
         if info_dict[key].empty:
             pass
         else:
             gdf = info_dict[key].copy()
             gdf = gpd.clip(gdf, aoi_gdf)
             gdf[f'{key}_geom'] = gdf.geometry 
-            detections_temp_gdf = detections_score_gdf.copy()   
-            detections_join_gdf = gpd.sjoin(detections_temp_gdf, gdf, how='left', predicate='intersects')
-            detections_join_gdf[f'{key}'] = np.where(detections_join_gdf[f'{key}_id'].notnull(), 'yes', 'no')
-            detections_infos_gdf = pd.merge(detections_infos_gdf, detections_join_gdf[[f'{key}', f'{key}_geom', 'det_id']], on='det_id', how='left')
-            detections_infos_gdf = compare_geom(detections_infos_gdf, key)
-            detections_infos_gdf[f'{key}'] = detections_infos_gdf['overlap']
-            detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom', 'overlap'])
+            detections_temp_gdf = detections_score_gdf.copy() 
+            detections_join_gdf = gpd.sjoin(detections_temp_gdf, gdf, how='left', predicate='intersects')      
+            detections_infos_gdf = pd.merge(detections_infos_gdf, detections_join_gdf[[f'{key}_geom', 'det_id']], on='det_id', how='left')
+            detections_infos_gdf[f'{key}'] = detections_infos_gdf.apply(lambda x: misc.overlap(x['geometry'], x[f'{key}_geom']) if x['geometry'] and x[f'{key}_geom'] != None else 0, axis=1)
+            detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom'])
             detections_infos_gdf = detections_infos_gdf.groupby('det_id',sort=False).apply(lambda x: x if len(x)==1 else x.loc[x[f'{key}'].ne('no')]).reset_index(drop=True)
     # Compute the nearest distance between detections and sda
     detections_infos_gdf = gpd.sjoin_nearest(detections_infos_gdf, sda_gdf[['sda_id', 'geometry']], how='left', distance_col='distance_sda')

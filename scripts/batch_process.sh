@@ -6,7 +6,7 @@
 
 echo 'Run batch processes to make quarries detection over several years'
 
-for year in 2020       # list of years to process (no comma: YEAR1 YEAR2 YEAR3 ...) 
+for year in 1995      # list of years to process (no comma: YEAR1 YEAR2 YEAR3 ...) 
 do
     echo ' '
     echo '-----------'

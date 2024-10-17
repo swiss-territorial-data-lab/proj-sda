@@ -3,7 +3,7 @@ prepare_data.py:
   srs: EPSG:2056
   datasets:
     shapefile: ./data/AoI/Ticino/Secteur_test_TC.gpkg               
-  output_folder: ./output/OD/det/ticino/test/2023/
+  output_folder: ./output/OD/det/ticino/test/1995/
   zoom_level: 16 
 
 
@@ -14,14 +14,14 @@ generate_tilesets.py:
     nb_tiles_max: 500
   working_directory: .
   datasets:
-    aoi_tiles: ./output/OD/det/ticino/test/2023/tiles.geojson
+    aoi_tiles: ./output/OD/det/ticino/test/1995/tiles.geojson
     image_source:
       # ############ 
       type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
-      year: 2023                  # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
+      year: 1995                  # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
       location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
       # ############ 
-  output_folder: ./output/OD/det/ticino/test/2023/
+  output_folder: ./output/OD/det/ticino/test/1995/
   tile_size: 256      # per side, in pixels
   overwrite: True
   n_jobs: 10
@@ -40,7 +40,7 @@ generate_tilesets.py:
 
 # Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/OD/det/ticino/test/2023/
+  working_directory: ./output/OD/det/ticino/test/1995/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -58,7 +58,7 @@ make_detections.py:
 
 # Assess the final results
 merge_detections.py:
-  working_dir: ./output/OD/det/ticino/test/2023/
+  working_dir: ./output/OD/det/ticino/test/1995/
   detections:
     oth: oth_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
@@ -70,19 +70,24 @@ merge_detections.py:
 # Filtering and merging detection polygons to improve final results
 filter_results.py:
   working_dir: ./data
-  detections: ../output/OD/det/ticino/test/2020/inference_detections_merged.gpkg
-  aoi: ./AoI/Ticino/Secteur_test_TC.gpkg    
-  canton: ticino
+  detections: ../output/OD/det/vaud/test/2023/inference_detections_merged.gpkg
+  aoi: ./AoI/Vaud/Secteur_test.shp 
+  canton: vaud
   zones_infos:
     vaud: 
-      pistes_avion: ./layers/Vaud/Pistes_aviation_MO_CSDUR.shp
+      landing_strip: ./layers/Vaud/Pistes_aviation_MO_CSDUR.shp
       batiments: ./layers/Vaud/Batiments_en_surface_MO.shp
       batiments_batir: ./layers/Vaud/Affectation_Zone_a_batir.gpkg
       sites_pollues: ./layers/Vaud/Sites_pollues_VD2022.shp
       sda: ./layers/Vaud/SDA_v5_2.shp
       slope: ./layers/Vaud/terrain_pente_VD.gpkg
     ticino:
+      agri_area: ./layers/Ticino/Idoneità_Agricola.shp
       batiments_batir: ./layers/Ticino/Zones_batir_Ind.shp
+      grands_cours_eau: ./layers/Ticino/Grandi_corsi.shp
+      protected_area: ./layers/Ticino/Compatibilita_LPN-SAC_20241010.gpkg
+      protected_underground_water: ./layers/Ticino/Protezione_acque_sott.shp
+      sites_pollues: ./layers/Ticino/Siti_inquinati.shp
       sda: ./layers/Ticino/Censimento_SAC_2023.shp
       slope: ./layers/Ticino/terrain_pente_TC.gpkg
   dem: ./DEM/switzerland_dem_EPSG2056.tif

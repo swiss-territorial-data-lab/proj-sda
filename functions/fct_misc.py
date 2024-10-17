@@ -95,5 +95,5 @@ def overlap(polygon1_shape, polygon2_shape):
     # Calculate intersection area
     polygon_intersection = polygon1_shape.intersection(polygon2_shape).area
     polygon_area = polygon1_shape.area
-    
+ 
     return polygon_intersection / polygon_area
