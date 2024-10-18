@@ -70,12 +70,12 @@ merge_detections.py:
 # Filtering and merging detection polygons to improve final results
 filter_results.py:
   working_dir: ./data
-  detections: ../output/OD/det/vaud/test/2023/inference_detections_merged.gpkg
-  aoi: ./AoI/Vaud/Secteur_test.shp 
-  canton: vaud
+  detections: ../output/OD/det/ticino/test/2023/inference_detections_merged.gpkg
+  aoi: ./AoI/Ticino/Secteur_test_TC.gpkg
+  canton: ticino
   zones_infos:
     vaud: 
-      pistes_avion: ./layers/Vaud/Pistes_aviation_MO_CSDUR.shp
+      landing_strip: ./layers/Vaud/Pistes_aviation_MO_CSDUR.shp
       batiments: ./layers/Vaud/Batiments_en_surface_MO.shp
       batiments_batir: ./layers/Vaud/Affectation_Zone_a_batir.gpkg
       sites_pollues: ./layers/Vaud/Sites_pollues_VD2022.shp
