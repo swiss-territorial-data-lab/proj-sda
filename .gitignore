@@ -1,7 +1,11 @@
 # Folders
-output*/
-input*/
 data*/
+input*/
+output*/
+model*/
+
+# Files
+config/config_det_*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
