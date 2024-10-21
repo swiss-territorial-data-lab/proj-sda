@@ -2,11 +2,12 @@
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
-    shapefile: ./data/ground_truth/20240805_GT.gpkg             # GT labels
+    shapefile: ./data/ground_truth/20240916_GT_MT_MES.gpkg         # GT labels
     # FP_shapefile: ./data/FP/FP_list.gpkg                        # FP labels
     # empty_tiles_aoi: ./data/AoI/AoI_2020.shp                    # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
-    empty_tiles_shp: ./data/EPT/20240726_EPT.gpkg             # Provided shpfile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
-    category: 'Classe'
+    # empty_tiles_year: multi-year                                # If "empty_tiles_aoi" selected then provide a year. Choice: (1) numeric (i.e. 2020), (2) multi-year (random year selection within years [1945-2023]) 
+    # empty_tiles_shp: ./data/EPT/20240726_EPT.gpkg             # Provided shpfile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
+    # category: 'Classe'
   output_folder: ./output/OD/trne/
   zoom_level: 16 
 
