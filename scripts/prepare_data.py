@@ -263,6 +263,7 @@ if __name__ == "__main__":
         logger.info("- Add label tiles to empty AoI tiles") 
         tiles_4326_all_gdf = pd.concat([tiles_4326_aoi_gdf, empty_tiles_4326_aoi_gdf])
     else: 
+<<<<<<< HEAD
         tiles_4326_all_gdf = tiles_4326_aoi_gdf.copy()
   
     # - Remove duplicated tiles
@@ -275,6 +276,21 @@ if __name__ == "__main__":
     tiles_4326_all_gdf.reset_index(drop=True, inplace=True)
     tiles_4326_all_gdf = tiles_4326_all_gdf.apply(add_tile_id, axis=1)
     nb_tiles = len(tiles_4326_all_gdf)
+=======
+        tiles_4326_all = tiles_4326_aoi
+    
+    # - Remove duplicated tiles
+    if nb_labels > 1:
+        tiles_4326_all.drop_duplicates(['title', 'year'] if 'year' in tiles_4326_all.keys() else 'title', inplace=True)
+
+    # - Remove useless columns, reset feature id and redefine it according to xyz format  
+    logger.info('- Add tile IDs and reorganise data set')
+    tiles_4326_all = tiles_4326_all[['geometry', 'title', 'year'] if 'year' in tiles_4326_all.keys() else ['geometry', 'title']].copy()
+    tiles_4326_all.reset_index(drop=True, inplace=True)
+    tiles_4326_all = tiles_4326_all.apply(add_tile_id, axis=1)
+    
+    nb_tiles = len(tiles_4326_all)
+>>>>>>> Correct error with year in prepare_data
     logger.info(f"There were {nb_tiles} tiles created")
 
     # Save tile shapefile
