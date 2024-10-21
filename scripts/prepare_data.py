@@ -106,7 +106,7 @@ if __name__ == "__main__":
     SHPFILE = cfg['datasets']['shapefile']
     FP_SHPFILE = cfg['datasets']['FP_shapefile'] if 'FP_shapefile' in cfg['datasets'].keys() else None
     if 'empty_tiles_aoi' in cfg['datasets'].keys() and 'empty_tiles_shp' in cfg['datasets'].keys():
-        logger.error("Choose one option between providing an AoI shapefile ('empty_tiles_aoi') in which empty tiles will be selected and a shapefile with selected empty tiles ('empty_tiles_shp')")
+        logger.error("Choose btween supplying an AoI shapefile ('empty_tiles_aoi') in which empty tiles will be selected, or a shapefile with selected empty tiles ('empty_tiles_shp')")
         sys.exit(1)    
     elif 'empty_tiles_aoi' in cfg['datasets'].keys():
         EPT_SHPFILE = cfg['datasets']['empty_tiles_aoi']
@@ -139,7 +139,7 @@ if __name__ == "__main__":
         labels_4326['CATEGORY'] = labels_4326[CATEGORY]
         category = labels_4326['CATEGORY'].unique()
         logger.info(f'Working with {len(category)} classe.s: {category}')
-        labels_4326['SUPERCATEGORY'] = "anthropogenic soils"
+        labels_4326['SUPERCATEGORY'] = 'anthropogenic soils'
 
     label_filename = 'labels.geojson'
     label_filepath = os.path.join(OUTPUT_DIR, label_filename)
@@ -151,8 +151,8 @@ if __name__ == "__main__":
     if FP_SHPFILE:
         fp_labels = gpd.read_file(FP_SHPFILE)
         fp_labels_4326 = fp_labels.to_crs(epsg=4326)
-        fp_labels_4326['CATEGORY'] = 'quarry'
-        fp_labels_4326['SUPERCATEGORY'] = 'land usage'
+        fp_labels_4326['CATEGORY'] = fp_labels_4326[CATEGORY]
+        fp_labels_4326['SUPERCATEGORY'] =  'anthropogenic soils'
 
         nb_fp_labels = len(fp_labels)
         logger.info(f"There are {nb_fp_labels} polygons in {FP_SHPFILE}")
@@ -164,15 +164,15 @@ if __name__ == "__main__":
         logger.success(f"{DONE_MSG} A file was written: {filepath}")
         labels_4326 = pd.concat([labels_4326, fp_labels_4326], ignore_index=True)
 
-    # Keep only label boundary geometry info (minx, miny, maxx, maxy) 
+    # Get the label boundaries (minx, miny, maxx, maxy) 
     logger.info("- Get the label boundaries")  
     boundaries_df = labels_4326.bounds
 
-    # Get the boundaries for all the labels (minx, miny, maxx, maxy) 
+    # Get the global boundaries for all the labels (minx, miny, maxx, maxy) 
     global_boundaries_gdf = labels_4326.copy()
     labels_bbox = bbox(global_boundaries_gdf.iloc[0].geometry.bounds)
 
-    # Get tiles for a given AoI from which empty tiles will be selected when the images are retrieved
+    # Get tiles for a given AoI from which empty tiles will be selected
     if EPT_SHPFILE:
         EPT_aoi = gpd.read_file(EPT_SHPFILE)
         EPT_aoi_4326 = EPT_aoi.to_crs(epsg=4326)
@@ -188,7 +188,8 @@ if __name__ == "__main__":
 
             if aoi_bbox_contains:
                 logger.info("- The surface area occupied by the bbox of the AoI used to find empty tiles is bigger than the label's one. The AoI boundaries will be used for tiling") 
-                boundaries_df = pd.DataFrame(EPT_aoi_boundaries_df.iloc[0].geometry.bounds).T
+                # boundaries_df = pd.DataFrame(EPT_aoi_boundaries_df.iloc[0].geometry.bounds).T
+                boundaries_df = EPT_aoi_boundaries_df.copy()
             else:
                 logger.info("- The surface area occupied by the bbox of the AoI used to find empty tiles is smaller than the label's one. Both the AoI and labels area will be used for tiling") 
                 # Get tiles coordinates and shapes
@@ -204,10 +205,6 @@ if __name__ == "__main__":
 
     # Get tiles coordinates and shapes
     tiles_4326_aoi = aoi_tiling(boundaries_df)
-
-    if EPT_SHPFILE and aoi_bbox_contains:
-        # Delete tiles outside of the AoI limits 
-        tiles_4326_aoi = gpd.sjoin(tiles_4326_aoi, EPT_aoi_4326, how='inner', lsuffix='ept_tiles', rsuffix='ept_aoi', predicate='intersects')
 
     # Compute labels intersecting tiles 
     tiles_4326_gt = gpd.sjoin(tiles_4326_aoi, labels_4326, how='inner', predicate='intersects')
