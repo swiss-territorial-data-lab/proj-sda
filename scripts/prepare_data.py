@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import Polygon
 
-sys.path.insert(0, '../..')
+sys.path.insert(0, 'object-detector')
 from helpers.misc import format_logger
 from helpers.constants import DONE_MSG
 
@@ -79,10 +79,10 @@ def assert_year(gdf1, gdf2, ds, year):
         assert ('year' in gdf1.keys() and ('year' in gdf2.keys())) or ('year' in gdf1.keys() and year!=None)
     except:
         if ds == 'FP':
-            logger.error("One input label shapefile contains a year column and the other one no. Please, standardize the label shapefiles supplied as input data.")
+            logger.error("One input label shapefile contains a year column and the other one no. Please, standardize the label shapefiles supplied as input data.")# CM: non, si year dans le gdf de droite et multi_year pour emptyfile c'est vrai 
             sys.exit(1)
         elif ds == 'empty_tiles':
-            logger.error("The empty tiles shapefile contains a 'year' column while there is not in the ground truth shapefile.")
+            logger.error("The empty tiles shapefile contains a 'year' column while there is not in the ground truth shapefile.") #CM: not necessarily the three messages are true at the same time 
             logger.error("If a tile shapefile is provided, standardize the shapefiles supplied as input data.")
             logger.error("Else, if an AoI shapefile is provided, provide an input year 'empty_tiles_year' in the configuration file.")
             sys.exit(1)
@@ -180,7 +180,7 @@ if __name__ == "__main__":
         fp_labels_gdf = gpd.read_file(FP_SHPFILE)
         assert_year(fp_labels_gdf, labels_gdf, 'FP', EPT_YEAR) 
         fp_labels_4326_gdf = fp_labels_gdf.to_crs(epsg=4326)
-        fp_labels_4326_gdf['CATEGORY'] = fp_labels_4326_gdf[CATEGORY]
+        fp_labels_4326_gdf['CATEGORY'] = 'Mouvement de terrain' # fp_labels_4326_gdf[CATEGORY] #CM: There is no cat in the FP GPKG at the moment
         fp_labels_4326_gdf['SUPERCATEGORY'] =  'anthropogenic soils'
 
         nb_fp_labels = len(fp_labels_gdf)
@@ -198,8 +198,8 @@ if __name__ == "__main__":
     boundaries_df = labels_4326_gdf.bounds
 
     # Get the global boundaries for all the labels (minx, miny, maxx, maxy) 
-    global_boundaries_gdf = labels_4326_gdf.copy()
-    labels_bbox = bbox(global_boundaries_gdf.iloc[0].geometry.bounds)
+    # global_boundaries_gdf = labels_4326_gdf.copy()# CM: useless, only used here under  
+    labels_bbox = bbox(labels_4326_gdf.iloc[0].geometry.bounds)# CM: changed 
 
     # Get tiles for a given AoI from which empty tiles will be selected
     if EPT_SHPFILE:
@@ -212,8 +212,8 @@ if __name__ == "__main__":
             EPT_aoi_boundaries_df = EPT_aoi_4326_gdf.bounds
 
             # Get the boundaries for all the AoI (minx, miny, maxx, maxy) 
-            EPT_aoi_boundaries_gdf = EPT_aoi_4326_gdf.copy()
-            aoi_bbox = bbox(EPT_aoi_boundaries_gdf.iloc[0].geometry.bounds)
+            # EPT_aoi_boundaries_gdf = EPT_aoi_4326_gdf.copy()  #CM: useless, only used here under   
+            aoi_bbox = bbox(EPT_aoi_4326_gdf.iloc[0].geometry.bounds) #CM: changed 
             aoi_bbox_contains = aoi_bbox.contains(labels_bbox)
 
             if aoi_bbox_contains:
@@ -245,25 +245,25 @@ if __name__ == "__main__":
     tiles_4326_aoi_gdf = aoi_tiling(boundaries_df)
 
     # Compute labels intersecting tiles 
-    tiles_4326_gt_gdf = gpd.sjoin(tiles_4326_aoi_gdf, labels_4326_gdf, how='inner', predicate='intersects')
+    tiles_4326_gt_gdf = gpd.sjoin(tiles_4326_aoi_gdf, labels_4326_gdf, how='inner', predicate='intersects') #CM: be cautious about the naming: if there is a FP file, there is not only the GT in label_4326_gdf   
     tiles_4326_gt_gdf.drop_duplicates('title', inplace=True)
 
-    logger.info(f"- Number of tiles intersecting GT labels = {len(tiles_4326_gt_gdf)}")
+    logger.info(f"- Number of tiles intersecting GT and FP labels = {len(tiles_4326_gt_gdf)}")# CM: the thing with having labels_4326_gdf containing GT and FP is back 
     if FP_SHPFILE:
         tiles_fp_4326_gdf = gpd.sjoin(tiles_4326_aoi_gdf, fp_labels_4326_gdf, how='inner', predicate='intersects')
         tiles_fp_4326_gdf.drop_duplicates('title', inplace=True)
-        logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_fp_4326)}")
+        logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_fp_4326_gdf)}") #CM: error in variable name
 
     if not EPT_SHPFILE or EPT_SHPFILE and aoi_bbox_contains == False:
         # Keep only tiles intersecting labels 
         tiles_4326_aoi_gdf = tiles_4326_gt_gdf.copy()
 
     # Get all the tiles in one gdf 
-    if EPT_SHPFILE and aoi_bbox_contains == False:
+    if EPT_SHPFILE and aoi_bbox_contains == False: 
         logger.info("- Add label tiles to empty AoI tiles") 
         tiles_4326_all_gdf = pd.concat([tiles_4326_aoi_gdf, empty_tiles_4326_aoi_gdf])
     else: 
-        tiles_4326_all_gdf = tiles_4326_aoi_gdf.copy()
+        tiles_4326_all_gdf = tiles_4326_aoi_gdf.copy()  # 
   
     # - Remove duplicated tiles
     if nb_labels > 1:
