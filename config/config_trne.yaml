@@ -2,12 +2,13 @@
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
-    shapefile: ./data/ground_truth/20240916_GT.gpkg       # GT labels
+    shapefile: ./data/ground_truth/tlm-hr-trn-topo_year.shp                   # GT labels
+    # shapefile: ./data/ground_truth/20240916_GT.gpkg       # GT labels
     # FP_shapefile: ./data/FP/FP_list.gpkg                        # FP labels
-    # empty_tiles_aoi: ./data/AoI/AoI_2020.shp                    # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
+    empty_tiles_aoi: ./data/AoI/AoI_2020.shp                    # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
     # empty_tiles_shp: ./data/EPT/20240726_EPT.gpkg             # Provided shpfile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
-    category: 'Classe'
-  output_folder: ./output/OD/trne/zoom16/run66/
+    # category: 'Classe'
+  output_folder: ./output/OD/test_EPT/
   zoom_level: 16
 
 
@@ -141,3 +142,7 @@ merge_detections.py:
 result_analysis.py:
   working_dir: ./output/OD/trne/zoom16/run59/
   detections: tagged_detections.gpkg
+
+gt_analysis.py:
+  working_dir: ./data/ground_truth/
+  labels: 20240916_GT_all.gpkg

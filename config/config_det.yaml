@@ -2,8 +2,8 @@
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
-    shapefile: ./data/AoI/Ticino/Secteur_test_TC.gpkg               
-  output_folder: ./output/OD/det/ticino/test/2020/
+    shapefile: ./data/AoI/Ticino/Secteur_test_TC_v2.gpkg               
+  output_folder: ./output/OD/det/ticino/
   zoom_level: 16 
 
 
