@@ -75,20 +75,26 @@ def assert_year(gdf1, gdf2, ds, year):
         year (string or numeric): attribution of year to tiles
     """
 
-    try:
-        assert ('year' in gdf1.keys() and ('year' in gdf2.keys())) or ('year' in gdf1.keys() and year!=None)
-    except:
-        if ds == 'FP':
-            logger.error("One input label shapefile contains a year column and the other one no. Please, standardize the label shapefiles supplied as input data.")
-            sys.exit(1)
-        elif ds == 'empty_tiles':
-            logger.error("The empty tiles shapefile contains a 'year' column while there is not in the ground truth shapefile.")
-            logger.error("If a tile shapefile is provided, standardize the shapefiles supplied as input data.")
-            logger.error("Else, if an AoI shapefile is provided, provide an input year 'empty_tiles_year' in the configuration file.")
-            sys.exit(1)
+    if ('year' not in gdf1.keys() and 'year' not in gdf2.keys()) or ('year' not in gdf1.keys() and year == None):
+        pass
+    elif ds == 'FP':
+        if ('year' in gdf1.keys() and 'year' in gdf2.keys()):
+            pass
         else:
-            logger.error("A year is provided as input for the empty tiles while no 'year' column is provided in the groud truth shapefile. Please, standardize the shapefiles supplied as input data.")
-            sys.exit(1)            
+            logger.error("One input label (GT or FP) shapefile contains a 'year' column while the other one no. Please, standardize the label shapefiles supplied as input data.")
+            sys.exit(1)
+    elif ds == 'empty_tiles':
+        if ('year' in gdf1.keys() and 'year' in gdf2.keys()) or ('year' in gdf1.keys() and year != None):
+            pass        
+        elif 'year' in gdf1.keys() and 'year' not in gdf2.keys():
+            logger.error("A 'year' column is provided in the GT shapefile but not for the empty tiles. Please, standardize the label shapefiles supplied as input data.")
+            sys.exit(1)
+        elif 'year' in gdf1.keys() and year == None:
+            logger.error("A 'year' column is provided in the GT shapefile but no year info for the empty tiles. Please, provide a value to 'empty_tiles_year' in the configuration file.")
+            sys.exit(1)
+        elif ('year' not in gdf1.keys() and 'year' not in gdf2.keys()) and ('year' not in gdf1.keys() and year != None):
+            logger.error("A year is provided for the empty tiles while no 'year' column is provided in the groud truth shapefile. Please, standardize the shapefiles or the year value in the configuration file.")
+            sys.exit(1)    
 
 
 def bbox(bounds):
@@ -180,8 +186,9 @@ if __name__ == "__main__":
         fp_labels_gdf = gpd.read_file(FP_SHPFILE)
         assert_year(fp_labels_gdf, labels_gdf, 'FP', EPT_YEAR) 
         fp_labels_4326_gdf = fp_labels_gdf.to_crs(epsg=4326)
-        fp_labels_4326_gdf['CATEGORY'] = fp_labels_4326_gdf[CATEGORY]
-        fp_labels_4326_gdf['SUPERCATEGORY'] =  'anthropogenic soils'
+        if CATEGORY:
+            fp_labels_4326_gdf['CATEGORY'] = fp_labels_4326_gdf[CATEGORY]
+            fp_labels_4326_gdf['SUPERCATEGORY'] =  'anthropogenic soils'
 
         nb_fp_labels = len(fp_labels_gdf)
         logger.info(f"There are {nb_fp_labels} polygons in {FP_SHPFILE}")
@@ -198,8 +205,7 @@ if __name__ == "__main__":
     boundaries_df = labels_4326_gdf.bounds
 
     # Get the global boundaries for all the labels (minx, miny, maxx, maxy) 
-    global_boundaries_gdf = labels_4326_gdf.copy()
-    labels_bbox = bbox(global_boundaries_gdf.iloc[0].geometry.bounds)
+    labels_bbox = bbox(labels_4326_gdf.iloc[0].geometry.bounds)
 
     # Get tiles for a given AoI from which empty tiles will be selected
     if EPT_SHPFILE:
@@ -212,8 +218,7 @@ if __name__ == "__main__":
             EPT_aoi_boundaries_df = EPT_aoi_4326_gdf.bounds
 
             # Get the boundaries for all the AoI (minx, miny, maxx, maxy) 
-            EPT_aoi_boundaries_gdf = EPT_aoi_4326_gdf.copy()
-            aoi_bbox = bbox(EPT_aoi_boundaries_gdf.iloc[0].geometry.bounds)
+            aoi_bbox = bbox(EPT_aoi_4326_gdf.iloc[0].geometry.bounds)
             aoi_bbox_contains = aoi_bbox.contains(labels_bbox)
 
             if aoi_bbox_contains:
@@ -233,7 +238,7 @@ if __name__ == "__main__":
                         empty_tiles_4326_aoi_gdf['year'] = np.random.randint(low=1945, high=2023, size=(len(empty_tiles_4326_aoi_gdf),))
         elif EPT == 'shp':
             if EPT_YEAR:
-                logger.warning("Selected empty tiles are provided with a shapefile. The year set for the empty tiles will be ignored")
+                logger.warning("A shapefile of selected empty tiles are provided. The year set for the empty tiles in the configuration file will be ignored")
                 EPT_YEAR = None
             empty_tiles_4326_aoi_gdf = EPT_aoi_4326_gdf.copy()
             aoi_bbox = None
@@ -245,18 +250,18 @@ if __name__ == "__main__":
     tiles_4326_aoi_gdf = aoi_tiling(boundaries_df)
 
     # Compute labels intersecting tiles 
-    tiles_4326_gt_gdf = gpd.sjoin(tiles_4326_aoi_gdf, labels_4326_gdf, how='inner', predicate='intersects')
-    tiles_4326_gt_gdf.drop_duplicates('title', inplace=True)
-
-    logger.info(f"- Number of tiles intersecting GT labels = {len(tiles_4326_gt_gdf)}")
+    tiles_4326_lbl_gdf = gpd.sjoin(tiles_4326_aoi_gdf, labels_4326_gdf, how='inner', predicate='intersects')
+    tiles_4326_lbl_gdf.drop_duplicates('title', inplace=True)
+    logger.info(f"- Number of tiles intersecting GT and FP labels = {len(tiles_4326_lbl_gdf)}")
+    
     if FP_SHPFILE:
         tiles_fp_4326_gdf = gpd.sjoin(tiles_4326_aoi_gdf, fp_labels_4326_gdf, how='inner', predicate='intersects')
         tiles_fp_4326_gdf.drop_duplicates('title', inplace=True)
-        logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_fp_4326)}")
+        logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_fp_4326_gdf)}")
 
     if not EPT_SHPFILE or EPT_SHPFILE and aoi_bbox_contains == False:
         # Keep only tiles intersecting labels 
-        tiles_4326_aoi_gdf = tiles_4326_gt_gdf.copy()
+        tiles_4326_aoi_gdf = tiles_4326_lbl_gdf.copy()
 
     # Get all the tiles in one gdf 
     if EPT_SHPFILE and aoi_bbox_contains == False:
