@@ -175,6 +175,8 @@ if __name__ == "__main__":
         logger.info(f'Working with {len(category)} classe.s: {category}')
         labels_4326_gdf['SUPERCATEGORY'] = 'anthropogenic soils'
 
+    gt_labels_4326_gdf = labels_4326_gdf.copy()
+
     label_filename = 'labels.geojson'
     label_filepath = os.path.join(OUTPUT_DIR, label_filename)
     labels_4326_gdf.to_file(label_filepath, driver='GeoJSON')
@@ -250,9 +252,9 @@ if __name__ == "__main__":
     tiles_4326_aoi_gdf = aoi_tiling(boundaries_df)
 
     # Compute labels intersecting tiles 
-    tiles_4326_lbl_gdf = gpd.sjoin(tiles_4326_aoi_gdf, labels_4326_gdf, how='inner', predicate='intersects')
+    tiles_4326_lbl_gdf = gpd.sjoin(tiles_4326_aoi_gdf, gt_labels_4326_gdf, how='inner', predicate='intersects')
     tiles_4326_lbl_gdf.drop_duplicates('title', inplace=True)
-    logger.info(f"- Number of tiles intersecting GT and FP labels = {len(tiles_4326_lbl_gdf)}")
+    logger.info(f"- Number of tiles intersecting GT labels = {len(tiles_4326_lbl_gdf)}")
     
     if FP_SHPFILE:
         tiles_fp_4326_gdf = gpd.sjoin(tiles_4326_aoi_gdf, fp_labels_4326_gdf, how='inner', predicate='intersects')
