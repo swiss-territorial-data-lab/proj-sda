@@ -70,10 +70,10 @@ merge_detections.py:
 # Filtering and merging detection polygons to improve final results
 filter_results.py:
   working_dir: ./data
-  detections: ../output/OD/det/ticino/test/2023/inference_detections_merged.gpkg
+  detections: ../output/OD/det/ticino/test/AoI_v1/2020/inference_detections_merged.gpkg
   aoi: ./AoI/Ticino/Secteur_test_TC.gpkg
   canton: ticino
-  zones_infos:
+  infos:
     vaud: 
       landing_strip: ./layers/Vaud/Pistes_aviation_MO_CSDUR.shp
       batiments: ./layers/Vaud/Batiments_en_surface_MO.shp
@@ -84,16 +84,19 @@ filter_results.py:
     ticino:
       agri_area: ./layers/Ticino/Idoneità_Agricola.shp
       batiments_batir: ./layers/Ticino/Zones_batir_Ind.shp
+      compa_SDA: ./layers/Ticino/Compatibilita_LPN-SAC_20241010.gpkg
+      forests: ./layers/Ticino/Fôrets.shp
       grands_cours_eau: ./layers/Ticino/Grandi_corsi.shp
       protected_area: ./layers/Ticino/Compatibilita_LPN-SAC_20241010.gpkg
       protected_underground_water: ./layers/Ticino/Protezione_acque_sott.shp
       sites_pollues: ./layers/Ticino/Siti_inquinati.shp
       sda: ./layers/Ticino/Censimento_SAC_2023.shp
       slope: ./layers/Ticino/terrain_pente_TC_SA.gpkg
+  exclusion: [batiments_batir, forests] 
   dem: ./DEM/switzerland_dem_EPSG2056.tif
-  elevation_threshold: 5000.0 # m, altitude threshold
+  elevation_threshold: 900.0 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
-  area_threshold: 0.0 # m2, area threshold under which polygons are discarded
+  area_threshold: 100.0 # m2, area threshold under which polygons are discarded
 
 
 merge_years.py:

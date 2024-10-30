@@ -28,31 +28,8 @@ def compare_geom(gdf, key):
             overlap.append(0)
         else:
             overlap.append(misc.overlap(i, ii))
-            print(overlap)
     gdf['overlap'] = overlap
-    print(gdf['overlap'])
-
     gdf['overlap'] = gdf.apply(lambda row: misc.overlap(row['geometry'], row[f'{key}_geom']) if row['geometry'] and row[f'{key}_geom'] != None else 0, axis=1)
-    # print(gdf['overlap'])
-    # print()
-    # exit(gdf['overlap'])
-    # geom1 = gdf.geometry.values.tolist()
-    # print('*****')
-    # print(key)
-    # print(len(gdf[f'{key}_geom']))
-    # geom2 = gdf[f'{key}_geom'].values.tolist() 
-    # print('-----')   
-    # overlap = []
-    # for n in range(len(gdf)):
-    #     i = geom1[n] 
-    #     ii = geom2[n] 
-    #     if i == None or ii == None:
-    #         overlap.append(0)
-    #     else:
-    #         overlap.append(misc.overlap(i, ii))
-    # gdf['overlap'] = overlap
-    # # print(gdf['overlap'])
-    # print('hello')
 
     return gdf
 
@@ -78,17 +55,18 @@ if __name__ == "__main__":
     AOI = cfg['aoi']
     DETECTIONS = cfg['detections']
     CANTON = cfg['canton'][0].lower() + cfg['canton'][1:]
-    AGRI_AREA = cfg['zones_infos'][CANTON]['agri_area'] if 'agri_area' in cfg['zones_infos'][CANTON].keys() else None
-    BAT = cfg['zones_infos'][CANTON]['batiments'] if 'batiments' in cfg['zones_infos'][CANTON].keys() else None
-    BAT_BATIR = cfg['zones_infos'][CANTON]['batiments_batir'] if 'batiments_batir' in cfg['zones_infos'][CANTON].keys() else None
-    FORESTS = cfg['zones_infos'][CANTON]['forests'] if 'forests' in cfg['zones_infos'][CANTON].keys() else None
-    GRANDS_COURS_EAU = cfg['zones_infos'][CANTON]['grands_cours_eau'] if 'grands_cours_eau' in cfg['zones_infos'][CANTON].keys() else None
-    LANDING_STRIP = cfg['zones_infos'][CANTON]['landing_strip'] if 'landing_strip' in cfg['zones_infos'][CANTON].keys() else None
-    PROTECTED_AREA = cfg['zones_infos'][CANTON]['protected_area'] if 'protected_area' in cfg['zones_infos'][CANTON].keys() else None
-    PROTECTED_UG_WATER = cfg['zones_infos'][CANTON]['protected_underground_water'] if 'protected_underground_water' in cfg['zones_infos'][CANTON].keys() else None
-    SDA = cfg['zones_infos'][CANTON]['sda'] if 'sda' in cfg['zones_infos'][CANTON].keys() else None
-    SITES_POLLUES = cfg['zones_infos'][CANTON]['sites_pollues'] if 'sites_pollues' in cfg['zones_infos'][CANTON].keys() else None
-    SLOPE = cfg['zones_infos'][CANTON]['slope'] if 'slope' in cfg['zones_infos'][CANTON].keys() else None
+    AGRI_AREA = cfg['infos'][CANTON]['agri_area'] if 'agri_area' in cfg['infos'][CANTON].keys() else None
+    BAT = cfg['infos'][CANTON]['batiments'] if 'batiments' in cfg['infos'][CANTON].keys() else None
+    BAT_BATIR = cfg['infos'][CANTON]['batiments_batir'] if 'batiments_batir' in cfg['infos'][CANTON].keys() else None
+    FORESTS = cfg['infos'][CANTON]['forests'] if 'forests' in cfg['infos'][CANTON].keys() else None
+    GRANDS_COURS_EAU = cfg['infos'][CANTON]['grands_cours_eau'] if 'grands_cours_eau' in cfg['infos'][CANTON].keys() else None
+    LANDING_STRIP = cfg['infos'][CANTON]['landing_strip'] if 'landing_strip' in cfg['infos'][CANTON].keys() else None
+    PROTECTED_AREA = cfg['infos'][CANTON]['protected_area'] if 'protected_area' in cfg['infos'][CANTON].keys() else None
+    PROTECTED_UG_WATER = cfg['infos'][CANTON]['protected_underground_water'] if 'protected_underground_water' in cfg['infos'][CANTON].keys() else None
+    SDA = cfg['infos'][CANTON]['sda'] if 'sda' in cfg['infos'][CANTON].keys() else None
+    SITES_POLLUES = cfg['infos'][CANTON]['sites_pollues'] if 'sites_pollues' in cfg['infos'][CANTON].keys() else None
+    SLOPE = cfg['infos'][CANTON]['slope'] if 'slope' in cfg['infos'][CANTON].keys() else None
+    EXCLUSION = cfg['exclusion'] if 'exclusion' in cfg.keys() else None
     DEM = cfg['dem']
     SCORE_THD = cfg['score_threshold']
     AREA_THD = cfg['area_threshold']
@@ -188,7 +166,7 @@ if __name__ == "__main__":
         slope_gdf['slope_>18%_id'] = slope_gdf.index
         slope_gdf.to_file(feature)
 
-    info_dict = {'slope_>18%': slope_gdf, 'agri_area': agri_gdf, 'batiments': bat_gdf, 'batiments_batir': bat_bat_gdf, 'forests': forests_gdf,
+    infos_dict = {'slope_>18%': slope_gdf, 'agri_area': agri_gdf, 'batiments': bat_gdf, 'batiments_batir': bat_bat_gdf, 'forests': forests_gdf,
     'gd_cours_eau': gd_cours_eau_gdf, 'landing_strip': ls_gdf, 'protected_area': protected_gdf, 'protected_water': protected_water_gdf, 
     'sda': sda_gdf, 'sites_pollues': sites_pollues_gdf}
 
@@ -215,16 +193,32 @@ if __name__ == "__main__":
     sc = len(detections_score_gdf)
     logger.info(f"{ta - sc} detections were removed by score filtering (score threshold = {SCORE_THD})")
 
+    detections_gdf = detections_score_gdf.copy()
+
+    # Overlay detections with exclusion area polygons
+    if EXCLUSION and len(EXCLUSION) > 0:
+        logger.info(f"Remove part of the detections intersecting exclusion areas.")
+        exclu_gdf = gpd.GeoDataFrame()
+        for key in EXCLUSION:
+            gdf = infos_dict[key].copy()
+            exclu_gdf = pd.concat([exclu_gdf, gdf], axis=0)
+            
+            # Remove the exclusion areas from the dictionnary 
+            del infos_dict[key]
+        
+        exclu_gdf = exclu_gdf.dissolve()
+        detections_gdf = detections_gdf.overlay(exclu_gdf, how='difference')
+
     # Indicate if polygons are intersecting relevant vector layers
-    detections_infos_gdf = detections_score_gdf.copy()
-    for key in info_dict.keys():
-        if info_dict[key].empty:
+    detections_infos_gdf = detections_gdf.copy()
+    for key in infos_dict.keys():
+        if infos_dict[key].empty:
             pass
         else:
-            gdf = info_dict[key].copy()
+            gdf = infos_dict[key].copy()
             gdf = gpd.clip(gdf, aoi_gdf)
             gdf[f'{key}_geom'] = gdf.geometry 
-            detections_temp_gdf = detections_score_gdf.copy() 
+            detections_temp_gdf = detections_gdf.copy() 
             detections_join_gdf = gpd.sjoin(detections_temp_gdf, gdf[[f'{key}_geom', 'geometry']], how='left', predicate='intersects')  
             del detections_temp_gdf
             del gdf
