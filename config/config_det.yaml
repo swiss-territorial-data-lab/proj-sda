@@ -76,23 +76,26 @@ filter_results.py:
   infos:
     vaud: 
       landing_strip: ./layers/Vaud/Pistes_aviation_MO_CSDUR.shp
-      batiments: ./layers/Vaud/Batiments_en_surface_MO.shp
-      batiments_batir: ./layers/Vaud/Affectation_Zone_a_batir.gpkg
-      sites_pollues: ./layers/Vaud/Sites_pollues_VD2022.shp
+      buildings: ./layers/Vaud/Batiments_en_surface_MO.shp
+      building_areas: ./layers/Vaud/Affectation_Zone_a_batir.gpkg
+      polluted sites: ./layers/Vaud/Sites_pollues_VD2022.shp
       sda: ./layers/Vaud/SDA_v5_2.shp
       slope: ./layers/Vaud/terrain_pente_VD.gpkg
     ticino:
       agri_area: ./layers/Ticino/Idoneità_Agricola.shp
-      batiments_batir: ./layers/Ticino/Zones_batir_Ind.shp
-      compa_SDA: ./layers/Ticino/Compatibilita_LPN-SAC_20241010.gpkg
+      building_areas: ./layers/Ticino/Zones_batir_Ind.shp
+      compatible_SDA: ./layers/Ticino/Compatibilita_LPN-SAC_20241010.gpkg
       forests: ./layers/Ticino/Fôrets.shp
-      grands_cours_eau: ./layers/Ticino/Grandi_corsi.shp
+      large_rivers: ./layers/Ticino/Grandi_corsi.shp
       protected_area: ./layers/Ticino/Compatibilita_LPN-SAC_20241010.gpkg
       protected_underground_water: ./layers/Ticino/Protezione_acque_sott.shp
-      sites_pollues: ./layers/Ticino/Siti_inquinati.shp
+      polluted sites: ./layers/Ticino/Siti_inquinati.shp
       sda: ./layers/Ticino/Censimento_SAC_2023.shp
       slope: ./layers/Ticino/terrain_pente_TC_SA.gpkg
-  exclusion: [batiments_batir, forests] 
+      zone_compatible_LPN: ./layers/Ticino/Zona_SAC_compatibile_con_i_disposti_LPN.gpkg
+      zone_compatible_LPN_extensive: ./layers/Ticino/Zona_SAC_compatibile_con_i_disposti_LPN_previa_gestione_estensiva.gpkg
+      zone_non_compatible_LPN: ./layers/Ticino/Zona_SAC_non_compatibile_con_i_disposti_LPN.gpkg
+  exclusion: [building_areas, forests, zone_non_compatible_LPN] 
   dem: ./DEM/switzerland_dem_EPSG2056.tif
   elevation_threshold: 900.0 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2

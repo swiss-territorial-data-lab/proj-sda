@@ -56,16 +56,19 @@ if __name__ == "__main__":
     DETECTIONS = cfg['detections']
     CANTON = cfg['canton'][0].lower() + cfg['canton'][1:]
     AGRI_AREA = cfg['infos'][CANTON]['agri_area'] if 'agri_area' in cfg['infos'][CANTON].keys() else None
-    BAT = cfg['infos'][CANTON]['batiments'] if 'batiments' in cfg['infos'][CANTON].keys() else None
-    BAT_BATIR = cfg['infos'][CANTON]['batiments_batir'] if 'batiments_batir' in cfg['infos'][CANTON].keys() else None
+    BUILDINGS = cfg['infos'][CANTON]['buildings'] if 'buildings' in cfg['infos'][CANTON].keys() else None
+    BUILD_AREAS = cfg['infos'][CANTON]['building_areas'] if 'building_areas' in cfg['infos'][CANTON].keys() else None
     FORESTS = cfg['infos'][CANTON]['forests'] if 'forests' in cfg['infos'][CANTON].keys() else None
-    GRANDS_COURS_EAU = cfg['infos'][CANTON]['grands_cours_eau'] if 'grands_cours_eau' in cfg['infos'][CANTON].keys() else None
+    LARGE_RIVERS = cfg['infos'][CANTON]['large_rivers'] if 'large_rivers' in cfg['infos'][CANTON].keys() else None
     LANDING_STRIP = cfg['infos'][CANTON]['landing_strip'] if 'landing_strip' in cfg['infos'][CANTON].keys() else None
     PROTECTED_AREA = cfg['infos'][CANTON]['protected_area'] if 'protected_area' in cfg['infos'][CANTON].keys() else None
     PROTECTED_UG_WATER = cfg['infos'][CANTON]['protected_underground_water'] if 'protected_underground_water' in cfg['infos'][CANTON].keys() else None
     SDA = cfg['infos'][CANTON]['sda'] if 'sda' in cfg['infos'][CANTON].keys() else None
-    SITES_POLLUES = cfg['infos'][CANTON]['sites_pollues'] if 'sites_pollues' in cfg['infos'][CANTON].keys() else None
+    POLLUTED_SITES = cfg['infos'][CANTON]['polluted_sites'] if 'polluted_sites' in cfg['infos'][CANTON].keys() else None
     SLOPE = cfg['infos'][CANTON]['slope'] if 'slope' in cfg['infos'][CANTON].keys() else None
+    ZONE_COMPATIBLE_LPN = cfg['infos'][CANTON]['zone_compatible_LPN'] if 'zone_compatible_LPN' in cfg['infos'][CANTON].keys() else None
+    ZONE_COMPATIBLE_LPN_EXTENSIVE = cfg['infos'][CANTON]['zone_compatible_LPN_extensive'] if 'zone_compatible_LPN_extensive' in cfg['infos'][CANTON].keys() else None
+    ZONE_NON_COMPATIBLE_LPN = cfg['infos'][CANTON]['zone_non_compatible_LPN'] if 'zone_non_compatible_LPN' in cfg['infos'][CANTON].keys() else None
     EXCLUSION = cfg['exclusion'] if 'exclusion' in cfg.keys() else None
     DEM = cfg['dem']
     SCORE_THD = cfg['score_threshold']
@@ -98,24 +101,24 @@ if __name__ == "__main__":
         agri_gdf['agri_id'] = agri_gdf.index
     else:
         agri_gdf = gpd.GeoDataFrame()
-    if BAT:
-        bat_gdf = gpd.read_file(BAT)
-        bat_gdf = bat_gdf.to_crs(2056)
-        bat_gdf['batiments_id'] = bat_gdf.index
+    if BUILDINGS:
+        building_gdf = gpd.read_file(BUILDINGS)
+        building_gdf = building_gdf.to_crs(2056)
+        building_gdf['buildings_id'] = building_gdf.index
     else:
-        bat_gdf = gpd.GeoDataFrame()
-    if BAT_BATIR:
-        bat_bat_gdf = gpd.read_file(BAT_BATIR)
-        bat_bat_gdf = bat_bat_gdf.to_crs(2056)
-        bat_bat_gdf['batiments_batir_id'] = bat_bat_gdf.index
+        building_gdf = gpd.GeoDataFrame()
+    if BUILD_AREAS:
+        building_areas = gpd.read_file(BUILD_AREAS)
+        building_areas = building_areas.to_crs(2056)
+        building_areas['building_areas_id'] = building_areas.index
     else:
-        bat_bat_gdf = gpd.GeoDataFrame()
-    if GRANDS_COURS_EAU:
-        gd_cours_eau_gdf = gpd.read_file(GRANDS_COURS_EAU)
-        gd_cours_eau_gdf = gd_cours_eau_gdf.to_crs(2056)
-        gd_cours_eau_gdf['gd_cours_eau_id'] = gd_cours_eau_gdf.index
+        building_areas = gpd.GeoDataFrame()
+    if LARGE_RIVERS:
+        large_rivers_gdf = gpd.read_file(LARGE_RIVERS)
+        large_rivers_gdf = large_rivers_gdf.to_crs(2056)
+        large_rivers_gdf['large_rivers_id'] = large_rivers_gdf.index
     else:
-        gd_cours_eau_gdf = gpd.GeoDataFrame()
+        large_rivers_gdf = gpd.GeoDataFrame()
     if FORESTS:
         forests_gdf = gpd.read_file(FORESTS)
         forests_gdf = forests_gdf.to_crs(2056)
@@ -146,12 +149,30 @@ if __name__ == "__main__":
         sda_gdf['sda_id'] = sda_gdf.index
     else:
         sda_gdf = gpd.GeoDataFrame()
-    if SITES_POLLUES:
-        sites_pollues_gdf = gpd.read_file(SITES_POLLUES)
-        sites_pollues_gdf = sites_pollues_gdf.to_crs(2056)
-        sites_pollues_gdf['sites_pollues_id'] = sites_pollues_gdf.index
+    if POLLUTED_SITES:
+        polluted_sites_gdf = gpd.read_file(POLLUTED_SITES)
+        polluted_sites_gdf = polluted_sites_gdf.to_crs(2056)
+        polluted_sites_gdf['polluted_sites_id'] = polluted_sites_gdf.index
     else:
-        sites_pollues_gdf = gpd.GeoDataFrame()
+        polluted_sites_gdf = gpd.GeoDataFrame()
+    if ZONE_COMPATIBLE_LPN:
+        zone_compatible_lpn_gdf = gpd.read_file(ZONE_COMPATIBLE_LPN)
+        zone_compatible_lpn_gdf = zone_compatible_lpn_gdf.to_crs(2056)
+        zone_compatible_lpn_gdf['zone_compatible_LPN_id'] = zone_compatible_lpn_gdf.index
+    else:
+        zone_compatible_lpn_gdf = gpd.GeoDataFrame()
+    if ZONE_COMPATIBLE_LPN_EXTENSIVE:
+        zone_compatible_lpn_extensive_gdf = gpd.read_file(ZONE_COMPATIBLE_LPN_EXTENSIVE)
+        zone_compatible_lpn_extensive_gdf = zone_compatible_lpn_extensive_gdf.to_crs(2056)
+        zone_compatible_lpn_extensive_gdf['zone_compatible_LPN_extensive_id'] = zone_compatible_lpn_extensive_gdf.index
+    else:
+        zone_compatible_lpn_extensive_gdf = gpd.GeoDataFrame()
+    if ZONE_NON_COMPATIBLE_LPN:
+        zone_non_compatible_lpn_gdf = gpd.read_file(ZONE_NON_COMPATIBLE_LPN)
+        zone_non_compatible_lpn_gdf = zone_non_compatible_lpn_gdf.to_crs(2056)
+        zone_non_compatible_lpn_gdf['zone_non_compatible_LPN_id'] = zone_non_compatible_lpn_gdf.index
+    else:
+        zone_non_compatible_lpn_gdf = gpd.GeoDataFrame()
 
     feature = f'./layers/{CANTON[0].upper() + CANTON[1:]}/slope.gpkg'
     if os.path.isfile(feature):
@@ -166,9 +187,10 @@ if __name__ == "__main__":
         slope_gdf['slope_>18%_id'] = slope_gdf.index
         slope_gdf.to_file(feature)
 
-    infos_dict = {'slope_>18%': slope_gdf, 'agri_area': agri_gdf, 'batiments': bat_gdf, 'batiments_batir': bat_bat_gdf, 'forests': forests_gdf,
-    'gd_cours_eau': gd_cours_eau_gdf, 'landing_strip': ls_gdf, 'protected_area': protected_gdf, 'protected_water': protected_water_gdf, 
-    'sda': sda_gdf, 'sites_pollues': sites_pollues_gdf}
+    infos_dict = {'slope_>18%': slope_gdf, 'agri_area': agri_gdf, 'buildings': building_gdf, 'building_areas': building_areas, 'forests': forests_gdf,
+    'large_rivers': large_rivers_gdf, 'landing_strip': ls_gdf, 'protected_area': protected_gdf, 'protected_water': protected_water_gdf, 
+    'sda': sda_gdf, 'polluted_sites': polluted_sites_gdf, 'zone_compatible_LPN': zone_compatible_lpn_gdf, 
+    'zone_compatible_LPN_extensive': zone_compatible_lpn_extensive_gdf, 'zone_non_compatible_LPN': zone_non_compatible_lpn_gdf}
 
     # Discard polygons detected at/below 0 m and above the threshold elevation and above a given slope
     dem = rasterio.open(DEM)
