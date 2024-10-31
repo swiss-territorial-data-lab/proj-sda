@@ -17,23 +17,6 @@ from loguru import logger
 logger = misc.format_logger(logger)
 
 
-def compare_geom(gdf, key):
-    geom1 = gdf.geometry.values.tolist()
-    geom2 = gdf[f'{key}_geom'].values.tolist()    
-    overlap = []
-    for n in range(len(gdf)):
-        i = geom1[n] 
-        ii = geom2[n] 
-        if i == None or ii == None:
-            overlap.append(0)
-        else:
-            overlap.append(misc.overlap(i, ii))
-    gdf['overlap'] = overlap
-    gdf['overlap'] = gdf.apply(lambda row: misc.overlap(row['geometry'], row[f'{key}_geom']) if row['geometry'] and row[f'{key}_geom'] != None else 0, axis=1)
-
-    return gdf
-
-
 if __name__ == "__main__":
 
     # Chronometer
