@@ -164,7 +164,7 @@ if __name__ == "__main__":
     ## Convert datasets shapefiles into geojson format
     logger.info('Convert labels shapefile into GeoJSON format (EPSG:4326)...')
     labels_gdf = gpd.read_file(SHPFILE)
-    labels_4326_gdf = labels_gdf.to_crs(epsg=4326)
+    labels_4326_gdf = labels_gdf.to_crs(epsg=4326).drop_duplicates()
     nb_labels = len(labels_gdf)
     logger.info(f'There are {nb_labels} polygons in {SHPFILE}')
 
@@ -190,10 +190,10 @@ if __name__ == "__main__":
     if FP_SHPFILE:
         fp_labels_gdf = gpd.read_file(FP_SHPFILE)
         assert_year(fp_labels_gdf, labels_gdf, 'FP', EPT_YEAR) 
-        fp_labels_4326_gdf = fp_labels_gdf.to_crs(epsg=4326)
+        fp_labels_4326_gdf = fp_labels_gdf.to_crs(epsg=4326).drop_duplicates()
         if CATEGORY:
             fp_labels_4326_gdf['CATEGORY'] = fp_labels_4326_gdf[CATEGORY]
-            fp_labels_4326_gdf['SUPERCATEGORY'] =  'anthropogenic soils'
+            fp_labels_4326_gdf['SUPERCATEGORY'] = 'anthropogenic soils'
 
         nb_fp_labels = len(fp_labels_gdf)
         logger.info(f"There are {nb_fp_labels} polygons in {FP_SHPFILE}")
@@ -260,14 +260,14 @@ if __name__ == "__main__":
     logger.info(f"- Number of tiles intersecting GT labels = {len(tiles_4326_gt_gdf)}")
     
     if FP_SHPFILE:
-        tiles_fp_4326_gdf = gpd.sjoin(tiles_4326_aoi_gdf, fp_labels_4326_gdf, how='inner', predicate='intersects')
-        tiles_fp_4326_gdf.drop_duplicates('title', inplace=True)
-        logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_fp_4326_gdf)}")
+        tiles_4326_fp_gdf = gpd.sjoin(tiles_4326_aoi_gdf, fp_labels_4326_gdf, how='inner', predicate='intersects')
+        tiles_4326_fp_gdf.drop_duplicates('title', inplace=True)
+        logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_4326_fp_gdf)}")
 
     if not EPT_SHPFILE or EPT_SHPFILE and aoi_bbox_contains == False:
         # Keep only tiles intersecting labels 
         if FP_SHPFILE:
-            tiles_4326_aoi_gdf = pd.concat([tiles_4326_gt_gdf, tiles_fp_4326_gdf]) 
+            tiles_4326_aoi_gdf = pd.concat([tiles_4326_gt_gdf, tiles_4326_fp_gdf]) 
         else:
             tiles_4326_aoi_gdf = tiles_4326_gt_gdf.copy()
 
@@ -280,6 +280,7 @@ if __name__ == "__main__":
   
     # - Remove duplicated tiles
     if nb_labels > 1:
+        tiles_4326_all_gdf['year'] = tiles_4326_all_gdf['year'].apply(int)
         tiles_4326_all_gdf.drop_duplicates(['title', 'year'] if 'year' in tiles_4326_all_gdf.keys() else 'title', inplace=True)
 
     # - Remove useless columns, reset feature id and redefine it according to xyz format  
@@ -287,6 +288,7 @@ if __name__ == "__main__":
     tiles_4326_all_gdf = tiles_4326_all_gdf[['geometry', 'title', 'year'] if 'year' in tiles_4326_all_gdf.keys() else ['geometry', 'title']].copy()
     tiles_4326_all_gdf.reset_index(drop=True, inplace=True)
     tiles_4326_all_gdf = tiles_4326_all_gdf.apply(add_tile_id, axis=1)
+
     nb_tiles = len(tiles_4326_all_gdf)
     logger.info(f"There were {nb_tiles} tiles created")
 
@@ -295,6 +297,7 @@ if __name__ == "__main__":
     tile_filename = 'tiles.geojson'
     tile_filepath = os.path.join(OUTPUT_DIR, tile_filename)
     tiles_4326_all_gdf.to_file(tile_filepath, driver='GeoJSON')
+    aoi_tiles_gdf = gpd.read_file(tile_filepath)
     written_files.append(tile_filepath)  
     logger.success(f"{DONE_MSG} A file was written: {tile_filepath}")
 
