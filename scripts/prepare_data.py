@@ -137,7 +137,7 @@ if __name__ == "__main__":
     # Load input parameters
     OUTPUT_DIR = cfg['output_folder']
     SHPFILE = cfg['datasets']['shapefile']
-    FP_SHPFILE = cfg['datasets']['FP_shapefile'] if 'FP_shapefile' in cfg['datasets'].keys() else None
+    FP_SHPFILE = cfg['datasets']['fp_shapefile'] if 'fp_shapefile' in cfg['datasets'].keys() else None
     EPT_YEAR = cfg['datasets']['empty_tiles_year'] if 'empty_tiles_year' in cfg['datasets'].keys() else None
     if 'empty_tiles_aoi' in cfg['datasets'].keys() and 'empty_tiles_shp' in cfg['datasets'].keys():
         logger.error("Choose between supplying an AoI shapefile ('empty_tiles_aoi') in which empty tiles will be selected, or a shapefile with selected empty tiles ('empty_tiles_shp')")
@@ -161,11 +161,12 @@ if __name__ == "__main__":
     written_files = []
     
     # Prepare the tiles
+
     ## Convert datasets shapefiles into geojson format
     logger.info('Convert labels shapefile into GeoJSON format (EPSG:4326)...')
     labels_gdf = gpd.read_file(SHPFILE)
-    labels_4326_gdf = labels_gdf.to_crs(epsg=4326).drop_duplicates()
-    nb_labels = len(labels_gdf)
+    labels_4326_gdf = labels_gdf.to_crs(epsg=4326).drop_duplicates(subset=['geometry', 'year'] if 'year' in labels_gdf.keys() else ['geometry'])
+    nb_labels = len(labels_4326_gdf)
     logger.info(f'There are {nb_labels} polygons in {SHPFILE}')
 
     if CATEGORY and CATEGORY in labels_4326_gdf.keys():
@@ -190,12 +191,12 @@ if __name__ == "__main__":
     if FP_SHPFILE:
         fp_labels_gdf = gpd.read_file(FP_SHPFILE)
         assert_year(fp_labels_gdf, labels_gdf, 'FP', EPT_YEAR) 
-        fp_labels_4326_gdf = fp_labels_gdf.to_crs(epsg=4326).drop_duplicates()
+        fp_labels_4326_gdf = fp_labels_gdf.to_crs(epsg=4326).drop_duplicates(subset=['geometry', 'year'] if 'year' in fp_labels_gdf.keys() else ['geometry'])
         if CATEGORY:
             fp_labels_4326_gdf['CATEGORY'] = fp_labels_4326_gdf[CATEGORY]
             fp_labels_4326_gdf['SUPERCATEGORY'] = 'anthropogenic soils'
 
-        nb_fp_labels = len(fp_labels_gdf)
+        nb_fp_labels = len(fp_labels_4326_gdf)
         logger.info(f"There are {nb_fp_labels} polygons in {FP_SHPFILE}")
 
         filename = 'FP.geojson'
@@ -280,8 +281,11 @@ if __name__ == "__main__":
   
     # - Remove duplicated tiles
     if nb_labels > 1:
-        tiles_4326_all_gdf['year'] = tiles_4326_all_gdf['year'].apply(int)
-        tiles_4326_all_gdf.drop_duplicates(['title', 'year'] if 'year' in tiles_4326_all_gdf.keys() else 'title', inplace=True)
+        if 'year' in tiles_4326_all_gdf.keys():
+            tiles_4326_all_gdf['year'] = tiles_4326_all_gdf['year'].apply(str)
+            tiles_4326_all_gdf.drop_duplicates(['title', 'year'], inplace=True)
+        else: 
+            tiles_4326_all_gdf.drop_duplicates(['title'], inplace=True)
 
     # - Remove useless columns, reset feature id and redefine it according to xyz format  
     logger.info('- Add tile IDs and reorganise data set')
