@@ -37,18 +37,19 @@ if __name__ == "__main__":
     WORKING_DIR = cfg['working_dir']
     AOI = cfg['aoi']
     DETECTIONS = cfg['detections']
-    CANTON = cfg['canton'][0].lower() + cfg['canton'][1:]
+    CANTON = cfg['canton']
+    LAYERS_DIR = cfg['infos']['layers_dir'].replace('{canton}', CANTON)
     AGRI_AREA = cfg['infos'][CANTON]['agri_area'] if 'agri_area' in cfg['infos'][CANTON].keys() else None
     BUILDINGS = cfg['infos'][CANTON]['buildings'] if 'buildings' in cfg['infos'][CANTON].keys() else None
     BUILD_AREAS = cfg['infos'][CANTON]['building_areas'] if 'building_areas' in cfg['infos'][CANTON].keys() else None
     FORESTS = cfg['infos'][CANTON]['forests'] if 'forests' in cfg['infos'][CANTON].keys() else None
     LARGE_RIVERS = cfg['infos'][CANTON]['large_rivers'] if 'large_rivers' in cfg['infos'][CANTON].keys() else None
-    LANDING_STRIP = cfg['infos'][CANTON]['landing_strip'] if 'landing_strip' in cfg['infos'][CANTON].keys() else None
     PROTECTED_AREA = cfg['infos'][CANTON]['protected_area'] if 'protected_area' in cfg['infos'][CANTON].keys() else None
     PROTECTED_UG_WATER = cfg['infos'][CANTON]['protected_underground_water'] if 'protected_underground_water' in cfg['infos'][CANTON].keys() else None
     SDA = cfg['infos'][CANTON]['sda'] if 'sda' in cfg['infos'][CANTON].keys() else None
     POLLUTED_SITES = cfg['infos'][CANTON]['polluted_sites'] if 'polluted_sites' in cfg['infos'][CANTON].keys() else None
     SLOPE = cfg['infos'][CANTON]['slope'] if 'slope' in cfg['infos'][CANTON].keys() else None
+    WATERS = cfg['infos'][CANTON]['waters'] if 'waters' in cfg['infos'][CANTON].keys() else None
     ZONE_COMPATIBLE_LPN = cfg['infos'][CANTON]['zone_compatible_LPN'] if 'zone_compatible_LPN' in cfg['infos'][CANTON].keys() else None
     ZONE_COMPATIBLE_LPN_EXTENSIVE = cfg['infos'][CANTON]['zone_compatible_LPN_extensive'] if 'zone_compatible_LPN_extensive' in cfg['infos'][CANTON].keys() else None
     ZONE_NON_COMPATIBLE_LPN = cfg['infos'][CANTON]['zone_non_compatible_LPN'] if 'zone_non_compatible_LPN' in cfg['infos'][CANTON].keys() else None
@@ -79,91 +80,91 @@ if __name__ == "__main__":
     aoi_gdf = aoi_gdf.to_crs(2056)
 
     if AGRI_AREA:
-        agri_gdf = gpd.read_file(AGRI_AREA)
+        agri_gdf = gpd.read_file(os.path.join(LAYERS_DIR, AGRI_AREA))
         agri_gdf = agri_gdf.to_crs(2056)
         agri_gdf['agri_id'] = agri_gdf.index
     else:
         agri_gdf = gpd.GeoDataFrame()
     if BUILDINGS:
-        building_gdf = gpd.read_file(BUILDINGS)
+        building_gdf = gpd.read_file(os.path.join(LAYERS_DIR, BUILDINGS))
         building_gdf = building_gdf.to_crs(2056)
         building_gdf['buildings_id'] = building_gdf.index
     else:
         building_gdf = gpd.GeoDataFrame()
     if BUILD_AREAS:
-        building_areas = gpd.read_file(BUILD_AREAS)
+        building_areas = gpd.read_file(os.path.join(LAYERS_DIR, BUILD_AREAS))
         building_areas = building_areas.to_crs(2056)
         building_areas['building_areas_id'] = building_areas.index
     else:
         building_areas = gpd.GeoDataFrame()
     if LARGE_RIVERS:
-        large_rivers_gdf = gpd.read_file(LARGE_RIVERS)
+        large_rivers_gdf = gpd.read_file(os.path.join(LAYERS_DIR, LARGE_RIVERS))
         large_rivers_gdf = large_rivers_gdf.to_crs(2056)
         large_rivers_gdf['large_rivers_id'] = large_rivers_gdf.index
     else:
         large_rivers_gdf = gpd.GeoDataFrame()
     if FORESTS:
-        forests_gdf = gpd.read_file(FORESTS)
+        forests_gdf = gpd.read_file(os.path.join(LAYERS_DIR, FORESTS))
         forests_gdf = forests_gdf.to_crs(2056)
         forests_gdf['forests_id'] = forests_gdf.index
     else:
         forests_gdf = gpd.GeoDataFrame() 
-    if LANDING_STRIP:
-        ls_gdf = gpd.read_file(LANDING_STRIP)
-        ls_gdf = ls_gdf.to_crs(2056)
-        ls_gdf['pistes_avion_id'] = ls_gdf.index
-    else:
-        ls_gdf = gpd.GeoDataFrame()
     if PROTECTED_AREA:
-        protected_gdf = gpd.read_file(PROTECTED_AREA)
+        protected_gdf = gpd.read_file(os.path.join(LAYERS_DIR, PROTECTED_AREA))
         protected_gdf = protected_gdf.to_crs(2056)
         protected_gdf['protected_id'] = protected_gdf.index
     else:
         protected_gdf = gpd.GeoDataFrame()
     if PROTECTED_UG_WATER:
-        protected_water_gdf = gpd.read_file(PROTECTED_UG_WATER)
+        protected_water_gdf = gpd.read_file(os.path.join(LAYERS_DIR, PROTECTED_UG_WATER))
         protected_water_gdf = protected_water_gdf.to_crs(2056)
         protected_water_gdf['protected_water_id'] = protected_water_gdf.index
     else:
         protected_water_gdf = gpd.GeoDataFrame()
     if SDA:
-        sda_gdf = gpd.read_file(SDA)
+        sda_gdf = gpd.read_file(os.path.join(LAYERS_DIR, SDA))
         sda_gdf = sda_gdf.to_crs(2056)
         sda_gdf['sda_id'] = sda_gdf.index
     else:
         sda_gdf = gpd.GeoDataFrame()
     if POLLUTED_SITES:
-        polluted_sites_gdf = gpd.read_file(POLLUTED_SITES)
+        polluted_sites_gdf = gpd.read_file(os.path.join(LAYERS_DIR, POLLUTED_SITES))
         polluted_sites_gdf = polluted_sites_gdf.to_crs(2056)
         polluted_sites_gdf['polluted_sites_id'] = polluted_sites_gdf.index
     else:
         polluted_sites_gdf = gpd.GeoDataFrame()
+    if WATERS:
+        waters_gdf = gpd.read_file(os.path.join(LAYERS_DIR, WATERS))
+        waters_gdf = waters_gdf.to_crs(2056)
+        waters_gdf['waters_id'] = waters_gdf.index
+    else:
+        waters_gdf = gpd.GeoDataFrame()
     if ZONE_COMPATIBLE_LPN:
-        zone_compatible_lpn_gdf = gpd.read_file(ZONE_COMPATIBLE_LPN)
+        zone_compatible_lpn_gdf = gpd.read_file(os.path.join(LAYERS_DIR, ZONE_COMPATIBLE_LPN))
         zone_compatible_lpn_gdf = zone_compatible_lpn_gdf.to_crs(2056)
         zone_compatible_lpn_gdf['zone_compatible_LPN_id'] = zone_compatible_lpn_gdf.index
     else:
         zone_compatible_lpn_gdf = gpd.GeoDataFrame()
     if ZONE_COMPATIBLE_LPN_EXTENSIVE:
-        zone_compatible_lpn_extensive_gdf = gpd.read_file(ZONE_COMPATIBLE_LPN_EXTENSIVE)
+        zone_compatible_lpn_extensive_gdf = gpd.read_file(os.path.join(LAYERS_DIR, ZONE_COMPATIBLE_LPN_EXTENSIVE))
         zone_compatible_lpn_extensive_gdf = zone_compatible_lpn_extensive_gdf.to_crs(2056)
         zone_compatible_lpn_extensive_gdf['zone_compatible_LPN_extensive_id'] = zone_compatible_lpn_extensive_gdf.index
     else:
         zone_compatible_lpn_extensive_gdf = gpd.GeoDataFrame()
     if ZONE_NON_COMPATIBLE_LPN:
-        zone_non_compatible_lpn_gdf = gpd.read_file(ZONE_NON_COMPATIBLE_LPN)
+        zone_non_compatible_lpn_gdf = gpd.read_file(os.path.join(LAYERS_DIR, ZONE_NON_COMPATIBLE_LPN))
         zone_non_compatible_lpn_gdf = zone_non_compatible_lpn_gdf.to_crs(2056)
         zone_non_compatible_lpn_gdf['zone_non_compatible_LPN_id'] = zone_non_compatible_lpn_gdf.index
     else:
         zone_non_compatible_lpn_gdf = gpd.GeoDataFrame()
 
-    feature = f'./layers/{CANTON[0].upper() + CANTON[1:]}/slope.gpkg'
+    feature = os.path.join(LAYERS_DIR, 'slope.gpkg')
     if os.path.isfile(feature):
         logger.info(f'{feature} already exists.')
         slope_gdf = gpd.read_file(feature)
     else:
         logger.info(f'{feature} does not exist and will be created.')
-        slope_gdf = gpd.read_file(SLOPE)
+        slope_gdf = gpd.read_file(os.path.join(LAYERS_DIR, SLOPE))
         slope_gdf = slope_gdf.to_crs(2056)
         slope_gdf = slope_gdf[slope_gdf['HL_Klasse']!='hang_18'] 
         slope_gdf = slope_gdf.dissolve()
@@ -171,8 +172,8 @@ if __name__ == "__main__":
         slope_gdf.to_file(feature)
 
     infos_dict = {'slope_>18%': slope_gdf, 'agri_area': agri_gdf, 'buildings': building_gdf, 'building_areas': building_areas, 'forests': forests_gdf,
-    'large_rivers': large_rivers_gdf, 'landing_strip': ls_gdf, 'protected_area': protected_gdf, 'protected_water': protected_water_gdf, 
-    'sda': sda_gdf, 'polluted_sites': polluted_sites_gdf, 'zone_compatible_LPN': zone_compatible_lpn_gdf, 
+    'large_rivers': large_rivers_gdf, 'protected_area': protected_gdf, 'protected_water': protected_water_gdf, 
+    'sda': sda_gdf, 'polluted_sites': polluted_sites_gdf, 'waters': waters_gdf, 'zone_compatible_LPN': zone_compatible_lpn_gdf, 
     'zone_compatible_LPN_extensive': zone_compatible_lpn_extensive_gdf, 'zone_non_compatible_LPN': zone_non_compatible_lpn_gdf}
 
     # Discard polygons detected at/below 0 m and above the threshold elevation and above a given slope

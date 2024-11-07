@@ -241,7 +241,9 @@ if __name__ == "__main__":
                     if isinstance(EPT_YEAR, int):
                         empty_tiles_4326_aoi_gdf['year'] = int(EPT_YEAR)
                     else:
-                        empty_tiles_4326_aoi_gdf['year'] = np.random.randint(low=1945, high=2023, size=(len(empty_tiles_4326_aoi_gdf),))
+                        empty_tiles_4326_aoi_gdf['year'] = np.random.randint(low=EPT_YEAR[0], high=EPT_YEAR[1], size=(len(empty_tiles_4326_aoi_gdf)))
+                elif EPT_SHPFILE and EPT_YEAR: 
+                    logger.warning("No year column in the label shapefile. The provided empty tile year will be ignored.")
         elif EPT == 'shp':
             if EPT_YEAR:
                 logger.warning("A shapefile of selected empty tiles are provided. The year set for the empty tiles in the configuration file will be ignored")
@@ -274,7 +276,7 @@ if __name__ == "__main__":
 
     # Get all the tiles in one gdf 
     if EPT_SHPFILE and aoi_bbox_contains == False:
-        logger.info("- Add label tiles to empty AoI tiles") 
+        logger.info("- Concatenate label tiles and empty AoI tiles") 
         tiles_4326_all_gdf = pd.concat([tiles_4326_aoi_gdf, empty_tiles_4326_aoi_gdf])
     else: 
         tiles_4326_all_gdf = tiles_4326_aoi_gdf.copy()
@@ -282,7 +284,7 @@ if __name__ == "__main__":
     # - Remove duplicated tiles
     if nb_labels > 1:
         if 'year' in tiles_4326_all_gdf.keys():
-            tiles_4326_all_gdf['year'] = tiles_4326_all_gdf['year'].apply(str)
+            tiles_4326_all_gdf['year'] = tiles_4326_all_gdf['year'].apply(int)
             tiles_4326_all_gdf.drop_duplicates(['title', 'year'], inplace=True)
         else: 
             tiles_4326_all_gdf.drop_duplicates(['title'], inplace=True)
@@ -292,7 +294,6 @@ if __name__ == "__main__":
     tiles_4326_all_gdf = tiles_4326_all_gdf[['geometry', 'title', 'year'] if 'year' in tiles_4326_all_gdf.keys() else ['geometry', 'title']].copy()
     tiles_4326_all_gdf.reset_index(drop=True, inplace=True)
     tiles_4326_all_gdf = tiles_4326_all_gdf.apply(add_tile_id, axis=1)
-
     nb_tiles = len(tiles_4326_all_gdf)
     logger.info(f"There were {nb_tiles} tiles created")
 
@@ -301,7 +302,6 @@ if __name__ == "__main__":
     tile_filename = 'tiles.geojson'
     tile_filepath = os.path.join(OUTPUT_DIR, tile_filename)
     tiles_4326_all_gdf.to_file(tile_filepath, driver='GeoJSON')
-    aoi_tiles_gdf = gpd.read_file(tile_filepath)
     written_files.append(tile_filepath)  
     logger.success(f"{DONE_MSG} A file was written: {tile_filepath}")
 
