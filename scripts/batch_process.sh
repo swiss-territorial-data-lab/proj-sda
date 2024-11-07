@@ -29,8 +29,5 @@ do
     python ./scripts/merge_detections.py config/config_det_$year.yaml
     echo ' '
     echo 'filter_results.py'
-    python ./scripts/filter_results.py config/config_det_$year.yaml
-
-
-    
+    python ./scripts/filter_results.py config/config_det_$year.yaml 
 done

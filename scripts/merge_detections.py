@@ -37,7 +37,6 @@ if __name__ == "__main__":
     # Load input parameters
     WORKING_DIR = cfg['working_dir']
     LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
-    # DETECTIONS = cfg['detections']
     DETECTION_FILES = cfg['detections']
     DISTANCE = cfg['distance']
     SCORE_THD = cfg['score_threshold'] if 'score_threshold' in cfg.keys() else 0.0
@@ -66,11 +65,6 @@ if __name__ == "__main__":
         detections_ds_gdf[f'dataset'] = dataset
         detections_gdf = pd.concat([detections_gdf, detections_ds_gdf], axis=0)
     detections_gdf = detections_gdf.to_crs(2056)
-    # if LABELS:
-    #     # detections_gdf = detections_gdf.drop(labels=['label_class', 'CATEGORY', 'year_label'], axis=1)
-    #     detections_gdf = detections_gdf[detections_gdf['tag']!='FN']
-    # else:
-    # detections_gdf = detections_gdf.drop(labels=['index'], axis=1)
     detections_gdf['area'] = detections_gdf.geometry.area 
     detections_gdf['det_id'] = detections_gdf.index
     logger.success(f"{DONE_MSG} {len(detections_gdf)} features were found.")
