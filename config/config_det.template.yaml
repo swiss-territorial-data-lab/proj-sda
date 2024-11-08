@@ -69,30 +69,34 @@ filter_results.py:
   working_dir: ./data
   detections: ../output/OD/det/SWISSIMAGE_YEAR/inference_detections_merged.gpkg
   aoi: ./AoI/Ticino/Secteur_test_TC.gpkg
-  canton: ticino
+  canton: Ticino
   infos:
-    vaud: 
-      landing_strip: ./layers/Vaud/Pistes_aviation_MO_CSDUR.shp
-      buildings: ./layers/Vaud/Batiments_en_surface_MO.shp
-      building_areas: ./layers/Vaud/Affectation_Zone_a_batir.gpkg
-      polluted sites: ./layers/Vaud/Sites_pollues_VD2022.shp
-      sda: ./layers/Vaud/SDA_v5_2.shp
-      slope: ./layers/Vaud/terrain_pente_VD.gpkg
-    ticino:
-      agri_area: ./layers/Ticino/Idoneità_Agricola.shp
-      building_areas: ./layers/Ticino/Zones_batir_Ind.shp
-      compatible_SDA: ./layers/Ticino/Compatibilita_LPN-SAC_20241010.gpkg
-      forests: ./layers/Ticino/Fôrets.shp
-      large_rivers: ./layers/Ticino/Grandi_corsi.shp
-      protected_area: ./layers/Ticino/Compatibilita_LPN-SAC_20241010.gpkg
-      protected_underground_water: ./layers/Ticino/Protezione_acque_sott.shp
-      polluted sites: ./layers/Ticino/Siti_inquinati.shp
-      sda: ./layers/Ticino/Censimento_SAC_2023.shp
-      slope: ./layers/Ticino/terrain_pente_TC_SA.gpkg
-      zone_compatible_LPN: ./layers/Ticino/Zona_SAC_compatibile_con_i_disposti_LPN.gpkg
-      zone_compatible_LPN_extensive: ./layers/Ticino/Zona_SAC_compatibile_con_i_disposti_LPN_previa_gestione_estensiva.gpkg
-      zone_non_compatible_LPN: ./layers/Ticino/Zona_SAC_non_compatibile_con_i_disposti_LPN.gpkg
-  exclusion: [batiments_batir, forests, zone_non_compatible_LPN] 
+    layers_dir: ./layers/{canton}/
+    Ticino:
+      agri_area: Idoneità_Agricola.shp
+      building_areas: Zones_batir_Ind.shp
+      climatic_areas: zones_climatiques_compatibles_sda_tc.gpkg
+      compatible_SDA: Compatibilita_LPN-SAC_20241010.gpkg
+      forests: Fôrets.shp
+      large_rivers: Grandi_corsi.shp
+      protected_underground_water: Protezione_acque_sott.shp
+      polluted sites: Siti_inquinati.shp
+      sda: Censimento_SAC_2023.shp
+      slope: terrain_pente_TC_SA.gpkg
+      waters: MU_Acque_TI.shp
+      zone_compatible_LPN: Zona_SAC_compatibile_con_i_disposti_LPN.gpkg
+      zone_compatible_LPN_extensive: Zona_SAC_compatibile_con_i_disposti_LPN_previa_gestione_estensiva.gpkg
+      zone_non_compatible_LPN: Zona_SAC_non_compatibile_con_i_disposti_LPN.gpkg
+    Vaud: 
+      buildings: batiments_en_surface_mo.gpkg
+      building_areas: affectation_zone_a_batir.gpkg
+      climatic_areas: zones_climatiques_compatibles_sda_vd.gpkg
+      polluted sites: sites_pollues_vd2022.gpkg
+      sda: sda_v5_2.gpkg
+      slope: terrain_pente_VD.gpkg
+      waters: lakes_VD.gpkg
+  attribute_names: ./layers/attribute_names.xlsx
+  exclusion: [building_areas, forests, zone_non_compatible_LPN, waters] 
   dem: ./DEM/switzerland_dem_EPSG2056.tif
   elevation_threshold: 900.0 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2

@@ -73,14 +73,6 @@ filter_results.py:
   canton: Ticino
   infos:
     layers_dir: ./layers/{canton}/
-    Vaud: 
-      buildings: Batiments_en_surface_mo.gpkg
-      building_areas: affectation_zone_a_batir.gpkg
-      climatic_areas: zones_climatiques_compatibles_sda_vd.gpkg
-      polluted sites: sites_pollues_vd2022.gpkg
-      sda: sda_v5_2.gpkg
-      slope: terrain_pente_VD.gpkg
-      waters: lakes_VD.gpkg
     Ticino:
       agri_area: Idoneità_Agricola.shp
       building_areas: Zones_batir_Ind.shp
@@ -88,7 +80,6 @@ filter_results.py:
       compatible_SDA: Compatibilita_LPN-SAC_20241010.gpkg
       forests: Fôrets.shp
       large_rivers: Grandi_corsi.shp
-      protected_area: Compatibilita_LPN-SAC_20241010.gpkg
       protected_underground_water: Protezione_acque_sott.shp
       polluted sites: Siti_inquinati.shp
       sda: Censimento_SAC_2023.shp
@@ -97,6 +88,15 @@ filter_results.py:
       zone_compatible_LPN: Zona_SAC_compatibile_con_i_disposti_LPN.gpkg
       zone_compatible_LPN_extensive: Zona_SAC_compatibile_con_i_disposti_LPN_previa_gestione_estensiva.gpkg
       zone_non_compatible_LPN: Zona_SAC_non_compatibile_con_i_disposti_LPN.gpkg
+    Vaud: 
+      buildings: batiments_en_surface_mo.gpkg
+      building_areas: affectation_zone_a_batir.gpkg
+      climatic_areas: zones_climatiques_compatibles_sda_vd.gpkg
+      polluted sites: sites_pollues_vd2022.gpkg
+      sda: sda_v5_2.gpkg
+      slope: terrain_pente_VD.gpkg
+      waters: lakes_VD.gpkg
+  attribute_names: ./layers/attribute_names.xlsx
   exclusion: [building_areas, forests, zone_non_compatible_LPN, waters] 
   dem: ./DEM/switzerland_dem_EPSG2056.tif
   elevation_threshold: 900.0 # m, altitude threshold
@@ -105,7 +105,7 @@ filter_results.py:
 
 
 merge_years.py:
-  canton: ticino
+  canton: Ticino
   working_dir: ./output/OD/det/{canton}/
   years: [2020, 2024]
   layer: inference_detections_merged_threshold_score-0dot1_area-50_elevation-600_overlap-0.gpkg 

@@ -59,7 +59,7 @@ generate_tilesets.py:
       url:
 
 
-# Optional-convert RGB to greyscale
+# Convert RGB to greyscale (Optional)
 rgb_to_greyscale.py: 
   working_dir: .
   image_dir: ./data/images/SWISSIMAGE/
@@ -67,7 +67,7 @@ rgb_to_greyscale.py:
   bands: 1
 
 
-# Optional-convert RGB to greyscale
+# Standardize image color to a reference image (Optional)
 match_colour.py: 
   working_dir: .
   image_dir: ./data/images/SWISSIMAGE/

@@ -42,6 +42,7 @@ if __name__ == "__main__":
     AGRI_AREA = cfg['infos'][CANTON]['agri_area'] if 'agri_area' in cfg['infos'][CANTON].keys() else None
     BUILDINGS = cfg['infos'][CANTON]['buildings'] if 'buildings' in cfg['infos'][CANTON].keys() else None
     BUILD_AREAS = cfg['infos'][CANTON]['building_areas'] if 'building_areas' in cfg['infos'][CANTON].keys() else None
+    CLIM_AREAS = cfg['infos'][CANTON]['climatic_areas'] if 'climatic_areas' in cfg['infos'][CANTON].keys() else None
     FORESTS = cfg['infos'][CANTON]['forests'] if 'forests' in cfg['infos'][CANTON].keys() else None
     LARGE_RIVERS = cfg['infos'][CANTON]['large_rivers'] if 'large_rivers' in cfg['infos'][CANTON].keys() else None
     PROTECTED_AREA = cfg['infos'][CANTON]['protected_area'] if 'protected_area' in cfg['infos'][CANTON].keys() else None
@@ -53,6 +54,7 @@ if __name__ == "__main__":
     ZONE_COMPATIBLE_LPN = cfg['infos'][CANTON]['zone_compatible_LPN'] if 'zone_compatible_LPN' in cfg['infos'][CANTON].keys() else None
     ZONE_COMPATIBLE_LPN_EXTENSIVE = cfg['infos'][CANTON]['zone_compatible_LPN_extensive'] if 'zone_compatible_LPN_extensive' in cfg['infos'][CANTON].keys() else None
     ZONE_NON_COMPATIBLE_LPN = cfg['infos'][CANTON]['zone_non_compatible_LPN'] if 'zone_non_compatible_LPN' in cfg['infos'][CANTON].keys() else None
+    ATTRIBUTE_NAMES = cfg['attribute_names']
     EXCLUSION = cfg['exclusion'] if 'exclusion' in cfg.keys() else None
     DEM = cfg['dem']
     SCORE_THD = cfg['score_threshold']
@@ -92,11 +94,17 @@ if __name__ == "__main__":
     else:
         building_gdf = gpd.GeoDataFrame()
     if BUILD_AREAS:
-        building_areas = gpd.read_file(os.path.join(LAYERS_DIR, BUILD_AREAS))
-        building_areas = building_areas.to_crs(2056)
-        building_areas['building_areas_id'] = building_areas.index
+        building_areas_gdf = gpd.read_file(os.path.join(LAYERS_DIR, BUILD_AREAS))
+        building_areas_gdf = building_areas_gdf.to_crs(2056)
+        building_areas_gdf['building_areas_id'] = building_areas_gdf.index
     else:
         building_areas = gpd.GeoDataFrame()
+    if CLIM_AREAS:
+        climatic_areas_gdf = gpd.read_file(os.path.join(LAYERS_DIR, CLIM_AREAS))
+        climatic_areas_gdf = climatic_areas_gdf.to_crs(2056)
+        climatic_areas_gdf['climatic_areas_id'] = climatic_areas_gdf.index
+    else:
+        climatic_areas_gdf = gpd.GeoDataFrame()
     if LARGE_RIVERS:
         large_rivers_gdf = gpd.read_file(os.path.join(LAYERS_DIR, LARGE_RIVERS))
         large_rivers_gdf = large_rivers_gdf.to_crs(2056)
@@ -171,7 +179,8 @@ if __name__ == "__main__":
         slope_gdf['slope_>18%_id'] = slope_gdf.index
         slope_gdf.to_file(feature)
 
-    infos_dict = {'slope_>18%': slope_gdf, 'agri_area': agri_gdf, 'buildings': building_gdf, 'building_areas': building_areas, 'forests': forests_gdf,
+    infos_dict = {'slope_>18%': slope_gdf, 'agri_area': agri_gdf, 'buildings': building_gdf, 'building_areas': building_areas_gdf, 
+    'climatic_areas': climatic_areas_gdf, 'forests': forests_gdf,
     'large_rivers': large_rivers_gdf, 'protected_area': protected_gdf, 'protected_water': protected_water_gdf, 
     'sda': sda_gdf, 'polluted_sites': polluted_sites_gdf, 'waters': waters_gdf, 'zone_compatible_LPN': zone_compatible_lpn_gdf, 
     'zone_compatible_LPN_extensive': zone_compatible_lpn_extensive_gdf, 'zone_non_compatible_LPN': zone_non_compatible_lpn_gdf}
@@ -242,6 +251,12 @@ if __name__ == "__main__":
 
     # Final gdf
     logger.info(f"{len(detections_infos_gdf)} detections remaining after filtering")
+
+    # Rename attribute names according to canton's needs
+    attribute_names_df = pd.read_excel(ATTRIBUTE_NAMES, sheet_name=CANTON, engine='openpyxl')
+    for i in range(len(attribute_names_df)):
+        if attribute_names_df['argument'][i] in detections_infos_gdf.keys():
+            detections_infos_gdf = detections_infos_gdf.rename(columns={attribute_names_df['argument'][i]: attribute_names_df['name'][i]})
 
     # Formatting the output name of the filtered detection  
     feature = f'{DETECTIONS[:-5]}_threshold_score-{SCORE_THD}_area-{int(AREA_THD)}_elevation-{int(ELEVATION_THD)}'.replace('0.', '0dot') + '.gpkg'
