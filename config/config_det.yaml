@@ -33,7 +33,7 @@ generate_tilesets.py:
     license:
       name: unknown
       url: unknown
-    categories_file: ./output/OD/trne/zoom16/run66/category_ids.json
+    categories_file: ./data/category_ids.json
 
 
 # Object detection with the optimised trained model

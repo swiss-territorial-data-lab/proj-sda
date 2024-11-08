@@ -81,14 +81,15 @@ The folders/files of the project `proj-sda` (in combination with `object-detecto
 ├── output                                          # outputs folders
 ├── sandbox
 │   ├── clip.py                                     # script clipping detections to the AoI
-│   ├── mosaic.py                                   # script doing image mosaic
-│   ├── plots.py                                    # script plotting figures
-│   ├── rgb_to_greyscale.sh                         # script converting RGB images to greyscale images
-│   └── track_detections.py                         # script tracking the detections in multiple years dataset 
+│   ├── gt_analysis.py                              # script plotting GT characteristics
+│   ├── mosaic.py                                   # script mosaicking images
+│   └── rgb_to_greyscale.sh                         # script converting RGB images to greyscale images
+dataset 
 ├── scripts
 │   ├── batch_process.sh                            # script to execute several commands
 │   ├── filter_results.py                           # script filtering detections
 │   ├── get_dem.sh                                  # script downloading swiss DEM and converting it to EPSG:2056
+│   ├── match_colour.py                             # script matching colour histogram to a reference image
 │   ├── merge_detections.py                         # script merging adjacent detections and attributing class
 │   ├── merge_years.py                              # script merging all year detections layers
 │   ├── prepare_data.py                             # script preparing data to be processed by the object-detector scripts
@@ -106,20 +107,22 @@ The folders/files of the project `proj-sda` (in combination with `object-detecto
 
 Below, the description of input data used for this project. 
 
-- images: [_SWISSIMAGE Journey_](https://www.swisstopo.admin.ch/en/maps-data-online/maps-geodata-online/journey-through-time-images.html) is an annual dataset of aerial images of Switzerland. Only RGB images are used, from 1999 to current. It includes [_SWISSIMAGE 10 cm_](https://www.swisstopo.admin.ch/fr/geodata/images/ortho/swissimage10.html), _SWISSIMAGE 25 cm_ and _SWISSIMAGE 50 cm_. The images are downloaded from the [geo.admin.ch](https://www.geo.admin.ch/fr) server using [XYZ](https://developers.planet.com/docs/planetschool/xyz-tiles-and-slippy-maps/) connector. 
-- ground truth: labels vectorized by domain experts, available on S3/proj-sda/data/ground_truth.
-
+- images: [_SWISSIMAGE Journey_](https://www.swisstopo.admin.ch/en/maps-data-online/maps-geodata-online/journey-through-time-images.html) is an annual dataset of aerial images of Switzerland from 1946 to today. The images are downloaded from the [geo.admin.ch](https://www.geo.admin.ch/fr) server using [XYZ](https://developers.planet.com/docs/planetschool/xyz-tiles-and-slippy-maps/) connector. 
+- ground truth: labels vectorized by the domain experts, available on S3/proj-sda/data/ground_truth/.
+- layers: list of vector layers provided by the domain experts to be spatially intersect with the results to either excluded or to add intersection information in the final attribute table, available on S3/proj-sda/data/layers/.
+- category_ids.json: categories attributed to the detections, available on S3/proj-sda/data/.
 
 ## Scripts
 
 The `proj-sda` repository contains scripts to prepare and post-process the data and results:
 
 1. `prepare_data.py`: format labels and produce tiles to be processed in the OD 
-2. `rgb_to_greyscale.py`: convert RGB images to  greyscale images
-3. `results_analysis.py`: plot some parameters of the detections to help understand the results
-4. `merge_detection.py`: merge adjacent detections cut by tiles into a single detection and attribute the class (the class of the maximum area)
-5. `filter_results.py`: filter results according to given layers and add new attributes to the layer if a detection is overlaps an area of interest. Other information such as score, elevation, slope are also displayed.
-6. `merge_years.py`: merge all the detection layers obtained during inference by year.
+2. `rgb_to_greyscale.py`: convert RGB images to greyscale images (optional)
+3. `match_colour.py`: normalise the colour histogram to the one of a reference image (optional). It can be used for instance after the colourisation of greyscale images to match the RGB images colours.
+4. `results_analysis.py`: plot some parameters of the detections to help understand the results (optional)
+5. `merge_detection.py`: merge adjacent detections cut by tiles into a single detection and attribute the class (the class of the maximum area)
+6. `filter_results.py`: filter results according to given layers and add new attributes to the layer if a detection is overlaps an area of interest. Other information such as score, elevation, slope are also displayed.
+7. `merge_years.py`: merge all the detection layers obtained during inference by year.
 
 
 Object detection is performed with tools present in the [`object-detector`](https://github.com/swiss-territorial-data-lab/object-detector) git repository. 
@@ -131,15 +134,25 @@ The workflow can be executed by running the following list of actions and comman
 
 **Training and evaluation**: 
 
-Prepare the data and train the model:
+Prepare the data:
 ```
 $ python scripts/prepare_data.py config/config_trne.yaml
 $ python ../object-detector/scripts/generate_tilesets.py config/config_trne.yaml
+```
+
+Optional: the images can be standardise by applying 
+```
+$ python scripts/rgb_to_greyscale.py config/config_trne.yaml
+$ python scripts/match_colour.py config/config_trne.yaml
+```
+
+Train the model:
+```
 $ python ../object-detector/scripts/train_model.py config/config_trne.yaml
 $ tensorboard --logdir output/trne/logs
 ```
 
-Open the following link with a web browser: `http://localhost:6006` and identify the iteration minimising the validation loss and select the model accordingly (`model_*.pth`) in `config_trne`. For the provided parameters, `model_0002999.pth` is the default one.
+Open the following link with a web browser: `http://localhost:6006` and identify the iteration minimising the validation loss and select the model accordingly (`model_*.pth`) in `config_trne`. For the provided parameters, `model_0001999.pth` is the default one.
 
 Perform and assess detections:
 ```
@@ -159,7 +172,7 @@ $ python scripts/merge_detections.py config/config_trne.yaml
 
 **Inference**: 
 
-Copy the file category_ids.json and the model to be used
+Colour processing on images can be performed if needed prior to inference.
  
 ```
 $ python scripts/prepare_data.py config/config_det.yaml
@@ -170,10 +183,16 @@ $ scripts/get_dem.sh
 $ python scripts/filter_results.py config/config_det.yaml
 ```
 
-The Detection workflow has been automated and can be run for a batch of years by executing these commands:
+The inference workflow has been automated and can be run for a batch of years (to be specified in the script) by executing these commands:
 ```
 $ scripts/get_dem.sh
 $ scripts/batch_process.sh
+```
+
+Finally, all the detection layers obtained for each year are merged into a single geopackage.
+
+```
+$ python scripts/merge_years.py config/config_det.yaml
 ```
 
 ## Disclaimer

@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # Load input parameters
     WORKING_DIR = cfg['working_dir']
     AOI_SHP = cfg['aoi_shapefile']
-    DETECTIONS_SHP = cfg['detections_shapefile']
+    DETECTIONS_DIR = cfg['detections_shapefile']
     OUTPUT_DIR = cfg['output_dir']
 
     os.chdir(WORKING_DIR)
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     aoi_gdf = gpd.read_file(AOI_SHP)
 
     logger.info(f"Read the detections shapefiles")
-    detections = glob(os.path.join(DETECTIONS_SHP, '*.geojson'))
+    detections = glob(os.path.join(DETECTIONS_DIR, '*.geojson'))
 
     feature_path = os.path.join(OUTPUT_DIR, 'MES_detections.gpkg')
 

@@ -58,14 +58,12 @@ generate_tilesets.py:
       name: Unknown
       url:
 
-
 # Convert RGB to greyscale (Optional)
 rgb_to_greyscale.py: 
   working_dir: .
   image_dir: ./data/images/SWISSIMAGE/
   output_dir: ./data/images/SWISSIMAGE/
   bands: 1
-
 
 # Standardize image color to a reference image (Optional)
 match_colour.py: 
@@ -108,7 +106,6 @@ make_detections.py:
   score_lower_threshold: 0.05
   remove_det_overlap: True
 
-
 # Evaluate the detection quality for the different datasets by calculating metrics
 assess_detections.py:
   working_directory: ./output/OD/trne/zoom16/run82/
@@ -123,6 +120,10 @@ assess_detections.py:
   iou_threshold: 0.1
   area_threshold: 50       # area under which the polygons are discarded from assessment
 
+# Plots (optional)
+result_analysis.py:
+  working_dir: ./output/OD/trne/zoom16/run82/zoom16/run59/
+  detections: tagged_detections.gpkg
 
 # Assess the final results
 merge_detections.py:
@@ -136,13 +137,3 @@ merge_detections.py:
   iou_threshold: 0.1
   score_threshold: 0.05
   assess: True
-
-
-# Plots (optional)
-result_analysis.py:
-  working_dir: ./output/OD/trne/zoom16/run82/zoom16/run59/
-  detections: tagged_detections.gpkg
-
-gt_analysis.py:
-  working_dir: ./data/ground_truth/
-  labels: 20240916_GT_all.gpkg
