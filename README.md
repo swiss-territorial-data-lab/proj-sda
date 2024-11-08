@@ -81,8 +81,6 @@ The folders/files of the project `proj-sda` (in combination with `object-detecto
 ├── output                                          # outputs folders
 ├── sandbox
 │   ├── clip.py                                     # script clipping detections to the AoI
-│   ├── filter_detections.py                        # script filtering the detections according to threshold values
-│   ├── get_dem.sh                                  # batch script downloading the DEM of Switzerland
 │   ├── mosaic.py                                   # script doing image mosaic
 │   ├── plots.py                                    # script plotting figures
 │   ├── rgb_to_greyscale.sh                         # script converting RGB images to greyscale images
