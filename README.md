@@ -114,16 +114,20 @@ Below, the description of input data used for this project.
 
 ## Scripts
 
-The `proj-sda` repository contains scripts to prepare and post-process the data and results:
+The `proj-sda` repository contains scripts to prepare and post-process the data and results. Hereafter a short description of each script and a workflow graph:
+
+<p align="center">
+<img src="./images/sda_workflow_graph.png?raw=true" width="100%">
+<br />
+</p>
 
 1. `prepare_data.py`: format labels and produce tiles to be processed in the OD 
 2. `rgb_to_greyscale.py`: convert RGB images to greyscale images (optional)
 3. `match_colour.py`: normalise the colour histogram to the one of a reference image (optional). It can be used for instance after the colourisation of greyscale images to match the RGB images colours.
 4. `results_analysis.py`: plot some parameters of the detections to help understand the results (optional)
-5. `merge_detection.py`: merge adjacent detections cut by tiles into a single detection and attribute the class (the class of the maximum area)
-6. `filter_results.py`: filter results according to given layers and add new attributes to the layer if a detection is overlaps an area of interest. Other information such as score, elevation, slope are also displayed.
+5. `merge_detections.py`: merge adjacent detections cut by tiles into a single detection and attribute the class (the class of the maximum area)
+6. `filter_detections.py`: filter detections by overlap with other vector layers. The overlapping portion of the detection can be removed or a new attribute column is created to indicate the overlapping ratio with the layer of interest. Other information such as score, elevation, slope are also displayed.
 7. `merge_years.py`: merge all the detection layers obtained during inference by year.
-
 
 Object detection is performed with tools present in the [`object-detector`](https://github.com/swiss-territorial-data-lab/object-detector) git repository. 
 
