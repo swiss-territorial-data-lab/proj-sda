@@ -87,7 +87,7 @@ The folders/files of the project `proj-sda` (in combination with `object-detecto
 dataset 
 ├── scripts
 │   ├── batch_process.sh                            # script to execute several commands
-│   ├── filter_results.py                           # script filtering detections
+│   ├── filter_detections.py                        # script detections filtering 
 │   ├── get_dem.sh                                  # script downloading swiss DEM and converting it to EPSG:2056
 │   ├── match_colour.py                             # script matching colour histogram to a reference image
 │   ├── merge_detections.py                         # script merging adjacent detections and attributing class
@@ -184,7 +184,7 @@ $ python ../object-detector/scripts/generate_tilesets.py config/config_det.yaml
 $ python ../object-detector/scripts/make_detections.py config/config_det.yaml
 $ python scripts/merge_detections.py config/config_det.yaml
 $ scripts/get_dem.sh
-$ python scripts/filter_results.py config/config_det.yaml
+$ python scripts/filter_detections.py config/config_det.yaml
 ```
 
 The inference workflow has been automated and can be run for a batch of years (to be specified in the script) by executing these commands:

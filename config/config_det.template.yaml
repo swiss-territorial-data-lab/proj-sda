@@ -51,7 +51,7 @@ make_detections.py:
     enabled: true
     epsilon: 2.0        # cf. https://rdp.readthedocs.io/en/latest/
   score_lower_threshold: 0.05
-  remove_det_overlap: True
+  remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained
 
 
 # Assess the final results
@@ -65,7 +65,7 @@ merge_detections.py:
   assess: False
   
 # Filtering and merging detection polygons to improve final results
-filter_results.py:
+filter_detections.py:
   working_dir: ./data
   detections: ../output/OD/det/SWISSIMAGE_YEAR/inference_detections_merged.gpkg
   aoi: ./AoI/Ticino/Secteur_test_TC.gpkg
