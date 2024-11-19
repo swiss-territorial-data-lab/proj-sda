@@ -16,7 +16,7 @@ from loguru import logger
 logger = misc.format_logger(logger)
 
 
-def plot_barchart(dir_plots, df, cat, data):
+def plot_barchart(df, cat, data):
 
     fig, ax = plt.subplots(1, 1, figsize=(30,5))
 
@@ -59,14 +59,14 @@ def plot_barchart(dir_plots, df, cat, data):
     plt.title(cat, fontweight='bold')
     plt.legend(loc='upper left', frameon=False)    
 
-    plot_path = os.path.join(dir_plots, f'{data}_{cat}.png')  
+    plot_path = f'{data}_{cat}.png'
     plt.savefig(plot_path, bbox_inches='tight')
     plt.close(fig)
 
     return plot_path
 
 
-def plot_boxplot(dir_plots, df, param):
+def plot_boxplot(df, param):
 
     ax = df.boxplot(column=[param], by=['tag'], grid=False)
     if param == 'area':
@@ -78,7 +78,7 @@ def plot_boxplot(dir_plots, df, param):
     ax.get_figure().suptitle('')
     ax.set_title('')
 
-    plot_path = os.path.join(dir_plots, f'{param}_boxplot.png')  
+    plot_path = f'{param}_boxplot.png'
     plt.savefig(plot_path, bbox_inches='tight')
 
     return plot_path
@@ -101,8 +101,10 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
+    WORKING_DIR = cfg['working_dir']
     DETECTIONS = cfg['detections']
-    OUTPUT = cfg['output_dir']
+
+    os.chdir(WORKING_DIR)
 
     written_files = [] 
 
@@ -115,15 +117,15 @@ if __name__ == "__main__":
     logger.info(f"{total} input shapes")
 
     for parameter in ['area', 'score']:  
-        feature = plot_boxplot(OUTPUT, detections_gdf, param=parameter)
+        feature = plot_boxplot(detections_gdf, param=parameter)
         written_files.append(feature)
         logger.success(f"{DONE_MSG} A file was written: {feature}") 
 
     for cat in filter(None, detections_gdf.CATEGORY.unique()): 
-        feature = plot_barchart(OUTPUT, detections_gdf, cat, data='label')
+        feature = plot_barchart(detections_gdf, cat, data='label')
         written_files.append(feature)
         logger.success(f"{DONE_MSG} A file was written: {feature}")  
-        feature = plot_barchart(OUTPUT, detections_gdf, cat, data='det')
+        feature = plot_barchart(detections_gdf, cat, data='det')
         written_files.append(feature)
         logger.success(f"{DONE_MSG} A file was written: {feature}")  
     logger.info("The following files were written. Let's check them out!")
