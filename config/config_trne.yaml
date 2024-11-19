@@ -8,7 +8,7 @@ prepare_data.py:
     # empty_tiles_year: 2020                                       # If "empty_tiles_aoi" selected then provide a year. Choice: (1) numeric (i.e. 2020), (2) [year1, year2] (random selection of a year within a given year range) 
     # empty_tiles_shp: ./data/empty_tiles/20240726_EPT.gpkg                  # Provided shapefile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
     category: 'Classe'
-  output_folder: ./output/OD/trne/zoom16/run86/
+  output_folder: ./output/OD/trne/zoom16/run91/
   zoom_level: 16 
 
 
@@ -19,16 +19,16 @@ generate_tilesets.py:
     nb_tiles_max: 2000
   working_directory: .
   datasets:
-    aoi_tiles: output/OD/trne/zoom16/run86/tiles.geojson
-    ground_truth_labels: output/OD/trne/zoom16/run86/labels.geojson
+    aoi_tiles: output/OD/trne/zoom16/run91/tiles.geojson
+    ground_truth_labels: output/OD/trne/zoom16/run91/labels.geojson
     # fp_labels:
-    #   fp_shp: output/OD/trne/zoom16/run86/FP.geojson
+    #   fp_shp: output/OD/trne/zoom16/run91/FP.geojson
     #   frac_trn: 0.7        # fraction of fp tiles to add to the trn dataset, then the remaining tiles will be split in 2 and added to tst and val datasets
     image_source:
       # ############# 
       # type: FOLDER
       # year: 'multi-year'
-      # location: ./output/OD/trne/zoom16/run86/all-images_src
+      # location: ./output/OD/trne/zoom16/run91/all-images_src
       # srs: "EPSG:3857"
       # ############# 
       # type: WMS                               # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
@@ -44,7 +44,7 @@ generate_tilesets.py:
   #   tiles_frac: 0.5       # fraction (relative to the number of tiles intersecting labels) of empty tiles to add
   #   frac_trn: 0.7         # fraction of empty tiles to add to the trn dataset, then the remaining tiles will be split in 2 and added to tst and val datasets
   #   keep_oth_tiles: False # keep tiles in oth dataset not intersecting oth labels
-  output_folder: output/OD/trne/zoom16/run86/
+  output_folder: output/OD/trne/zoom16/run91/
   tile_size: 256      # per side, in pixels
   overwrite: True
   n_jobs: 10
@@ -63,24 +63,24 @@ generate_tilesets.py:
 # Convert RGB to greyscale (Optional)
 rgb_to_greyscale.py: 
   working_dir: .
-  image_dir: ./data/images/SWISSIMAGE/
-  output_dir: ./data/images/SWISSIMAGE/
+  image_dir: <DIR_PATH>
+  output_dir: <DIR_PATH>
   bands: 1
 
 
 # Standardize image color to a reference image (Optional)
 match_colour.py: 
   working_dir: .
-  image_dir: ./data/images/SWISSIMAGE/
-  output_dir: ./data/images/SWISSIMAGE/color_adjustment
-  reference: ./output/OD/trne/zoom16/run86/<REF_IMAGE>
-  method: scikit
+  image_dir: <DIR_PATH>
+  output_dir: <DIR_PATH>
+  reference: <PATH_TO_REF_IMAGE>
+  method: scikit   # 1: scikit, 2: rasterio
   plot: False
 
 
 # Train the model with the detectron2 algorithm
 train_model.py:
-  working_directory: ./output/OD/trne/zoom16/run86/
+  working_directory: ./output/OD/trne/zoom16/run91/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files: # relative paths, w/ respect to the working_folder
@@ -94,7 +94,7 @@ train_model.py:
 
 # Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run86/
+  working_directory: ./output/OD/trne/zoom16/run91/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -103,7 +103,7 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ./logs/model_0014999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ./logs/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: true
@@ -114,7 +114,7 @@ make_detections.py:
 
 # Evaluate the detection quality for the different datasets by calculating metrics
 assess_detections.py:
-  working_directory: ./output/OD/trne/zoom16/run86/
+  working_directory: ./output/OD/trne/zoom16/run91/
   datasets:
     ground_truth_labels: labels.geojson
     split_aoi_tiles: split_aoi_tiles.geojson # aoi = Area of Interest
@@ -130,13 +130,13 @@ assess_detections.py:
 
 # Plots (optional)
 result_analysis.py:
-  working_dir: ./output/OD/trne/zoom16/run86/
+  working_dir: ./output/OD/trne/zoom16/run91/
   detections: tagged_detections.gpkg
 
 
 # Assess the final results
 merge_detections.py:
-  working_dir: ./output/OD/trne/zoom16/run86/
+  working_dir: ./output/OD/trne/zoom16/run91/
   labels: labels.geojson
   detections:
     trn: trn_detections_at_0dot05_threshold.gpkg

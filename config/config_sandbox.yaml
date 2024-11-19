@@ -11,7 +11,7 @@ mosaic.py:
 
 gt_analysis.py:
   working_dir: ./data/ground_truth/
-  labels: <GT_SHPFILE>
+  labels: 20240916_GT_CH.gpkg
 
 # Segment Anything Model
 segment_images.py:
