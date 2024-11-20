@@ -2,7 +2,7 @@
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
-    shapefile: ./data/AoI/Ticino/Secteur_test_TC_v2.gpkg               
+    shapefile: ./data/AoI/Vaud/Secteur_test.shp            
   output_folder: ./output/OD/det/SWISSIMAGE_YEAR
   zoom_level: 16 
 
@@ -27,7 +27,7 @@ generate_tilesets.py:
   COCO_metadata:
     year: 2024
     version: 1.0
-    description: Anthropogenic soils (Ticino, Vaud and swissTML3D 2024)
+    description: Anthropogenic soils (Vaud, Vaud and swissTML3D 2024)
     contributor: swisstopo
     url: https://swisstopo.ch
     license:
@@ -45,7 +45,7 @@ make_detections.py:
     oth: COCO_oth.json
   detectron2_config_file: ../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../../model/run53/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../../../model/run89/model_0004999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: true
@@ -68,11 +68,11 @@ merge_detections.py:
 filter_detections.py:
   working_dir: ./data
   detections: ../output/OD/det/SWISSIMAGE_YEAR/inference_detections_merged.gpkg
-  aoi: ./AoI/Ticino/Secteur_test_TC.gpkg
-  canton: Ticino
+  aoi: ./AoI/Vaud/Secteur_test.shp  
+  canton: Vaud
   infos:
     layers_dir: ./layers/{canton}/
-    Ticino:
+    Vaud:
       agri_area: Idoneità_Agricola.shp
       building_areas: Zones_batir_Ind.shp
       climatic_areas: zones_climatiques_compatibles_sda_tc.gpkg
@@ -96,8 +96,8 @@ filter_detections.py:
       slope: terrain_pente_VD.gpkg
       waters: lakes_VD.gpkg
   attribute_names: ./layers/attribute_names.xlsx
-  exclusion: [building_areas, forests, zone_non_compatible_LPN, waters] 
+  exclusion: [waters] 
   dem: ./DEM/switzerland_dem_EPSG2056.tif
-  elevation_threshold: 900.0 # m, altitude threshold
+  elevation_threshold: 0.0 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
   area_threshold: 100.0 # m2, area threshold under which polygons are discarded
