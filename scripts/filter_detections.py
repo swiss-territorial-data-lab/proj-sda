@@ -197,16 +197,10 @@ if __name__ == "__main__":
     tdem = len(detections_gdf)
     logger.info(f"{total - tdem} detections were removed by elevation threshold: {ELEVATION_THD} m")
 
-    # Discard polygons with area under a given threshold 
-    detections_area_gdf = detections_gdf[detections_gdf.area > AREA_THD]
-    ta = len(detections_area_gdf)
-    logger.info(f"{tdem - ta} detections were removed by area filtering (area threshold = {AREA_THD} m2)")
-
     # Filter dataframe by score value
-    detections_gdf = detections_area_gdf.copy()
     detections_score_gdf = detections_gdf[detections_gdf.score > SCORE_THD]
     sc = len(detections_score_gdf)
-    logger.info(f"{ta - sc} detections were removed by score filtering (score threshold = {SCORE_THD})")
+    logger.info(f"{tdem - sc} detections were removed by score filtering (score threshold = {SCORE_THD})")
 
     detections_gdf = detections_score_gdf.copy()
 
@@ -242,7 +236,16 @@ if __name__ == "__main__":
             detections_infos_gdf[f'{key}'] = detections_infos_gdf.apply(lambda x: misc.overlap(x['geometry'], x[f'{key}_geom']) if x['geometry'] and x[f'{key}_geom'] != None else 0, axis=1)
             detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom'])
             detections_infos_gdf = detections_infos_gdf.groupby('det_id',sort=False).apply(lambda x: x if len(x)==1 else x.loc[x[f'{key}'].ne('no')]).reset_index(drop=True)
-            
+
+
+    # Discard polygons with area under a given threshold 
+    detections_infos_gdf = detections_infos_gdf.explode(ignore_index=True)
+    detections_infos_gdf['area'] = detections_infos_gdf.area
+    tsjoin = len(detections_infos_gdf)
+    detections_infos_gdf = detections_infos_gdf[detections_infos_gdf.area > AREA_THD]
+    ta = len(detections_infos_gdf)
+    logger.info(f"{tsjoin - ta} detections were removed by area filtering (area threshold = {AREA_THD} m2)")
+
     # Compute the nearest distance between detections and sda
     if SDA:
         detections_infos_gdf = gpd.sjoin_nearest(detections_infos_gdf, sda_gdf[['sda_id', 'geometry']], how='left', distance_col='distance_sda')
