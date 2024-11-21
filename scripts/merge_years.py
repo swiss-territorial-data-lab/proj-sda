@@ -48,7 +48,7 @@ if __name__ == "__main__":
         detections_gdf = gpd.read_file(str(year) + '/' + LAYER)
         detections_final_gdf = pd.concat([detections_final_gdf, detections_gdf], ignore_index=True)
     
-    feature = f'detections_anthro_soils_{CANTON}_.gpkg'
+    feature = f'detections_anthropogenic_soils_{CANTON}.gpkg'
     detections_final_gdf.to_file(feature)
 
     logger.info("The following files were written. Let's check them out!")
