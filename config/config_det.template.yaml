@@ -2,7 +2,7 @@
 prepare_data.py:  
   srs: EPSG:2056
   datasets:
-    shapefile: ./data/AoI/Vaud/Secteur_test.shp            
+    shapefile: ./data/AoI/Ticino/Secteur_test_TC_v2.gpkg           
   output_folder: ./output/OD/det/SWISSIMAGE_YEAR
   zoom_level: 16 
 
@@ -68,8 +68,8 @@ merge_detections.py:
 filter_detections.py:
   working_dir: ./data
   detections: ../output/OD/det/SWISSIMAGE_YEAR/inference_detections_merged.gpkg
-  aoi: ./AoI/Vaud/Secteur_test.shp  
-  canton: Vaud
+  aoi: ./AoI/Ticino/Secteur_test_TC_v2.gpkg
+  canton: Ticino
   infos:
     layers_dir: ./layers/{canton}/
     Vaud:
@@ -96,8 +96,8 @@ filter_detections.py:
       slope: terrain_pente_VD.gpkg
       waters: lakes_VD.gpkg
   attribute_names: ./layers/attribute_names.xlsx
-  exclusion: [waters] 
+  exclusion: [building_areas, forests, zone_non_compatible_LPN, waters] 
   dem: ./DEM/switzerland_dem_EPSG2056.tif
-  elevation_threshold: 0.0 # m, altitude threshold
+  elevation_threshold: 10000.0 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
   area_threshold: 100.0 # m2, area threshold under which polygons are discarded
