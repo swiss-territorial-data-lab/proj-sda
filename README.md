@@ -1,4 +1,4 @@
-# Automatic detection of agricultaral soils affected by anthropegenic activities
+# Automatic detection of agricultural soils affected by anthropogenic activities
 
 The aim of the project is to automatically detect anthropogenic activities that have affected agricultural soils in the past. Two main categories have been defined: "non-agricultural activities" and "land movements". The results will make it possible to identify potentially rehabilitable soils that can be used to establish a land crop rotation map. <br>
 
@@ -107,7 +107,7 @@ dataset
 
 Below, the description of input data used for this project. 
 
-- images: [_SWISSIMAGE Journey_](https://www.swisstopo.admin.ch/en/maps-data-online/maps-geodata-online/journey-through-time-images.html) is an annual dataset of aerial images of Switzerland from 1946 to today. The images are downloaded from the [geo.admin.ch](https://www.geo.admin.ch/fr) server using [XYZ](https://developers.planet.com/docs/planetschool/xyz-tiles-and-slippy-maps/) connector. 
+- images: [_SWISSIMAGE Journey_](https://map.geo.admin.ch/#/map?lang=fr&center=2660000,1190000&z=1&bgLayer=ch.swisstopo.pixelkarte-farbe&topic=ech&layers=ch.swisstopo.swissimage-product@year=2024;ch.swisstopo.swissimage-product.metadata@year=2024) is an annual dataset of aerial images of Switzerland from 1946 to today. The images are downloaded from the [geo.admin.ch](https://www.geo.admin.ch/fr) server using [XYZ](https://api3.geo.admin.ch/services/sdiservices.html#xyz) connector. 
 - ground truth: labels vectorized by the domain experts, available on S3/proj-sda/data/ground_truth/.
 - layers: list of vector layers provided by the domain experts to be spatially intersect with the results to either excluded or to add intersection information in the final attribute table, available on S3/proj-sda/data/layers/.
 - category_ids.json: categories attributed to the detections, available on S3/proj-sda/data/.
