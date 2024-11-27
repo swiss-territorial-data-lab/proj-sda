@@ -21,7 +21,7 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
     Returns:
         tuple:
         - geodataframe: true positive intersections between a detection and a label;
-        - geodataframe: false postive detection;
+        - geodataframe: false postive detections;
         - geodataframe: false negative labels;
         - geodataframe: intersections between a detection and a label with a mismatched class id.
         - geodataframe: label and detection polygons with an area smaller than the threshold.
@@ -48,14 +48,14 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
     # We need to keep both geometries after sjoin to check the best intersection over union
     _labels_gdf['label_geom'] = _labels_gdf.geometry
     
-    # Filter detection and labels with area less than thd value 
+    # Filter detections and labels with area less than thd value 
     if area_threshold:
-        _dets_gdf['area'] = _dets_gdf.geometry.area
+        _dets_gdf['area'] = _dets_gdf.area
         filter_dets_gdf = _dets_gdf[_dets_gdf['area']<area_threshold]
-        _dets_gdf = _dets_gdf[_dets_gdf['area']>=area_threshold]
-        _labels_gdf['area'] = _labels_gdf.geometry.area
+        _dets_gdf = _dets_gdf[_dets_gdf['area']>=area_threshold].copy()
+        _labels_gdf['area'] = _labels_gdf.area
         filter_labels_gdf = _labels_gdf[_labels_gdf['area']<area_threshold]
-        _labels_gdf = _labels_gdf[_labels_gdf['area']>=area_threshold]
+        _labels_gdf = _labels_gdf[_labels_gdf['area']>=area_threshold].copy()
         small_poly_gdf = pd.concat([filter_dets_gdf, filter_labels_gdf])
 
     # TRUE POSITIVES
