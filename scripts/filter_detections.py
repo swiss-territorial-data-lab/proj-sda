@@ -17,6 +17,10 @@ from loguru import logger
 logger = misc.format_logger(logger)
 
 
+def none_if_undefined(cfg, key):
+    return cfg[key] if key in cfg.keys() else None
+
+
 if __name__ == "__main__":
 
     # Chronometer
@@ -38,22 +42,23 @@ if __name__ == "__main__":
     AOI = cfg['aoi']
     DETECTIONS = cfg['detections']
     CANTON = cfg['canton']
+    CANTON_PARAMS = cfg['infos'][CANTON]
     LAYERS_DIR = cfg['infos']['layers_dir'].replace('{canton}', CANTON)
-    AGRI_AREA = cfg['infos'][CANTON]['agri_area'] if 'agri_area' in cfg['infos'][CANTON].keys() else None
-    BUILDINGS = cfg['infos'][CANTON]['buildings'] if 'buildings' in cfg['infos'][CANTON].keys() else None
-    BUILD_AREAS = cfg['infos'][CANTON]['building_areas'] if 'building_areas' in cfg['infos'][CANTON].keys() else None
-    CLIM_AREAS = cfg['infos'][CANTON]['climatic_areas'] if 'climatic_areas' in cfg['infos'][CANTON].keys() else None
-    FORESTS = cfg['infos'][CANTON]['forests'] if 'forests' in cfg['infos'][CANTON].keys() else None
-    LARGE_RIVERS = cfg['infos'][CANTON]['large_rivers'] if 'large_rivers' in cfg['infos'][CANTON].keys() else None
-    PROTECTED_AREA = cfg['infos'][CANTON]['protected_area'] if 'protected_area' in cfg['infos'][CANTON].keys() else None
-    PROTECTED_UG_WATER = cfg['infos'][CANTON]['protected_underground_water'] if 'protected_underground_water' in cfg['infos'][CANTON].keys() else None
-    SDA = cfg['infos'][CANTON]['sda'] if 'sda' in cfg['infos'][CANTON].keys() else None
-    POLLUTED_SITES = cfg['infos'][CANTON]['polluted_sites'] if 'polluted_sites' in cfg['infos'][CANTON].keys() else None
-    SLOPE = cfg['infos'][CANTON]['slope'] if 'slope' in cfg['infos'][CANTON].keys() else None
-    WATERS = cfg['infos'][CANTON]['waters'] if 'waters' in cfg['infos'][CANTON].keys() else None
-    ZONE_COMPATIBLE_LPN = cfg['infos'][CANTON]['zone_compatible_LPN'] if 'zone_compatible_LPN' in cfg['infos'][CANTON].keys() else None
-    ZONE_COMPATIBLE_LPN_EXTENSIVE = cfg['infos'][CANTON]['zone_compatible_LPN_extensive'] if 'zone_compatible_LPN_extensive' in cfg['infos'][CANTON].keys() else None
-    ZONE_NON_COMPATIBLE_LPN = cfg['infos'][CANTON]['zone_non_compatible_LPN'] if 'zone_non_compatible_LPN' in cfg['infos'][CANTON].keys() else None
+    AGRI_AREA = none_if_undefined(CANTON_PARAMS, 'agri_area') 
+    BUILDINGS = none_if_undefined(CANTON_PARAMS, 'buildings') 
+    BUILD_AREAS = none_if_undefined(CANTON_PARAMS, 'building_areas') 
+    CLIM_AREAS = none_if_undefined(CANTON_PARAMS, 'climatic_areas') 
+    FORESTS = none_if_undefined(CANTON_PARAMS, 'forests') 
+    LARGE_RIVERS = none_if_undefined(CANTON_PARAMS, 'large_rivers') 
+    PROTECTED_AREA = none_if_undefined(CANTON_PARAMS, 'protected_areas') 
+    PROTECTED_UG_WATER = none_if_undefined(CANTON_PARAMS, 'protected_underground_water') 
+    SDA = none_if_undefined(CANTON_PARAMS, 'sda') 
+    POLLUTED_SITES = none_if_undefined(CANTON_PARAMS, 'polluted_sites') 
+    SLOPE = none_if_undefined(CANTON_PARAMS, 'slope') 
+    WATERS = none_if_undefined(CANTON_PARAMS, 'waters') 
+    ZONE_COMPATIBLE_LPN = none_if_undefined(CANTON_PARAMS, 'zone_compatible_LPN') 
+    ZONE_COMPATIBLE_LPN_EXTENSIVE = none_if_undefined(CANTON_PARAMS, 'zone_compatible_LPN_extensive') 
+    ZONE_NON_COMPATIBLE_LPN = none_if_undefined(CANTON_PARAMS, 'zone_non_compatible_LPN')
     ATTRIBUTE_NAMES = cfg['attribute_names']
     EXCLUSION = cfg['exclusion'] if 'exclusion' in cfg.keys() else None
     DEM = cfg['dem']
@@ -188,7 +193,8 @@ if __name__ == "__main__":
     # Discard polygons detected at/below 0 m and above the threshold elevation and above a given slope
     dem = rasterio.open(DEM)
 
-    detections_gdf = detections_gdf.loc[detections_gdf['geometry'].is_valid, :] 
+    detections_gdf = misc.check_validity(detections_gdf, correct=True)
+
     row, col = dem.index(detections_gdf.centroid.x, detections_gdf.centroid.y)
     elevation = dem.read(1)[row, col]
     detections_gdf['elevation'] = elevation 
@@ -218,7 +224,8 @@ if __name__ == "__main__":
         exclu_gdf = exclu_gdf.dissolve()
         detections_gdf = detections_gdf.overlay(exclu_gdf, how='difference')
 
-    # Indicate if polygons are intersecting relevant vector layers
+    # Spatial join between detections and other vector layers
+    logger.info('Compute intersection overlap between detection polygons and other vector layer polygons.')
     detections_infos_gdf = detections_gdf.copy()
     for key in infos_dict.keys():
         if infos_dict[key].empty:
@@ -248,6 +255,7 @@ if __name__ == "__main__":
 
     # Compute the nearest distance between detections and sda
     if SDA:
+        logger.info('Compute the nearest distance between detection polygons and SDA polygons.')
         detections_infos_gdf = gpd.sjoin_nearest(detections_infos_gdf, sda_gdf[['sda_id', 'geometry']], how='left', distance_col='distance_sda')
         detections_infos_gdf = detections_infos_gdf.drop_duplicates(subset=['det_id', 'sda'])
         detections_infos_gdf = detections_infos_gdf.drop(columns=['index_right', 'sda_id']) 
@@ -255,7 +263,7 @@ if __name__ == "__main__":
     # Final gdf
     logger.info(f"{len(detections_infos_gdf)} detections remaining after filtering")
 
-    # Rename attribute names according to canton's needs
+    # Rename attribute names according to the Canton's needs
     attribute_names_df = pd.read_excel(ATTRIBUTE_NAMES, sheet_name=CANTON, engine='openpyxl')
     for i in range(len(attribute_names_df)):
         if attribute_names_df['argument'][i] in detections_infos_gdf.keys():
