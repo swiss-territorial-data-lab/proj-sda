@@ -29,7 +29,7 @@ def plot_barchart(df, cat, data):
         df = df[~(df.tag.isin(["FN", "wrong class", "small polygon"]))]
         year = 'year_det'
   
-    df = df[[year, 'tag']]
+    df = df[[year, 'tag']].astype({year: 'int', 'tag': 'str'})
 
     df['counts'] = 1
 
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     # Convert input detections to a geodataframe 
     detections_gdf = gpd.read_file(DETECTIONS)
     detections_gdf = detections_gdf.to_crs(2056)
-    detections_gdf['area'] = detections_gdf.geometry.area 
+    detections_gdf['area'] = detections_gdf.area 
 
     total = len(detections_gdf)
     logger.info(f"{total} input shapes")
