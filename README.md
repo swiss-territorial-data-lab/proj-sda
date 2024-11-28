@@ -30,8 +30,7 @@ The project has been run on a 32 GiB RAM machine with a 16 GiB GPU (NVIDIA Tesla
 - PyTorch version 1.10
 - CUDA version 11.3
 - GDAL version 3.0.4
-<!-- - `object-detector` version [2.1.0](https://github.com/swiss-territorial-data-lab/object-detector/releases/tag/v.2.1.0)  -->
-- [`object-detector`](https://github.com/swiss-territorial-data-lab/object-detector): clone the repo in the same folder than `proj-sda` and switch to branch `ch/multi-year`. 
+- object-detector version [2.3.1](https://github.com/swiss-territorial-data-lab/object-detector/releases/tag/v2.3.1)
 
 ### Installation
 
@@ -82,19 +81,19 @@ The folders/files of the project `proj-sda` (in combination with `object-detecto
 ├── sandbox
 │   ├── clip.py                                     # script clipping detections to the AoI
 │   ├── gt_analysis.py                              # script plotting GT characteristics
+│   ├── match_colour.py                             # script matching colour histogram to a reference image
 │   ├── mosaic.py                                   # script mosaicking images
+│   ├── rgb_to_greyscale.py                         # script converting RGB images to greyscale images
 │   └── rgb_to_greyscale.sh                         # script converting RGB images to greyscale images
 dataset 
 ├── scripts
 │   ├── batch_process.sh                            # script to execute several commands
 │   ├── filter_detections.py                        # script detections filtering 
 │   ├── get_dem.sh                                  # script downloading swiss DEM and converting it to EPSG:2056
-│   ├── match_colour.py                             # script matching colour histogram to a reference image
 │   ├── merge_detections.py                         # script merging adjacent detections and attributing class
 │   ├── merge_years.py                              # script merging all year detections layers
 │   ├── prepare_data.py                             # script preparing data to be processed by the object-detector scripts
-│   ├── result_analysis.py                          # script plotting some parameters
-│   └── rgb_to_greyscale.py                         # script converting RGB images to greyscale images
+│   └── result_analysis.py                          # script plotting some parameters
 ├── .gitignore                                      
 ├── LICENSE
 ├── README.md                                      
@@ -122,37 +121,31 @@ The `proj-sda` repository contains scripts to prepare and post-process the data 
 </p>
 
 1. `prepare_data.py`: format labels and produce tiles to be processed in the OD 
-2. `rgb_to_greyscale.py`: convert RGB images to greyscale images (optional)
-3. `match_colour.py`: normalise the colour histogram to the one of a reference image (optional). It can be used for instance after the colourisation of greyscale images to match the RGB images colours.
-4. `results_analysis.py`: plot some parameters of the detections to help understand the results (optional)
-5. `merge_detections.py`: merge adjacent detections cut by tiles into a single detection and attribute the class (the class of the maximum area)
-6. `filter_detections.py`: filter detections by overlap with other vector layers. The overlapping portion of the detection can be removed or a new attribute column is created to indicate the overlapping ratio with the layer of interest. Other information such as score, elevation, slope are also displayed.
-7. `merge_years.py`: merge all the detection layers obtained during inference by year.
+2. `results_analysis.py`: plot some parameters of the detections to help understand the results (optional)
+3. `merge_detections.py`: merge adjacent detections cut by tiles into a single detection and attribute the class (the class of the maximum area)
+4. `filter_detections.py`: filter detections by overlap with other vector layers. The overlapping portion of the detection can be removed or a new attribute column is created to indicate the overlapping ratio with the layer of interest. Other information such as score, elevation, slope are also displayed.
+5. `merge_years.py`: merge all the detection layers obtained during inference by year.
+6. `get_dem.sh`: download the DEM of Switzerland.
+7. `batch_process.sh`: batch script to perform the inference workflow over several years.
 
 Object detection is performed with tools present in the [`object-detector`](https://github.com/swiss-territorial-data-lab/object-detector) git repository. 
 
 
  ## Workflow instructions
 
-The workflow can be executed by running the following list of actions and commands. Adjust the paths and input values of the configuration files accordingly. The contents of the configuration files in angle brackets must be assigned. 
+The workflow can be executed by running the following list of actions and commands. Adjust the paths and input values of the configuration files accordingly. The contents of the configuration files in square brackets must be assigned. 
 
 **Training and evaluation**: 
 
 Prepare the data:
 ```
 $ python scripts/prepare_data.py config/config_trne.yaml
-$ python ../object-detector/scripts/generate_tilesets.py config/config_trne.yaml
-```
-
-Optional: the images can be standardise by applying 
-```
-$ python scripts/rgb_to_greyscale.py config/config_trne.yaml
-$ python scripts/match_colour.py config/config_trne.yaml
+$ stdl-objdet generate_tilesets config/config_trne.yaml
 ```
 
 Train the model:
 ```
-$ python ../object-detector/scripts/train_model.py config/config_trne.yaml
+$ stdl-objdet train_model config/config_trne.yaml
 $ tensorboard --logdir output/trne/logs
 ```
 
@@ -160,8 +153,8 @@ Open the following link with a web browser: `http://localhost:6006` and identify
 
 Perform and assess detections:
 ```
-$ python ../object-detector/scripts/make_detections.py config/config_trne.yaml
-$ python ../object-detector/scripts/assess_detections.py config/config_trne.yaml
+$ stdl-objdet make_detections config/config_trne.yaml
+$ stdl-objdet assess_detections  config/config_trne.yaml
 ```
 
 Some characteristics of the detections can be analysed with the help of plots:
@@ -180,8 +173,8 @@ Colour processing on images can be performed if needed prior to inference.
  
 ```
 $ python scripts/prepare_data.py config/config_det.yaml
-$ python ../object-detector/scripts/generate_tilesets.py config/config_det.yaml
-$ python ../object-detector/scripts/make_detections.py config/config_det.yaml
+$ stdl-objdet generate_tilesets config/config_det.yaml
+$ stdl-objdet make_detections config/config_det.yaml
 $ python scripts/merge_detections.py config/config_det.yaml
 $ scripts/get_dem.sh
 $ python scripts/filter_detections.py config/config_det.yaml
@@ -198,6 +191,19 @@ Finally, all the detection layers obtained for each year are merged into a singl
 ```
 $ python scripts/merge_years.py config/config_det.yaml
 ```
+
+## Sandbox
+
+Additional scripts can be used to process images. Their use is optional.
+
+1. `clip.py`: clip a vecor layer with another one.
+2. `gt_analysis.py`: plot GT characteristics.
+3. `match_colour.py`: normalise the colour histogram to the one of a reference image. 
+4. `mosaic.py`: mosaic images. 
+5. `rgb_to_greyscale.py`: convert RGB images to greyscale images. 
+6. `rgb_to_greyscale.sh`: convert RGB images to greyscale images. 
+
+This project uses a multi-year dataset comprising greyscale and RGB images. The historical greyscale images are colourised using the method developed by [Farella et al. 2022](https://doi.org/10.3390/jimaging8100269), for which the code is available [here](https://github.com/3DOM-FBK/Hyper_U_Net).
 
 ## Disclaimer
 
