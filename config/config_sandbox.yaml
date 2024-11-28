@@ -1,54 +1,34 @@
+# Convert RGB to greyscale (Optional)
+rgb_to_greyscale.py: 
+  working_dir: .
+  image_dir: <DIR_PATH>
+  output_dir: <DIR_PATH>
+  bands: 1
+
+
+# Standardize image color to a reference image (Optional)
+match_colour.py: 
+  working_dir: .
+  image_dir: <DIR_PATH>
+  output_dir: <DIR_PATH>
+  reference: <PATH_TO_REF_IMAGE>
+  method: scikit   # 1: scikit, 2: rasterio
+  plot: False
+
+
 clip.py:
   working_dir: .
   aoi_shapefile: <AOI_SHPFILE_PATH>
   detections_dir: <DIR_PATH>
   output_dir: output/
 
+
 mosaic.py:  
   working_dir: .
   input_dir: <DIR_PATH>
   output_dir: <DIR_PATH>
 
+
 gt_analysis.py:
   working_dir: ./data/ground_truth/
   labels: 20240916_GT_CH.gpkg
-
-# Segment Anything Model
-segment_images.py:
-  working_dir: .
-  image_dir:  input/images/
-  output_dir: output/
-  vector_extension: gpkg      # 'gpkg' or 'shp'
-  image_crop:                 # activate the option to crop the input image according to pixel coordinates (for performing tests)
-    enable: False
-    size: [0, 1026, 0, 1026]  # crop image to perform test 
-  SAM:
-    dl_checkpoints: False     # True: automatic download from server, False: download manually files https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth
-    checkpoints_dir: model/
-    checkpoints: sam_vit_h_4b8939.pth # sam_vit_h_4b8939.pth; sam_vit_l_0b3195.pth; sam_vit_b_01ec64.pth
-    large_tile:
-      method: batch           # choice 1:"batch", 2:"resample". Batch method subdivides the image into smaller tiles (tile_size). Resample method downscales the pixels to the given size (resample).
-      thd_size: 5500000       # pixels
-      tile_size: 512          # pixels (square). Will be ignored if method=resample
-      resample: 0.2           # m, pixel size. Will be ignore if method=batch
-    foreground: True          # if True, save only foreground masks, no background mask 
-    unique: True              # attribute unique ID to mask 
-    mask_multiplier: 255
-    custom_SAM:               # customize the parameters for Segment Anything (https://github.com/facebookresearch/segment-anything/blob/main/segment_anything/automatic_mask_generator.py) 
-      enable: False
-      custom_parameters: {
-        "points_per_side": 64,
-        "points_per_batch": 96,
-        "pred_iou_thresh": 0.65,
-        "stability_score_thresh": 0.8,
-        "stability_score_offset": 5.0,
-        "box_nms_thresh":  0.3,
-        "crop_n_layers": 0,
-        "crop_nms_thresh": 0.8,
-        "crop_overlap_ratio": 0.6,
-        "crop_n_points_downscale_factor": 9,
-        # "point_grids": None,
-        "min_mask_region_area": 250,
-        # "output_mode": str = "binary_mask",
-        }
-    visualization_masks: True          # save annotated masks
