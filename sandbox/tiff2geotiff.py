@@ -35,11 +35,12 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
-    IMAGE_DIR = cfg['image_dir']
+    GEOTIFF_IMAGE_DIR = cfg['geotiff_image_dir']
+    TIFF_IMAGE_DIR = cfg['tiff_image_dir']
 
     logger.info('----- read data1 -------')
 
-    filesTs_list =  glob.glob(os.path.join(cwd + IMAGE_DIR, '*.tif'))
+    filesTs_list =  glob.glob(os.path.join(cwd + GEOTIFF_IMAGE_DIR, '*.tif'))
     files_name1 = [fn.split('\\')[-1].split('.tif')[0].strip() for fn in filesTs_list]
     N = len(filesTs_list)
 
@@ -55,8 +56,8 @@ if __name__ == "__main__":
         geotransform = dataset1.GetGeoTransform()
 
         file_name = files_name1[j1].split("/")
-        ima=cv2.imread(cwd + IMAGE_DIR + file_name[-1]+'.tif')
-        dataset2 = gdal.Open(cwd + IMAGE_DIR + file_name[-1]+'.tif', gdal.GA_Update)
+        ima=cv2.imread(cwd + GEOTIFF_IMAGE_DIR + file_name[-1]+'.tif')
+        dataset2 = gdal.Open(cwd + TIFF_IMAGE_DIR + file_name[-1]+'.tif', gdal.GA_Update)
         dataset2.SetGeoTransform(geotransform)
         dataset2.SetProjection( projection )
 

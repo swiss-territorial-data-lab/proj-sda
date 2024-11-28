@@ -8,7 +8,8 @@ rgb_to_greyscale.py:
 
 # Convert tiff to geotiff
 tiff2geotiff.py: 
-  image_dir: /data/images/run99/
+  geotiff_image_dir: <DIR_PATH>
+  tiff_image_dir: <DIR_PATH>
 
 
 # Standardize image color to a reference image

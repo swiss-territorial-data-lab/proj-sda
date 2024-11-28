@@ -84,7 +84,8 @@ The folders/files of the project `proj-sda` (in combination with `object-detecto
 │   ├── match_colour.py                             # script matching colour histogram to a reference image
 │   ├── mosaic.py                                   # script mosaicking images
 │   ├── rgb_to_greyscale.py                         # script converting RGB images to greyscale images
-│   └── rgb_to_greyscale.sh                         # script converting RGB images to greyscale images
+│   ├── rgb_to_greyscale.sh                         # script converting RGB images to greyscale images
+│   └── tiff2geotiff.py                             # convert tiff to geotiff
 dataset 
 ├── scripts
 │   ├── batch_process.sh                            # script to execute several commands
@@ -202,8 +203,10 @@ Additional scripts can be used to process images. Their use is optional.
 4. `mosaic.py`: mosaic images. 
 5. `rgb_to_greyscale.py`: convert RGB images to greyscale images. 
 6. `rgb_to_greyscale.sh`: convert RGB images to greyscale images. 
+7. `tiff2geotiff.py`: convert tiff to geotiff files. Provide geotiff files with the same size and extent as the tiff files to georeference. 
 
 This project uses a multi-year dataset comprising greyscale and RGB images. The historical greyscale images are colourised using the method developed by [Farella et al. 2022](https://doi.org/10.3390/jimaging8100269), for which the code is available [here](https://github.com/3DOM-FBK/Hyper_U_Net).
+
 
 ## Disclaimer
 
