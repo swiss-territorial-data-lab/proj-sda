@@ -1,4 +1,4 @@
-# Convert RGB to greyscale (Optional)
+# Convert RGB to greyscale
 rgb_to_greyscale.py: 
   working_dir: .
   image_dir: <DIR_PATH>
@@ -6,7 +6,12 @@ rgb_to_greyscale.py:
   bands: 1
 
 
-# Standardize image color to a reference image (Optional)
+# Convert tiff to geotiff
+tiff2geotiff.py: 
+  image_dir: /data/images/run99/
+
+
+# Standardize image color to a reference image
 match_colour.py: 
   working_dir: .
   image_dir: <DIR_PATH>
