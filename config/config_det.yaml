@@ -68,7 +68,7 @@ merge_detections.py:
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_dir: ./data
-  detections: ../output/OD/det/ticino/test/AoI_v1/2020/inference_detections_merged.gpkg
+  detections: ../output/OD/det/Ticino/run89/2020/inference_detections_merged.gpkg
   aoi: ./AoI/Ticino/Secteur_test_TC_v2.gpkg
   canton: Ticino
   infos:
