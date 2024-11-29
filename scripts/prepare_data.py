@@ -221,16 +221,6 @@ if __name__ == "__main__":
     tiles_4326_aoi_gdf = aoi_tiling(boundaries_df)
     tiles_4326_labels_gdf = gpd.sjoin(tiles_4326_aoi_gdf, labels_4326_gdf, how='inner', predicate='intersects')
 
-    # Get the number of tiles intersecting labels
-    tiles_4326_gt_gdf = gpd.sjoin(tiles_4326_aoi_gdf, gt_labels_4326_gdf, how='inner', predicate='intersects')
-    tiles_4326_gt_gdf.drop_duplicates(['title', 'year'] if 'year' in tiles_4326_gt_gdf.keys() else ['title'], inplace=True)
-    logger.info(f"- Number of tiles intersecting GT labels = {len(tiles_4326_gt_gdf)}")
-
-    if FP_SHPFILE:
-        tiles_4326_fp_gdf = gpd.sjoin(tiles_4326_aoi_gdf, fp_labels_4326_gdf, how='inner', predicate='intersects')
-        tiles_4326_fp_gdf.drop_duplicates(['title', 'year'] if 'year' in tiles_4326_fp_gdf.keys() else ['title'], inplace=True)
-        logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_4326_fp_gdf)}")
-
     # Tiling of the AoI from which empty tiles will be selected
     if EPT_SHPFILE:
         EPT_aoi_gdf = gpd.read_file(EPT_SHPFILE)
@@ -279,6 +269,16 @@ if __name__ == "__main__":
 
     nb_tiles = len(tiles_4326_all_gdf)
     logger.info(f"There were {nb_tiles} tiles created")
+
+    # Get the number of tiles intersecting labels
+    tiles_4326_gt_gdf = gpd.sjoin(tiles_4326_all_gdf, gt_labels_4326_gdf, how='inner', predicate='intersects')
+    tiles_4326_gt_gdf.drop_duplicates(['id'], inplace=True)
+    logger.info(f"- Number of tiles intersecting GT labels = {len(tiles_4326_gt_gdf)}")
+
+    if FP_SHPFILE:
+        tiles_4326_fp_gdf = gpd.sjoin(tiles_4326_all_gdf, fp_labels_4326_gdf, how='inner', predicate='intersects')
+        tiles_4326_fp_gdf.drop_duplicates(['id'], inplace=True)
+        logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_4326_fp_gdf)}")
 
     # Save tile shapefile
     logger.info("Export tiles to GeoJSON (EPSG:4326)...")  
