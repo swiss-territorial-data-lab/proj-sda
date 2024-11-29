@@ -184,7 +184,7 @@ if __name__ == "__main__":
         labels_4326_gdf['SUPERCATEGORY'] = 'anthropogenic soils'
 
     gt_labels_4326_gdf = labels_4326_gdf.copy()
-
+    
     label_filename = 'labels.geojson'
     label_filepath = os.path.join(OUTPUT_DIR, label_filename)
     gt_labels_4326_gdf.to_file(label_filepath, driver='GeoJSON')

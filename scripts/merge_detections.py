@@ -52,8 +52,8 @@ if __name__ == "__main__":
     logger.info("Loading split AoI tiles as a GeoPandas DataFrame...")
     tiles_gdf = gpd.read_file('split_aoi_tiles.geojson')
     tiles_gdf = tiles_gdf.to_crs(2056)
-    if 'year' in tiles_gdf.keys(): 
-        tiles_gdf = tiles_gdf.rename(columns={"year": "year_tile"})    
+    if 'year_tile' in tiles_gdf.keys(): 
+        tiles_gdf['year_tile'] = tiles_gdf.year_tile.astype(int)
     logger.success(f"{DONE_MSG} {len(tiles_gdf)} features were found.")
 
     logger.info("Loading detections as a GeoPandas DataFrame...")
@@ -67,6 +67,8 @@ if __name__ == "__main__":
     detections_gdf = detections_gdf.to_crs(2056)
     detections_gdf['area'] = detections_gdf.area 
     detections_gdf['det_id'] = detections_gdf.index
+    if 'year_det' in detections_gdf.keys(): 
+        detections_gdf['year_det'] = detections_gdf.year_det.astype(int)
     logger.success(f"{DONE_MSG} {len(detections_gdf)} features were found.")
 
     # get classe ids
@@ -75,7 +77,7 @@ if __name__ == "__main__":
     filepath.close()
     categories_info_df = pd.DataFrame()
     for key in categories_json.keys():
-        categories_tmp={sub_key: [value] for sub_key, value in categories_json[key].items()}
+        categories_tmp = {sub_key: [value] for sub_key, value in categories_json[key].items()}
         categories_info_df = pd.concat([categories_info_df, pd.DataFrame(categories_tmp)], ignore_index=True)
     categories_info_df.sort_values(by=['id'], inplace=True, ignore_index=True)
     categories_info_df.drop(['supercategory'], axis=1, inplace=True)
@@ -83,7 +85,7 @@ if __name__ == "__main__":
     id_classes = range(len(categories_json))
 
     # Merge features
-    logger.info(f"Merge adjacent polygons spread across tiles with a buffer of {DISTANCE} m...")
+    logger.info(f"Merge adjacent polygons overlapping tiles with a buffer of {DISTANCE} m...")
     detections_year = gpd.GeoDataFrame()
 
     # Process detection by year
@@ -91,39 +93,39 @@ if __name__ == "__main__":
         detections_gdf = detections_gdf.copy()
         detections_by_year_gdf = detections_gdf[detections_gdf['year_det']==year]
 
-        detections_temp_buffer_gdf = detections_by_year_gdf.copy()
-        detections_temp_buffer_gdf['geometry'] = detections_by_year_gdf.geometry.buffer(DISTANCE, resolution=2)
+        detections_buffer_gdf = detections_by_year_gdf.copy()
+        detections_buffer_gdf['geometry'] = detections_by_year_gdf.geometry.buffer(DISTANCE, resolution=2)
 
         # Saves the id of polygons contained entirely within the tile (no merging with adjacent tiles), to avoid merging them if they are at a distance of less than thd  
-        detections_tiles_join_gdf = gpd.sjoin(tiles_gdf, detections_temp_buffer_gdf, how='left', predicate='contains')
+        detections_tiles_join_gdf = gpd.sjoin(tiles_gdf, detections_buffer_gdf, how='left', predicate='contains')
         remove_det_list = detections_tiles_join_gdf.det_id.unique().tolist()
 
         detections_overlap_tiles_gdf = detections_by_year_gdf[~detections_by_year_gdf.det_id.isin(remove_det_list)].drop_duplicates(subset=['det_id'], ignore_index=True)
         detections_within_tiles_gdf = detections_by_year_gdf[detections_by_year_gdf.det_id.isin(remove_det_list)].drop_duplicates(subset=['det_id'], ignore_index=True)
 
         # Merge polygons within the thd distance
-        detections_merge = detections_overlap_tiles_gdf.buffer(DISTANCE, resolution=2).geometry.unary_union
-        detections_merge = gpd.GeoDataFrame(geometry=[detections_merge], crs=detections_gdf.crs)  
-        if detections_merge.isnull().values.any():
-            detections_merge = gpd.GeoDataFrame()
+        detections_merge_gdf = detections_overlap_tiles_gdf.buffer(DISTANCE, resolution=2).geometry.unary_union
+        detections_merge_gdf = gpd.GeoDataFrame(geometry=[detections_merge_gdf], crs=detections_gdf.crs)  
+        if detections_merge_gdf.isnull().values.any():
+            detections_merge_gdf = gpd.GeoDataFrame()
         else:
-            detections_merge = detections_merge.explode(ignore_index=True)
-            detections_merge.geometry = detections_merge.geometry.buffer(-DISTANCE, resolution=2)
+            detections_merge_gdf = detections_merge_gdf.explode(ignore_index=True)
+            detections_merge_gdf.geometry = detections_merge_gdf.geometry.buffer(-DISTANCE, resolution=2)
 
         detections_within_tiles_gdf = detections_within_tiles_gdf.drop(['score', 'dataset', 'det_class', 'year_det', 'area'], axis=1)
         
         # Concat polygons contained within a tile and the merged ones
-        detections_merge = pd.concat([detections_merge, detections_within_tiles_gdf], axis=0, ignore_index=True)
-        detections_merge['index_merge'] = detections_merge.index
+        detections_merge_gdf = pd.concat([detections_merge_gdf, detections_within_tiles_gdf], axis=0, ignore_index=True)
+        detections_merge_gdf['index_merge'] = detections_merge_gdf.index
 
         # Spatially join merged detection with raw ones to retrieve relevant information (score, area,...)
-        detections_join = gpd.sjoin(detections_merge, detections_by_year_gdf, how='inner', predicate='intersects')
+        detections_join_gdf = gpd.sjoin(detections_merge_gdf, detections_by_year_gdf, how='inner', predicate='intersects')
 
         det_class_all = []
         det_score_all = []
 
-        for id in detections_merge.index_merge.unique():
-            detections_by_year_gdf = detections_join.copy()
+        for id in detections_merge_gdf.index_merge.unique():
+            detections_by_year_gdf = detections_join_gdf.copy()
             detections_by_year_gdf = detections_by_year_gdf[(detections_by_year_gdf['index_merge']==id)]
             detections_by_year_gdf = detections_by_year_gdf.rename(columns={'score_left': 'score'})
             det_score_all.append(detections_by_year_gdf['score'].mean())
@@ -136,13 +138,13 @@ if __name__ == "__main__":
                 det_class = [0]
             det_class_all.append(det_class[0])
 
-        detections_merge['det_class'] = det_class_all
-        detections_merge['score'] = det_score_all
+        detections_merge_gdf['det_class'] = det_class_all
+        detections_merge_gdf['score'] = det_score_all
 
-        detections_merge = pd.merge(detections_merge, detections_join[
+        detections_merge_gdf = pd.merge(detections_merge_gdf, detections_join_gdf[
             ['index_merge', 'dataset', 'year_det']], 
             on='index_merge')
-        detections_year = pd.concat([detections_year, detections_merge])
+        detections_year = pd.concat([detections_year, detections_merge_gdf])
 
     detections_year['det_category'] = [
         categories_info_df.loc[categories_info_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
@@ -150,39 +152,28 @@ if __name__ == "__main__":
         for det_class in detections_year.det_class.to_numpy()
     ] 
 
-    detections_merged_gdf = detections_year.drop_duplicates(subset='score')
-    td = len(detections_merged_gdf)
+    # Remove duplicate detection for a given year
+    detections_merge_gdf = detections_year.drop_duplicates(subset=['geometry', 'year_det'])
+    
+    td = len(detections_merge_gdf)
     logger.info(f"... {td} clustered detections remains after shape union")
     
     # Filter dataframe by score value
-    detections_merged_gdf = detections_merged_gdf[detections_merged_gdf.score > SCORE_THD]
-    sc = len(detections_merged_gdf)
+    detections_merge_gdf = detections_merge_gdf[detections_merge_gdf.score > SCORE_THD]
+    sc = len(detections_merge_gdf)
     logger.info(f"{td - sc} detections were removed by score filtering (score threshold = {SCORE_THD})")
 
     if ASSESS:
         logger.info("Loading labels as a GeoPandas DataFrame...")
         labels_gdf = gpd.read_file(LABELS)
         labels_gdf = labels_gdf.to_crs(2056)
-        labels_gdf.rename(columns={'name':'CATEGORY', 'id': 'label_class'},inplace=True)
+        if 'year' in labels_gdf.keys():  
+            labels_gdf['year'] = labels_gdf.year.astype(int)       
+            labels_gdf = labels_gdf.rename(columns={"year": "year_label"})
         logger.success(f"{DONE_MSG} {len(labels_gdf)} features were found.")
 
-        logger.info("Assigned labels to dataset")
-        tiles_gdf['tile_geometry'] = tiles_gdf['geometry']    
-        labels_tiles_sjoined_gdf = gpd.sjoin(labels_gdf, tiles_gdf, how='inner', predicate='intersects')
-
-        if 'year_label' in labels_gdf.keys():
-            labels_tiles_sjoined_gdf = labels_tiles_sjoined_gdf[labels_tiles_sjoined_gdf.year_label == labels_tiles_sjoined_gdf.year_tile]  
-
-        labels_tiles_sjoined_gdf = labels_tiles_sjoined_gdf.drop_duplicates(subset=['geometry'], keep='first')
-        labels_tiles_sjoined_gdf.drop(columns=['tile_geometry', 'index_right'], inplace=True)
-        labels_tiles_sjoined_gdf.rename(columns={'id': 'tile_id'}, inplace=True)
-
-        tiles_gdf.drop('tile_geometry', inplace=True, axis=1)
-
-
-        labels_gdf = labels_tiles_sjoined_gdf.copy()
         # append class ids to labels
-        labels_gdf = labels_gdf.astype({'CATEGORY':'str'})
+        labels_gdf['CATEGORY'] = labels_gdf.CATEGORY.astype(str)
         labels_w_id_gdf = labels_gdf.merge(categories_info_df, on='CATEGORY', how='left')
 
         logger.info('Tag detections and get metrics...')
@@ -192,7 +183,7 @@ if __name__ == "__main__":
         metrics_cl_df_dict = {}
 
         tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = metrics.get_fractional_sets(
-            detections_merged_gdf, labels_w_id_gdf, IOU_THD, AREA_THD)
+            detections_merge_gdf, labels_w_id_gdf, IOU_THD, AREA_THD)
 
         tp_gdf['tag'] = 'TP'
         fp_gdf['tag'] = 'FP'
@@ -202,19 +193,20 @@ if __name__ == "__main__":
 
         tagged_dets_gdf = pd.concat([tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf], ignore_index=True)
 
+        logger.info(f'TP = {len(tp_gdf)}, FP = {len(fp_gdf)}, FN = {len(fn_gdf)}')
         tagged_dets_gdf['det_category'] = [
             categories_info_df.loc[categories_info_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
             if not np.isnan(det_class) else None
             for det_class in tagged_dets_gdf.det_class.to_numpy()
         ] 
 
-        tp_k, fp_k, fn_k, p_k, r_k, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes)
+        tp_k, fp_k, fn_k, p_k, r_k, f1_k, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes)
         logger.info(f'precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
 
         # Save tagged processed results 
-        feature = os.path.join(f'tagged_detections_merged_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
+        feature = os.path.join(f'tagged_detections_merge_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
         tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
-        tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category', 'year': 'year_label'}, errors='raise')
+        tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category'}, errors='raise')
         tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'label_class', 'label_category', 'year_label', 'det_class', 'det_category', 'year_det']]\
             .to_file(feature, driver='GPKG', index=False)
         written_files.append(feature)
@@ -225,6 +217,7 @@ if __name__ == "__main__":
                 'class': id_cl,
                 'precision_k': p_k[id_cl],
                 'recall_k': r_k[id_cl],
+                'f1_k': f1_k[id_cl],
                 'TP_k' : tp_k[id_cl],
                 'FP_k' : fp_k[id_cl],
                 'FN_k' : fn_k[id_cl],
@@ -242,20 +235,19 @@ if __name__ == "__main__":
             for det_class in metrics_by_cl_df['class'].to_numpy()
         ] 
 
-        file_to_write = os.path.join('metrics_by_class.csv')
+        file_to_write = os.path.join('metrics_by_class_merged_dets.csv')
         metrics_by_cl_df[
-            ['class', 'category', 'TP_k', 'FP_k', 'FN_k', 'precision_k', 'recall_k']
+            ['class', 'category', 'TP_k', 'FP_k', 'FN_k', 'precision_k', 'recall_k', 'f1_k']
         ].sort_values(by=['class']).to_csv(file_to_write, index=False)
         written_files.append(file_to_write)
 
     else:
         # Save processed results
-        feature = os.path.join('inference_detections_merged.gpkg')
-        detections_merged_gdf = detections_merged_gdf.to_crs(2056)
-        detections_merged_gdf[['geometry', 'det_id', 'score', 'det_class', 'det_category', 'year_det']]\
+        feature = os.path.join('inference_merged_dets.gpkg')
+        detections_merge_gdf = detections_merge_gdf.to_crs(2056)
+        detections_merge_gdf[['geometry', 'det_id', 'score', 'det_class', 'det_category', 'year_det']]\
             .to_file(feature, driver='GPKG', index=False)
         written_files.append(feature)       
-
 
     print()
     logger.info("The following files were written. Let's check them out!")
