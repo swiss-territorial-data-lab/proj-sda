@@ -31,11 +31,11 @@ def main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_SHP):
     logger.info("Loading images footprint.")
     img_fp_gdf = gpd.read_file(IMG_FOOTPRINT_SHP)
     img_fp_gdf = misc.convert_crs(img_fp_gdf, epsg=SRS)
-    img_fp_gdf['year'] = YEAR
+    img_fp_gdf['flight_year'] = YEAR
 
     # Intersect shapefiles
     aoi_intersection_gdf = canton_aoi_gdf.overlay(img_fp_gdf, how='intersection')
-    aoi_intersection_gdf = aoi_intersection_gdf[['geometry', 'year']] 
+    aoi_intersection_gdf = aoi_intersection_gdf[['geometry', 'flight_year']] 
     aoi_intersection_gdf['canton'] = CANTON
     aoi_intersection_gdf['shp1'] = os.path.basename(CANTON_SHP)
     aoi_intersection_gdf['shp2'] = os.path.basename(IMG_FOOTPRINT_SHP)
