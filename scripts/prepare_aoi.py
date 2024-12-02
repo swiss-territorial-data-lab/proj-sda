@@ -17,7 +17,7 @@ from loguru import logger
 logger = misc.format_logger(logger)
 
 
-def main(WORKING_DIR, CANTON, YEAR, CANTON_SHP, IMG_FOOTPRINT_SHP):
+def main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_SHP):
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')
@@ -27,10 +27,10 @@ def main(WORKING_DIR, CANTON, YEAR, CANTON_SHP, IMG_FOOTPRINT_SHP):
     # Read shapefiles
     logger.info("Loading canton border.")
     canton_aoi_gdf = gpd.read_file(CANTON_SHP)
-    canton_aoi_gdf = misc.convert_crs(canton_aoi_gdf, epsg=2056)
+    canton_aoi_gdf = misc.convert_crs(canton_aoi_gdf, epsg=SRS)
     logger.info("Loading images footprint.")
     img_fp_gdf = gpd.read_file(IMG_FOOTPRINT_SHP)
-    img_fp_gdf = misc.convert_crs(img_fp_gdf, epsg=2056)
+    img_fp_gdf = misc.convert_crs(img_fp_gdf, epsg=SRS)
 
     # Intersect shapefiles
     aoi_intersection_gdf = canton_aoi_gdf.overlay(img_fp_gdf, how='intersection')
@@ -75,10 +75,11 @@ if __name__ == "__main__":
     WORKING_DIR = cfg['working_directory']
     CANTON = cfg['canton']
     YEAR = cfg['year']
+    SRS = cfg['srs']
     CANTON_SHP = cfg['canton_shp'].replace('{canton}', CANTON)
     IMG_FOOTPRINT_SHP = cfg['img_footprint_shp'].replace('{year}', str(YEAR))
 
-    main(WORKING_DIR, CANTON, YEAR, CANTON_SHP, IMG_FOOTPRINT_SHP)
+    main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_SHP)
 
     # Stop chronometer  
     toc = time.time()

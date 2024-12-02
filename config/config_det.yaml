@@ -1,8 +1,17 @@
+# Prepare the AoI
+prepare_aoi.py:  
+  working_directory: ./data/AoI/
+  canton: ticino
+  year: 2018
+  srs: EPSG:2056
+  canton_shp: ./{canton}/limiti_cantone_2012_MN95.shp
+  img_footprint_shp: ./swissimage_footprints/swissimage_footprint_{year}.shp     
+
+
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
-  srs: EPSG:2056
   datasets:
-    shapefile: ./data/AoI/Ticino/Secteur_test_TC_v2.gpkg               
+    shapefile: ./data/AoI/ticino/Secteur_test_TC_v2.gpkg               
   output_folder: ./output/OD/det/ticino/
   zoom_level: 16 
 
@@ -27,7 +36,7 @@ generate_tilesets.py:
   COCO_metadata:
     year: 2024
     version: 1.0
-    description: Anthropogenic soils (Ticino, Vaud and swissTML3D 2024)
+    description: Anthropogenic soils (ticino, Vaud and swissTML3D 2024)
     contributor: swisstopo
     url: https://swisstopo.ch
     license:
@@ -68,12 +77,12 @@ merge_detections.py:
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_dir: ./data
-  detections: ../output/OD/det/Ticino/run89/2020/inference_detections_merged.gpkg
-  aoi: ./AoI/Ticino/Secteur_test_TC_v2.gpkg
-  canton: Ticino
+  detections: ../output/OD/det/ticino/run89/2020/inference_detections_merged.gpkg
+  aoi: ./AoI/ticino/Secteur_test_TC_v2.gpkg
+  canton: ticino
   infos:
     layers_dir: ./layers/{canton}/
-    Ticino:
+    ticino:
       agri_area: Idoneità_Agricola.shp
       building_areas: Zones_batir_Ind.shp
       climatic_areas: zones_climatiques_compatibles_sda_tc.gpkg

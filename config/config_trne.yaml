@@ -1,6 +1,5 @@
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
-  srs: EPSG:2056
   datasets:
     shapefile: ./data/ground_truth/20240916_GT_CH.gpkg       # GT labels
     # fp_shapefile: ./data/FP/20241104_FP.gpkg                     # FP labels

@@ -1,6 +1,15 @@
+# Prepare the AoI
+prepare_aoi.py:  
+  working_directory: ./data/AoI/
+  canton: ticino
+  year: SWISSIMAGE_YEAR
+  srs: EPSG:2056
+  canton_shp: ./{canton}/limiti_cantone_2012_MN95.shp
+  img_footprint_shp: ./swissimage_footprints/swissimage_footprint_{year}.shp 
+
+
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
-  srs: EPSG:2056
   datasets:
     shapefile: ./data/AoI/Ticino/Secteur_test_TC_v2.gpkg           
   output_folder: ./output/OD/det/SWISSIMAGE_YEAR
