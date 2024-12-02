@@ -175,11 +175,7 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0):
             p_k[id_cl] = tp_count / (tp_count + fp_count)
             r_k[id_cl] = tp_count / (tp_count + fn_count)
 
-    tp_count_all = sum(tp_k.values())
-    fp_count_all = sum(fp_k.values())
-    fn_count_all = sum(fn_k.values())
-    accuracy = (tp_count_all) / (tp_count_all + fp_count_all + fn_count_all)
-
+    accuracy = sum(tp_k.values()) / (sum(tp_k.values()) + sum(fp_k.values()) + sum(fn_k.values()))
     precision = sum(p_k.values()) / len(id_classes)
     recall = sum(r_k.values()) / len(id_classes)
 
