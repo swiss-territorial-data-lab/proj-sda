@@ -35,5 +35,8 @@ do
         echo ' '
         echo 'filter_detections.py'
         python ./scripts/filter_detections.py config/config_det_${year}_${canton}.yaml 
+    else
+        echo File $file does not exist. Skip the processing.
+        echo ' '
     fi
 done
