@@ -204,7 +204,7 @@ if __name__ == "__main__":
         logger.info(f'accuracy = {accuracy:.3f}, precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
 
         # Save tagged processed results 
-        feature = os.path.join(f'tagged_detections_merge_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
+        feature = os.path.join(f'tagged_merged_detections_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
         tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
         tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category'}, errors='raise')
         tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'label_class', 'label_category', 'year_label', 'det_class', 'det_category', 'year_det']]\
@@ -234,19 +234,18 @@ if __name__ == "__main__":
             for det_class in metrics_by_cl_df['class'].to_numpy()
         ] 
 
-        file_to_write = os.path.join('metrics_by_class_merged_dets.csv')
+        file_to_write = os.path.join('metrics_by_class_merged_detections.csv')
         metrics_by_cl_df[
             ['class', 'category', 'TP_k', 'FP_k', 'FN_k', 'precision_k', 'recall_k']
         ].sort_values(by=['class']).to_csv(file_to_write, index=False)
         written_files.append(file_to_write)
 
-    else:
-        # Save processed results
-        feature = os.path.join('inference_merged_dets.gpkg')
-        detections_merge_gdf = detections_merge_gdf.to_crs(2056)
-        detections_merge_gdf[['geometry', 'det_id', 'score', 'det_class', 'det_category', 'year_det']]\
-            .to_file(feature, driver='GPKG', index=False)
-        written_files.append(feature)       
+    # Save processed results
+    feature = os.path.join(f'merged_detections_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
+    detections_merge_gdf = detections_merge_gdf.to_crs(2056)
+    detections_merge_gdf[['geometry', 'score', 'det_class', 'det_category', 'year_det']]\
+        .to_file(feature, driver='GPKG', index=False)
+    written_files.append(feature)       
 
     print()
     logger.info("The following files were written. Let's check them out!")
