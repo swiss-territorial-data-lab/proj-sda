@@ -200,8 +200,8 @@ if __name__ == "__main__":
             for det_class in tagged_dets_gdf.det_class.to_numpy()
         ] 
 
-        tp_k, fp_k, fn_k, p_k, r_k, f1_k, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes)
-        logger.info(f'precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
+        tp_k, fp_k, fn_k, p_k, r_k, accuracy, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes)
+        logger.info(f'accuracy = {accuracy:.3f}, precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
 
         # Save tagged processed results 
         feature = os.path.join(f'tagged_detections_merge_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
@@ -217,7 +217,6 @@ if __name__ == "__main__":
                 'class': id_cl,
                 'precision_k': p_k[id_cl],
                 'recall_k': r_k[id_cl],
-                'f1_k': f1_k[id_cl],
                 'TP_k' : tp_k[id_cl],
                 'FP_k' : fp_k[id_cl],
                 'FN_k' : fn_k[id_cl],
@@ -237,7 +236,7 @@ if __name__ == "__main__":
 
         file_to_write = os.path.join('metrics_by_class_merged_dets.csv')
         metrics_by_cl_df[
-            ['class', 'category', 'TP_k', 'FP_k', 'FN_k', 'precision_k', 'recall_k', 'f1_k']
+            ['class', 'category', 'TP_k', 'FP_k', 'FN_k', 'precision_k', 'recall_k']
         ].sort_values(by=['class']).to_csv(file_to_write, index=False)
         written_files.append(file_to_write)
 
