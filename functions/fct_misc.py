@@ -41,6 +41,27 @@ def check_validity(poly_gdf, correct=False):
     return poly_gdf
 
 
+def convert_crs(gdf, epsg=2056):
+    """Convert crs of a vector layer to a defined one
+
+    Args:
+        gdf (GeoDataFrame): input geodataframe
+        epsg (int): projected coordinate system
+
+    Returns:
+        GeoDataFrame: output geodataframe with the desired epsg
+    """
+
+    if gdf.crs == None:
+        gdf = gdf.set_crs(epsg)
+        logger.info(f"Set crs to epsg:{epsg}.")
+    elif gdf.crs != epsg:
+        gdf = gdf.to_crs(epsg)
+        logger.info(f"Convert crs to epsg:{epsg}.")
+
+    return gdf
+
+
 def ensure_dir_exists(dirpath):
     """Test if a directory exists. If not, make it.  
 
