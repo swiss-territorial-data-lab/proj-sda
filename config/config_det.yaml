@@ -97,7 +97,7 @@ filter_detections.py:
       zone_compatible_LPN: Zona_SAC_compatibile_con_i_disposti_LPN.gpkg
       zone_compatible_LPN_extensive: Zona_SAC_compatibile_con_i_disposti_LPN_previa_gestione_estensiva.gpkg
       zone_non_compatible_LPN: Zona_SAC_non_compatibile_con_i_disposti_LPN.gpkg
-    Vaud: 
+    vaud: 
       buildings: batiments_en_surface_mo.gpkg
       building_areas: affectation_zone_a_batir.gpkg
       climatic_areas: zones_climatiques_compatibles_sda_vd.gpkg
