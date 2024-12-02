@@ -93,6 +93,7 @@ dataset
 │   ├── get_dem.sh                                  # script downloading swiss DEM and converting it to EPSG:2056
 │   ├── merge_detections.py                         # script merging adjacent detections and attributing class
 │   ├── merge_years.py                              # script merging all year detections layers
+│   ├── prepare_aoi.py                              # script preparing the aoi shapefile for inference
 │   ├── prepare_data.py                             # script preparing data to be processed by the object-detector scripts
 │   └── result_analysis.py                          # script plotting some parameters
 ├── .gitignore                                      
@@ -121,13 +122,14 @@ The `proj-sda` repository contains scripts to prepare and post-process the data 
 <br />
 </p>
 
-1. `prepare_data.py`: format labels and produce tiles to be processed in the OD 
-2. `results_analysis.py`: plot some parameters of the detections to help understand the results (optional)
-3. `merge_detections.py`: merge adjacent detections cut by tiles into a single detection and attribute the class (the class of the maximum area)
-4. `filter_detections.py`: filter detections by overlap with other vector layers. The overlapping portion of the detection can be removed or a new attribute column is created to indicate the overlapping ratio with the layer of interest. Other information such as score, elevation, slope are also displayed.
-5. `merge_years.py`: merge all the detection layers obtained during inference by year.
-6. `get_dem.sh`: download the DEM of Switzerland.
-7. `batch_process.sh`: batch script to perform the inference workflow over several years.
+1. `prepare_aoi.py`: produce an aoi shapefile compatible with a SWISSIMAGE year and desired geographical boundaries.
+2. `prepare_data.py`: format labels and produce tiles to be processed in the OD.
+3. `results_analysis.py`: plot some parameters of the detections to help understand the results (optional).
+4. `merge_detections.py`: merge adjacent detections cut by tiles into a single detection and attribute the class (the class of the maximum area).
+5. `filter_detections.py`: filter detections by overlap with other vector layers. The overlapping portion of the detection can be removed or a new attribute column is created to indicate the overlapping ratio with the layer of interest. Other information such as score, elevation, slope are also displayed.
+6. `merge_years.py`: merge all the detection layers obtained during inference by year.
+7. `get_dem.sh`: download the DEM of Switzerland.
+8. `batch_process.sh`: batch script to perform the inference workflow over several years.
 
 Object detection is performed with tools present in the [`object-detector`](https://github.com/swiss-territorial-data-lab/object-detector) git repository. 
 
@@ -173,6 +175,7 @@ $ python scripts/merge_detections.py config/config_trne.yaml
 Colour processing on images can be performed if needed prior to inference.
  
 ```
+$ python scripts/prepare_aoi.py config/config_det.yaml
 $ python scripts/prepare_data.py config/config_det.yaml
 $ stdl-objdet generate_tilesets config/config_det.yaml
 $ stdl-objdet make_detections config/config_det.yaml
