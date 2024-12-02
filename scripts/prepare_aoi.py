@@ -17,33 +17,7 @@ from loguru import logger
 logger = misc.format_logger(logger)
 
 
-if __name__ == "__main__":
-
-    # Start chronometer
-    tic = time.time()
-    logger.info('Starting...')
-
-    # Argument and parameter specification
-    parser = argparse.ArgumentParser(description="The script prepares the AoI used to perform inference")
-    parser.add_argument('config_file', type=str, help='Framework configuration file')
-    args = parser.parse_args()
-
-    logger.info(f"Using {args.config_file} as config file.")
- 
-    with open(args.config_file) as fp:
-        cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
-
-    # Load input parameters
-    WORKING_DIR = cfg['working_directory']
-    CANTON = cfg['canton']
-    YEAR = cfg['year']
-    CANTON_SHP = cfg['canton_shp'].replace('{canton}', CANTON)
-    IMG_FOOTPRINT_SHP = cfg['img_footprint_shp'].replace('{year}', str(YEAR))
-    OUTPUT_DIR = cfg['output_folder']
-
-    # Create an output directory in case it doesn't exist
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
+def main(WORKING_DIR, CANTON, YEAR, CANTON_SHP, IMG_FOOTPRINT_SHP):
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')
@@ -79,6 +53,32 @@ if __name__ == "__main__":
     for written_file in written_files:
         logger.info(written_file)
     print()
+
+
+if __name__ == "__main__":
+
+    # Start chronometer
+    tic = time.time()
+    logger.info('Starting...')
+
+    # Argument and parameter specification
+    parser = argparse.ArgumentParser(description="The script prepares the AoI used to perform inference")
+    parser.add_argument('config_file', type=str, help='Framework configuration file')
+    args = parser.parse_args()
+
+    logger.info(f"Using {args.config_file} as config file.")
+ 
+    with open(args.config_file) as fp:
+        cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
+
+    # Load input parameters
+    WORKING_DIR = cfg['working_directory']
+    CANTON = cfg['canton']
+    YEAR = cfg['year']
+    CANTON_SHP = cfg['canton_shp'].replace('{canton}', CANTON)
+    IMG_FOOTPRINT_SHP = cfg['img_footprint_shp'].replace('{year}', str(YEAR))
+
+    main(WORKING_DIR, CANTON, YEAR, CANTON_SHP, IMG_FOOTPRINT_SHP)
 
     # Stop chronometer  
     toc = time.time()
