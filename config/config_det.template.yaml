@@ -4,7 +4,7 @@ prepare_aoi.py:
   canton: CANTON
   year: SWISSIMAGE_YEAR
   srs: EPSG:2056
-  canton_shp: ./{canton}/MN95_CAD_TPR_LAD_MO.shp
+  canton_shp: ./{canton}/MN95_CAD_TPR_LAD_MO_VD.shp
   img_footprint_shp: ./swissimage_footprints/swissimage_footprint_{year}.shp 
 
 

@@ -54,7 +54,7 @@ make_detections.py:
     oth: COCO_oth.json
   detectron2_config_file: ../../../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../../trne/zoom16/run66/logs/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../../../trne/zoom16/run89/model_0004999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: true
@@ -77,7 +77,7 @@ merge_detections.py:
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_dir: ./data
-  detections: ../output/OD/det/ticino/run89/2020/inference_detections_merged.gpkg
+  detections: ../output/OD/det/ticino/test/2020/merged_detections_at_0dot05_threshold.gpkg
   aoi: ./AoI/ticino/Secteur_test_TC_v2.gpkg
   canton: ticino
   infos:
