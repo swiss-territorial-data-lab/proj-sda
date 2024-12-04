@@ -118,7 +118,7 @@ result_analysis.py:
 # Assess the final results
 merge_detections.py:
   working_dir: ./output/OD/trne/zoom16/run106/
-  labels: labels.geojson
+  labels: label_sample.gpkg
   detections:
     trn: trn_detections_at_0dot05_threshold.gpkg
     val: val_detections_at_0dot05_threshold.gpkg
@@ -126,4 +126,6 @@ merge_detections.py:
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
   iou_threshold: 0.1
   score_threshold: 0.05
-  assess: True
+  assess: 
+    enable: True
+    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average

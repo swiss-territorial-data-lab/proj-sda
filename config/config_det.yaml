@@ -71,7 +71,9 @@ merge_detections.py:
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
   iou_threshold: 0.1
   score_threshold: 0.05
-  assess: False
+  assess: 
+    enable: False
+    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
   
 
 # Filtering and merging detection polygons to improve final results
