@@ -75,11 +75,19 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
 
     # Filter detections based on IoU value
     best_matches_gdf = candidates_tp_temp_gdf.groupby(['det_id'], group_keys=False).apply(lambda g:g[g.IOU==g.IOU.max()])
+    best_matches_gdf.drop_duplicates(subset=['det_id'], inplace=True)
 
     # Detection, resp labels, with IOU lower than threshold value are considered as FP, resp FN, and saved as such
     actual_matches_gdf = best_matches_gdf[best_matches_gdf['IOU'] >= iou_threshold].copy()
     actual_matches_gdf = actual_matches_gdf.sort_values(by=['IOU'], ascending=False).drop_duplicates(subset=['det_id', 'year_det'])
     actual_matches_gdf['IOU'] = actual_matches_gdf.IOU.round(3)
+
+    matched_label_ids = actual_matches_gdf['label_id'].unique().tolist()
+    matched_det_ids = actual_matches_gdf['det_id'].unique().tolist()
+
+    fp_gdf_temp = candidates_tp_gdf[~candidates_tp_gdf.det_id.isin(matched_det_ids)].drop_duplicates(subset=['det_id'], ignore_index=True)
+    fn_gdf_temp = candidates_tp_gdf[~candidates_tp_gdf.label_id.isin(matched_label_ids)].drop_duplicates(subset=['label_id'], ignore_index=True)
+    fn_gdf_temp.loc[:, 'geometry'] = fn_gdf_temp.label_geom
 
     # Test that labels and detections share the same class (id starting at 1 for labels and at 0 for detections)
     condition = actual_matches_gdf.label_class == actual_matches_gdf.det_class + 1
@@ -89,13 +97,6 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
     mismatched_classes_gdf.drop(columns=['x', 'y', 'z', 'dataset_right', 'label_geom'], errors='ignore', inplace=True)
     mismatched_classes_gdf.rename(columns={'dataset_left': 'dataset'}, inplace=True)
   
-    matched_label_ids = np.delete(actual_matches_gdf['label_id'].unique().tolist(), np.isin(actual_matches_gdf['label_id'].unique().tolist(), mismatched_classes_gdf['label_id'].unique().tolist()))
-    matched_det_ids = actual_matches_gdf['det_id'].unique().tolist()
-
-    fp_gdf_temp = candidates_tp_gdf[~candidates_tp_gdf.det_id.isin(matched_det_ids)].drop_duplicates(subset=['det_id'], ignore_index=True)
-    fn_gdf_temp = candidates_tp_gdf[~candidates_tp_gdf.label_id.isin(matched_label_ids)].drop_duplicates(subset=['label_id'], ignore_index=True)
-    fn_gdf_temp.loc[:, 'geometry'] = fn_gdf_temp.label_geom
-
     # FALSE POSITIVES
     fp_gdf = left_join[left_join.label_id.isna()].copy()
     assert(len(fp_gdf[fp_gdf.duplicated()]) == 0)
@@ -123,7 +124,7 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
     return tp_gdf, fp_gdf, fn_gdf, mismatched_classes_gdf, small_poly_gdf
 
 
-def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0):
+def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macro-average'):
     """Determine the metrics based on the TP, FP and FN
 
     Args:
@@ -132,6 +133,7 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0):
         fn_gdf (geodataframe): false negative labels
         mismatch_gdf (geodataframe): labels and detections intersecting with a mismatched class id
         id_classes (list): list of the possible class ids. Defaults to 0.
+        method (str): method used to compute multi-class metrics
     
     Returns:
         tuple: 
@@ -149,8 +151,11 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0):
     p_k = by_class_dict.copy()
     r_k = by_class_dict.copy()
     f1_k = by_class_dict.copy()
-
-    for id_cl in id_classes:
+    count_k = by_class_dict.copy()
+    pw_k = by_class_dict.copy()
+    rw_k = by_class_dict.copy()
+ 
+    for id_cl in id_classes:       
 
         tp_count = 0 if tp_gdf.empty else len(tp_gdf[tp_gdf.det_class==id_cl])
         pure_fp_count = 0 if fp_gdf.empty else len(fp_gdf[fp_gdf.det_class==id_cl])
@@ -158,11 +163,13 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0):
 
         if mismatch_gdf.empty:
             mismatched_fp_count = 0
+            mismatched_fn_count = 0
         else:
             mismatched_fp_count = len(mismatch_gdf[mismatch_gdf.det_class==id_cl])
+            mismatched_fn_count = len(mismatch_gdf[mismatch_gdf.det_class==id_cl+1])
 
         fp_count = pure_fp_count + mismatched_fp_count
-        fn_count = pure_fn_count
+        fn_count = pure_fn_count + mismatched_fn_count
 
         tp_k[id_cl] = tp_count
         fp_k[id_cl] = fp_count
@@ -171,20 +178,34 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0):
         if tp_count == 0:
             p_k[id_cl] = 0
             r_k[id_cl] = 0
+            f1_k[id_cl] = 0
         else:            
             p_k[id_cl] = tp_count / (tp_count + fp_count)
             r_k[id_cl] = tp_count / (tp_count + fn_count)
+            f1_k[id_cl] = 2 * p_k[id_cl] * r_k[id_cl] / (p_k[id_cl] + r_k[id_cl])
+            count_k[id_cl] = tp_count + fn_count 
 
     accuracy = sum(tp_k.values()) / (sum(tp_k.values()) + sum(fp_k.values()) + sum(fn_k.values()))
-    precision = sum(p_k.values()) / len(id_classes)
-    recall = sum(r_k.values()) / len(id_classes)
+
+    if method == 'macro-average':   
+        precision = sum(p_k.values()) / len(id_classes)
+        recall = sum(r_k.values()) / len(id_classes)
+    elif method == 'macro-weighted-average':  
+        for id_cl in id_classes:
+            pw_k[id_cl] = (count_k[id_cl] / sum(count_k.values())) * p_k[id_cl]
+            rw_k[id_cl] = (count_k[id_cl] / sum(count_k.values())) * r_k[id_cl]
+        precision = sum(pw_k.values()) / len(id_classes)
+        recall = sum(rw_k.values()) / len(id_classes)
+    elif method == 'micro-average':  
+        precision = sum(tp_k.values()) / (sum(tp_k.values()) + sum(fp_k.values()))
+        recall = sum(tp_k.values()) / (sum(tp_k.values()) + sum(fn_k.values()))
 
     if precision==0 and recall==0:
-        return tp_k, fp_k, fn_k, p_k, r_k, 0, 0, 0
+        return tp_k, fp_k, fn_k, p_k, r_k, f1_k, 0, 0, 0
     
     f1 = 2 * precision * recall / (precision + recall)
     
-    return tp_k, fp_k, fn_k, p_k, r_k, accuracy, precision, recall, f1
+    return tp_k, fp_k, fn_k, p_k, r_k, f1_k, accuracy, precision, recall, f1
 
 
 def intersection_over_union(polygon1_shape, polygon2_shape):
