@@ -155,7 +155,7 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
     pw_k = by_class_dict.copy()
     rw_k = by_class_dict.copy()
  
-    for id_cl in id_classes:       
+    for id_cl in id_classes:    
 
         tp_count = 0 if tp_gdf.empty else len(tp_gdf[tp_gdf.det_class==id_cl])
         pure_fp_count = 0 if fp_gdf.empty else len(fp_gdf[fp_gdf.det_class==id_cl])
@@ -166,8 +166,8 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
             mismatched_fn_count = 0
         else:
             mismatched_fp_count = len(mismatch_gdf[mismatch_gdf.det_class==id_cl])
-            mismatched_fn_count = len(mismatch_gdf[mismatch_gdf.det_class==id_cl+1])
-
+            mismatched_fn_count = len(mismatch_gdf[mismatch_gdf.label_class==id_cl+1])
+            
         fp_count = pure_fp_count + mismatched_fp_count
         fn_count = pure_fn_count + mismatched_fn_count
 
