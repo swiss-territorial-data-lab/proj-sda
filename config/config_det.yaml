@@ -100,11 +100,11 @@ filter_detections.py:
       zone_compatible_LPN_extensive: Zona_SAC_compatibile_con_i_disposti_LPN_previa_gestione_estensiva.gpkg
       zone_non_compatible_LPN: Zona_SAC_non_compatibile_con_i_disposti_LPN.gpkg
     vaud: 
-      buildings: batiments_en_surface_mo.gpkg
+      buildings: Batiments_en_surface_MO.gpkg
       building_areas: affectation_zone_a_batir.gpkg
       climatic_areas: zones_climatiques_compatibles_sda_vd.gpkg
-      polluted sites: sites_pollues_vd2022.gpkg
-      sda: sda_v5_2.gpkg
+      polluted sites: Sites_pollues_vd2022.gpkg
+      sda: SDA_v5_2.gpkg
       slope: terrain_pente_VD.gpkg
       waters: lakes_VD.gpkg
   attribute_names: ./layers/attribute_names.xlsx

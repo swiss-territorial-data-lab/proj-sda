@@ -11,8 +11,8 @@ prepare_aoi.py:
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   datasets:
-    shapefile: ./data/AoI/CANTON/Secteur_test_TC_v2.gpkg  
-    # shapefile: ./data/AoI/CANTON/aoi_SWISSIMAGE_YEAR_CANTON.gpkg           
+    # shapefile: ./data/AoI/CANTON/Secteur_test_TC_v2.gpkg  
+    shapefile: ./data/AoI/CANTON/aoi_SWISSIMAGE_YEAR_CANTON.gpkg           
   output_folder: ./output/OD/det/CANTON/SWISSIMAGE_YEAR
   zoom_level: 16 
 
@@ -75,14 +75,14 @@ merge_detections.py:
   assess: 
     enable: False
     metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
-    
+
   
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_dir: ./data
   detections: ../output/OD/det/CANTON/SWISSIMAGE_YEAR/merged_detections_at_0dot05_threshold.gpkg
-  # aoi: ./AoI/vaud/aoi_SWISSIMAGE_YEAR_CANTON.gpkg  
-  aoi: ./AoI/CANTON/Secteur_test_TC_v2.gpkg 
+  aoi: ./AoI/vaud/aoi_SWISSIMAGE_YEAR_CANTON.gpkg  
+  # aoi: ./AoI/CANTON/Secteur_test_TC_v2.gpkg 
   canton: CANTON
   infos:
     layers_dir: ./layers/{canton}/
@@ -102,16 +102,16 @@ filter_detections.py:
       zone_compatible_LPN_extensive: Zona_SAC_compatibile_con_i_disposti_LPN_previa_gestione_estensiva.gpkg
       zone_non_compatible_LPN: Zona_SAC_non_compatibile_con_i_disposti_LPN.gpkg
     vaud: 
-      buildings: batiments_en_surface_mo.gpkg
+      buildings: Batiments_en_surface_MO.gpkg
       building_areas: affectation_zone_a_batir.gpkg
       climatic_areas: zones_climatiques_compatibles_sda_vd.gpkg
-      polluted sites: sites_pollues_vd2022.gpkg
-      sda: sda_v5_2.gpkg
+      polluted sites: Sites_pollues_vd2022.gpkg
+      sda: SDA_v5_2.gpkg
       slope: terrain_pente_VD.gpkg
       waters: lakes_VD.gpkg
   attribute_names: ./layers/attribute_names.xlsx
-  exclusion: [building_areas, forests, zone_non_compatible_LPN, waters]  
+  exclusion: [waters]  
   dem: ./DEM/switzerland_dem_EPSG2056.tif
-  elevation_threshold: 900 # m, altitude threshold
+  elevation_threshold: 10000 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
   area_threshold: 100.0 # m2, area threshold under which polygons are discarded
