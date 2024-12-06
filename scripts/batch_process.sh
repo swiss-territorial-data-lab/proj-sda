@@ -4,7 +4,7 @@
 echo 'Run batch process to perfrom inference over several SWISSIMAGE years'
 
 canton=vaud
-for year in 2016 2017 2018 2019     # list of years to process (no comma: YEAR1 YEAR2 YEAR3 ...)  
+for year in YEAR1 YEAR2 YEAR3     # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)  
 do
     echo '-----------'
     echo Canton = $canton
@@ -13,30 +13,28 @@ do
     sed -i "s/SWISSIMAGE_YEAR/$year/g" config/config_det_${year}_${canton}.yaml
     sed -i "s/CANTON/$canton/g" config/config_det_${year}_${canton}.yaml
     echo ' '
-    # echo 'prepare_aoi.py'
-    # python ./scripts/prepare_aoi.py config/config_det_${year}_${canton}.yaml
-    # echo ' '
-    # file=./data/AoI/$canton/aoi_${year}_${canton}.gpkg
-    # if [ -e $file ]; then
-    #     echo ' '
-    #     echo 'prepare_data.py'
-    #     python ./scripts/prepare_data.py config/config_det_${year}_${canton}.yaml
-    #     echo ' '
-    #     echo 'generate_tilesets.py'
-    #     python ../object-detector/scripts/generate_tilesets.py config/config_det_${year}_${canton}.yaml
-    #     # stdl-objdet generate_tilesets config/config_det_${year}_${canton}.yaml
-    #     echo ' '
-    #     echo 'make_detections.py'
-    #     python ../object-detector/scripts/make_detections.py config/config_det_${year}_${canton}.yaml
-    #     # stdl-objdet make_detections config/config_det_${year}_${canton}.yaml
-    #     echo ' '
-    #     echo 'merge_detections.py'
-    #     python ./scripts/merge_detections.py config/config_det_${year}_${canton}.yaml
-    #     echo ' '
-    echo 'filter_detections.py'
-    python ./scripts/filter_detections.py config/config_det_${year}_${canton}.yaml 
-    # else
-    #     echo File $file does not exist. Skip the processing.
-    #     echo ' '
-    # fi
+    echo 'prepare_aoi.py'
+    python ./scripts/prepare_aoi.py config/config_det_${year}_${canton}.yaml
+    echo ' '
+    file=./data/AoI/$canton/aoi_${year}_${canton}.gpkg
+    if [ -e $file ]; then
+        echo ' '
+        echo 'prepare_data.py'
+        python ./scripts/prepare_data.py config/config_det_${year}_${canton}.yaml
+        echo ' '
+        echo 'generate_tilesets.py'
+        stdl-objdet generate_tilesets config/config_det_${year}_${canton}.yaml
+        echo ' '
+        echo 'make_detections.py'
+        stdl-objdet make_detections config/config_det_${year}_${canton}.yaml
+        echo ' '
+        echo 'merge_detections.py'
+        python ./scripts/merge_detections.py config/config_det_${year}_${canton}.yaml
+        echo ' '
+        echo 'filter_detections.py'
+        python ./scripts/filter_detections.py config/config_det_${year}_${canton}.yaml 
+    else
+        echo File $file does not exist. Skip the processing.
+        echo ' '
+    fi
 done
