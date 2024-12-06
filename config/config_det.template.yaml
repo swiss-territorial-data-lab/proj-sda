@@ -4,7 +4,7 @@ prepare_aoi.py:
   canton: CANTON
   year: SWISSIMAGE_YEAR
   srs: EPSG:2056
-  canton_shp: ./{canton}/MN95_CAD_TPR_LAD_MO_VD.shp
+  canton_shp: ./{canton}/<CANTON_SHPFILE>
   img_footprint_shp: ./swissimage_footprints/swissimage_footprint_{year}.shp 
 
 
@@ -55,7 +55,7 @@ make_detections.py:
     oth: COCO_oth.json
   detectron2_config_file: ../../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../../../models/run89/model_0004999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../../../../models/model_0004999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: true
@@ -81,8 +81,7 @@ merge_detections.py:
 filter_detections.py:
   working_dir: ./data
   detections: ../output/OD/det/CANTON/SWISSIMAGE_YEAR/merged_detections_at_0dot05_threshold.gpkg
-  aoi: ./AoI/vaud/aoi_SWISSIMAGE_YEAR_CANTON.gpkg  
-  # aoi: ./AoI/CANTON/Secteur_test_TC_v2.gpkg 
+  aoi: ./AoI/vaud/aoi_SWISSIMAGE_YEAR_CANTON.gpkg 
   canton: CANTON
   infos:
     layers_dir: ./layers/{canton}/
@@ -110,8 +109,8 @@ filter_detections.py:
       slope: terrain_pente_VD.gpkg
       waters: lakes_VD.gpkg
   attribute_names: ./layers/attribute_names.xlsx
-  exclusion: [waters]  
+  exclusion: [building_areas, forests, zone_non_compatible_LPN, waters]  
   dem: ./DEM/switzerland_dem_EPSG2056.tif
-  elevation_threshold: 10000 # m, altitude threshold
+  elevation_threshold: 900 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
   area_threshold: 100.0 # m2, area threshold under which polygons are discarded

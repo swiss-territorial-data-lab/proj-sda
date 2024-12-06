@@ -2,16 +2,16 @@
 prepare_aoi.py:  
   working_directory: ./data/AoI/
   canton: ticino
-  year: 2018
+  year: 2022
   srs: EPSG:2056
-  canton_shp: ./{canton}/limiti_cantone_2012_MN95.shp
+  canton_shp: ./{canton}/<CANTON_SHPFILE>
   img_footprint_shp: ./swissimage_footprints/swissimage_footprint_{year}.shp     
 
 
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   datasets:
-    shapefile: ./data/AoI/ticino/Secteur_test_TC_v2.gpkg               
+    shapefile: ./data/AoI/ticino/<AOI_SHPFILE>             
   output_folder: ./output/OD/det/ticino/
   zoom_level: 16 
 
@@ -23,12 +23,12 @@ generate_tilesets.py:
     nb_tiles_max: 500
   working_directory: .
   datasets:
-    aoi_tiles: ./output/OD/det/ticino/test/2020/tiles.geojson
+    aoi_tiles: ./output/OD/det/ticino/tiles.geojson
     image_source:
       type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
-      year: 2020                  # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
+      year: 2022                  # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
       location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
-  output_folder: ./output/OD/det/ticino/test/2020/
+  output_folder: ./output/OD/det/ticino/
   tile_size: 256      # per side, in pixels
   overwrite: True
   n_jobs: 10
@@ -36,7 +36,7 @@ generate_tilesets.py:
   COCO_metadata:
     year: 2024
     version: 1.0
-    description: Anthropogenic soils (ticino, Vaud and swissTML3D 2024)
+    description: Anthropogenic soils (Ticino, Vaud)
     contributor: swisstopo
     url: https://swisstopo.ch
     license:
@@ -47,14 +47,14 @@ generate_tilesets.py:
 
 # Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/OD/det/ticino/test/2020/
+  working_directory: ./output/OD/det/ticino/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
     oth: COCO_oth.json
-  detectron2_config_file: ../../../../../../config/detectron2_config.yaml # path relative to the working_folder
+  detectron2_config_file: ../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../../trne/zoom16/run89/model_0004999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../models/model_0004999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: true
@@ -65,7 +65,7 @@ make_detections.py:
 
 # Assess the final results
 merge_detections.py:
-  working_dir: ./output/OD/det/ticino/test/2020/
+  working_dir: ./output/OD/det/ticino/
   detections:
     oth: oth_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
@@ -79,8 +79,8 @@ merge_detections.py:
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_dir: ./data
-  detections: ../output/OD/det/ticino/test/2020/merged_detections_at_0dot05_threshold.gpkg
-  aoi: ./AoI/ticino/Secteur_test_TC_v2.gpkg
+  detections: ../output/OD/det/ticino/merged_detections_at_0dot05_threshold.gpkg
+  aoi: ./AoI/ticino/<AOI_SHPFILE
   canton: ticino
   infos:
     layers_dir: ./layers/{canton}/
@@ -109,14 +109,14 @@ filter_detections.py:
       waters: lakes_VD.gpkg
   attribute_names: ./layers/attribute_names.xlsx
   exclusion: [building_areas, forests, zone_non_compatible_LPN, waters] 
-  dem: ./DEM/switzerland_dem_EPSG2056.tif
+  dem: ./DEM/switzerland_dem_EPSG2056.tifMN95_CAD_TPR_LAD_MO_VD.shp
   elevation_threshold: 900.0 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
   area_threshold: 100.0 # m2, area threshold under which polygons are discarded
 
 
 merge_years.py:
-  canton: Vaud
-  working_dir: ./output/OD/det/{canton}/run89
+  canton: ticino
+  working_dir: ./output/OD/det/{canton}/
   years: [1971, 1995, 2004, 2020]
-  layer: inference_detections_merged_threshold_score-0dot05_area-100_elevation-10000.gpkg 
+  layer: inference_detections_merged_threshold_score-0dot05_area-100_elevation-900.gpkg 
