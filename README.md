@@ -44,7 +44,7 @@ Python dependencies can be installed with `pip` or `conda` using the `requiremen
 
 - Create a Python virtual environment
 ```
-$ python3 -m venv <dir_path>/<name of the virtual environment>
+$ python3.8 -m venv <dir_path>/<name of the virtual environment>
 $ source <dir_path>/<name of the virtual environment>/bin/activate
 ```
 
