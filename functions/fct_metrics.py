@@ -138,9 +138,11 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
     Returns:
         tuple: 
             - dict: precision for each class
-            - dict: recall for each class
-            - float: precision;
-            - float: recall;
+            - dict: recall for each 
+            - dict: f1-score for each class
+            - float: accuracy
+            - float: precision
+            - float: recall
             - float: f1 score.
     """
 

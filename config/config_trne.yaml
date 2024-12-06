@@ -107,7 +107,7 @@ assess_detections.py:
   output_folder: .
   iou_threshold: 0.1
   area_threshold: 50       # area under which the polygons are discarded from assessment
-
+  metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
 
 # Plots (optional)
 result_analysis.py:
@@ -117,7 +117,7 @@ result_analysis.py:
 
 # Assess the final results
 merge_detections.py:
-  working_dir: ./output/OD/trne/zoom16/run67/
+  working_dir: ./output/OD/trne/zoom16/ru67/
   labels: labels.geojson
   detections:
     trn: trn_detections_at_0dot05_threshold.gpkg
