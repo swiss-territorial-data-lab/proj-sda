@@ -222,7 +222,7 @@ if __name__ == "__main__":
             del infos_dict[key]
         
         exclu_gdf = exclu_gdf.dissolve()
-        detections_gdf = detections_gdf.overlay(exclu_gdf, how='difference')
+        detections_gdf = detections_gdf.overlay(exclu_gdf, how='difference', keep_geom_type=False)
 
     # Spatial join between detections and other vector layers
     logger.info('Compute intersection overlap between detection polygons and other vector layer polygons.')
