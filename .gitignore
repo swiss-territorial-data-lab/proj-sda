@@ -1,5 +1,6 @@
 # Folders
-data*/
+data/*
+!data/category_ids.json
 input*/
 output*/
 model*/
