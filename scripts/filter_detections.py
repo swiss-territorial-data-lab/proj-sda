@@ -17,7 +17,22 @@ from loguru import logger
 logger = misc.format_logger(logger)
 
 
+def check_gdf_len(gdf):
+    """Check if the GeoDataFrame is empty. If True, exit the script
+
+    Args:
+        gdf (GeoDataFrame): detection polygons
+    """
+
+    try:
+        assert len(gdf) > 0
+    except AssertionError:
+        logger.error("No detections left in the dataframe. Exit script.")
+        sys.exit(1)
+
+
 def none_if_undefined(cfg, key):
+    
     return cfg[key] if key in cfg.keys() else None
 
 
@@ -199,11 +214,13 @@ if __name__ == "__main__":
     elevation = dem.read(1)[row, col]
     detections_gdf['elevation'] = elevation 
 
+    check_gdf_len(detections_gdf)
     detections_gdf = detections_gdf[(detections_gdf.elevation != 0) & (detections_gdf.elevation < ELEVATION_THD)]
     tdem = len(detections_gdf)
     logger.info(f"{total - tdem} detections were removed by elevation threshold: {ELEVATION_THD} m")
 
     # Filter dataframe by score value
+    check_gdf_len(detections_gdf)
     detections_score_gdf = detections_gdf[detections_gdf.score > SCORE_THD]
     sc = len(detections_score_gdf)
     logger.info(f"{tdem - sc} detections were removed by score filtering (score threshold = {SCORE_THD})")
@@ -211,6 +228,7 @@ if __name__ == "__main__":
     detections_gdf = detections_score_gdf.copy()
 
     # Overlay detections with exclusion area polygons
+    check_gdf_len(detections_gdf)
     if EXCLUSION and len(EXCLUSION) > 0:
         logger.info(f"Remove part of the detections intersecting exclusion areas.")
         exclu_gdf = gpd.GeoDataFrame()
@@ -225,6 +243,7 @@ if __name__ == "__main__":
         detections_gdf = detections_gdf.overlay(exclu_gdf, how='difference', keep_geom_type=False)
 
     # Spatial join between detections and other vector layers
+    check_gdf_len(detections_gdf)
     logger.info('Compute intersection overlap between detection polygons and other vector layer polygons.')
     detections_infos_gdf = detections_gdf.copy()
     for key in infos_dict.keys():
@@ -246,12 +265,15 @@ if __name__ == "__main__":
 
 
     # Discard polygons with area under a given threshold 
+    check_gdf_len(detections_infos_gdf)
     detections_infos_gdf = detections_infos_gdf.explode(ignore_index=True)
     detections_infos_gdf['area'] = detections_infos_gdf.area
     tsjoin = len(detections_infos_gdf)
     detections_infos_gdf = detections_infos_gdf[detections_infos_gdf.area > AREA_THD]
     ta = len(detections_infos_gdf)
     logger.info(f"{tsjoin - ta} detections were removed by area filtering (area threshold = {AREA_THD} m2)")
+
+    check_gdf_len(detections_infos_gdf)
 
     # Compute the nearest distance between detections and sda
     if SDA:
