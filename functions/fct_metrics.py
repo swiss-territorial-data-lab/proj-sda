@@ -159,7 +159,6 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
  
     for id_cl in id_classes:
 
-        tp_count = 0 if tp_gdf.empty else len(tp_gdf[tp_gdf.det_class==id_cl])
         pure_fp_count = 0 if fp_gdf.empty else len(fp_gdf[fp_gdf.det_class==id_cl])
         pure_fn_count = 0 if fn_gdf.empty else len(fn_gdf[fn_gdf.label_class==id_cl+1])  # label class starting at 1 and id class at 0
 
@@ -168,6 +167,7 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
 
         fp_count = pure_fp_count + mismatched_fp_count
         fn_count = pure_fn_count + mismatched_fn_count
+        tp_count = 0 if tp_gdf.empty else len(tp_gdf[tp_gdf.det_class==id_cl])
 
         tp_k[id_cl] = tp_count
         fp_k[id_cl] = fp_count
@@ -176,6 +176,8 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
         p_k[id_cl] = 0 if tp_count == 0 else tp_count / (tp_count + fp_count)
         r_k[id_cl] = 0 if tp_count == 0 else tp_count / (tp_count + fn_count)
         count_k[id_cl] = 0 if tp_count == 0 else tp_count + fn_count 
+
+    accuracy = sum(tp_k.values()) / (sum(tp_k.values()) + sum(fp_k.values()) + sum(fn_k.values()))
 
     if method == 'macro-average':   
         precision = sum(p_k.values()) / len(id_classes)
@@ -199,7 +201,7 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
     
     f1 = 2 * precision * recall / (precision + recall)
     
-    return tp_k, fp_k, fn_k, p_k, r_k, precision, recall, f1
+    return tp_k, fp_k, fn_k, p_k, r_k, f1_k, accuracy, precision, recall, f1
 
 
 def intersection_over_union(polygon1_shape, polygon2_shape):
