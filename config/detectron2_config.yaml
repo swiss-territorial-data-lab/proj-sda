@@ -188,7 +188,7 @@ MODEL:
     - 0.5
     NAME: StandardROIHeads
     NMS_THRESH_TEST: 0.5
-    NUM_CLASSES: 1
+    NUM_CLASSES: 2
     POSITIVE_FRACTION: 0.25
     PROPOSAL_APPEND_GT: true
     SCORE_THRESH_TEST: 0.05
@@ -267,7 +267,7 @@ OUTPUT_DIR: logs
 SEED: 42
 SOLVER:
   BASE_LR: 0.005
-  BIAS_LR_FACTOR: 0.5
+  BIAS_LR_FACTOR: 1.0
   CHECKPOINT_PERIOD: 500
   CLIP_GRADIENTS:
     CLIP_TYPE: value
@@ -277,7 +277,7 @@ SOLVER:
   GAMMA: 0.8
   IMS_PER_BATCH: 2
   LR_SCHEDULER_NAME: WarmupMultiStepLR
-  MAX_ITER: 5000
+  MAX_ITER: 7000
   MOMENTUM: 0.9
   NESTEROV: false
   STEPS:
@@ -290,16 +290,26 @@ SOLVER:
   - 3500
   - 4000
   - 4500
-  # - 5000
-  # - 5500
-  # - 6000
-  # - 6500
- # - 7000
- # - 7500
- # - 8000
- # - 8500
- # - 9000
- # - 9500
+  - 5000
+  - 5500
+  - 6000
+  - 6500
+  # - 7000
+  # - 7500
+  # - 8000
+  # - 8500
+  # - 9000
+  # - 9500
+  # - 10000
+  # - 10500
+  # - 11000
+  # - 11500
+  # - 12000
+  # - 12500
+  # - 13000
+  # - 13500
+  # - 14000
+  # - 14500
   WARMUP_FACTOR: 0.001
   WARMUP_ITERS: 200
   WARMUP_METHOD: linear

@@ -1,6 +1,82 @@
 import os
 import sys
 from loguru import logger
+from shapely.validation import make_valid
+
+
+def check_validity(poly_gdf, correct=False):
+    '''
+    Test if all the geometry of a dataset are valid. When it is not the case, correct the geometries with a buffer of 0 m
+    if correct != False and stop with an error otherwise.
+
+    - poly_gdf: dataframe of geometries to check
+    - correct: boolean indicating if the invalid geometries should be corrected with a buffer of 0 m
+
+    return: a dataframe with valid geometries.
+    '''
+
+    invalid_condition = ~poly_gdf.is_valid
+
+    try:
+        assert(poly_gdf[invalid_condition].shape[0]==0), \
+            f"{poly_gdf[invalid_condition].shape[0]} geometries are invalid on" + \
+                    f" {poly_gdf.shape[0]} detections."
+    except Exception as e:
+        logger.warning(e)
+        if correct:
+            logger.info("Correction of the invalid geometries with the shapely function 'make_valid'...")
+            
+            invalid_poly = poly_gdf.loc[invalid_condition, 'geometry']
+            try:
+                poly_gdf.loc[invalid_condition, 'geometry'] = [
+                    make_valid(poly) for poly in invalid_poly
+                    ]
+     
+            except ValueError:
+                logger.info('Failed to fix geometries with "make_valid", try with a buffer of 0.')
+                poly_gdf.loc[invalid_condition, 'geometry'] = [poly.buffer(0) for poly in invalid_poly] 
+        else:
+            sys.exit(1)
+
+    return poly_gdf
+
+
+def convert_crs(gdf, epsg=2056):
+    """Convert crs of a vector layer to a defined one
+
+    Args:
+        gdf (GeoDataFrame): input geodataframe
+        epsg (int): projected coordinate system
+
+    Returns:
+        GeoDataFrame: output geodataframe with the desired epsg
+    """
+
+    if gdf.crs == None:
+        gdf = gdf.set_crs(epsg)
+        logger.info(f"Set crs to epsg:{epsg}.")
+    elif gdf.crs != epsg:
+        gdf = gdf.to_crs(epsg)
+        logger.info(f"Convert crs to epsg:{epsg}.")
+
+    return gdf
+
+
+def ensure_dir_exists(dirpath):
+    """Test if a directory exists. If not, make it.  
+
+    Args:
+        dirpath (str): directory path to test
+
+    Returns:
+        dirpath (str): directory path that have been tested
+    """
+
+    if not os.path.exists(dirpath):
+        os.makedirs(dirpath)
+        logger.info(f"The directory {dirpath} was created.")
+    
+    return dirpath
 
 
 def format_logger(logger):
@@ -26,18 +102,20 @@ def format_logger(logger):
     return logger
 
 
-def ensure_dir_exists(dirpath):
-    """Test if a directory exists. If not, make it.  
+def overlap(polygon1_shape, polygon2_shape):
+    """Determine the overlap area of one polygon with another one
 
     Args:
-        dirpath (str): directory path to test
+        polygon1_shape (geometry): first polygon
+        polygon2_shape (geometry): second polygon
 
     Returns:
-        dirpath (str): directory path that have been tested
+        float: ratio of overlapped area
     """
 
-    if not os.path.exists(dirpath):
-        os.makedirs(dirpath)
-        logger.info(f"The directory {dirpath} was created.")
+    # Calculate intersection area
     
-    return dirpath
+    polygon_intersection = polygon1_shape.intersection(polygon2_shape).area
+    polygon_area = polygon1_shape.area
+    
+    return polygon_intersection / polygon_area

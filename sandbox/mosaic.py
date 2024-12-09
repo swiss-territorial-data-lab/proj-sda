@@ -9,7 +9,6 @@ from rasterio.merge import merge
 import rasterio as rio
 from pathlib import Path
 
-# the following allows us to import modules from within this file's parent folder
 sys.path.insert(1, '.')
 import functions.fct_misc as misc
 
@@ -42,15 +41,17 @@ if __name__ == "__main__":
     # Create an output directory in case it doesn't exist
     misc.ensure_dir_exists(os.path.join(OUTPUT_DIR))
 
-
+    # Get raster file names
     raster_files = list(Path(INPUT_DIR).iterdir())
     raster_to_mosaic = []
 
+    # Get filename
     split = INPUT_DIR.split('/')
     zoom = split[-4].split('_')[1]
     year = split[-3]
     filename = zoom + '_' + year + '_mosaic.tif'
 
+    # Mosaic images and save
     for p in raster_files:
         raster = rio.open(p)
         raster_to_mosaic.append(raster)

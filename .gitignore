@@ -1,11 +1,10 @@
 # Folders
-data*/
+data/*
+!data/category_ids.json
 input*/
 output*/
 model*/
-
-# Files
-config/config_det_*
+config/config_det_*.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

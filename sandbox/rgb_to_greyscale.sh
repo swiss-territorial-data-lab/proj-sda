@@ -1,8 +1,8 @@
 #!/bin/bash
 # !!! Might not work yet in the provided venv
 
-mypathin=/mnt/data-03/cherny/git/proj-sda/data/images/SWISSIMAGE/zoom_16/RGB_trne/2020
-mypathout=/mnt/data-03/cherny/git/proj-sda/data/images/SWISSIMAGE/zoom_16/Grayscale_trne_gdal/2020
+mypathin=<DIR_PATH>
+mypathout=<DIR_PATH>
 mkdir -p $mypathout
 
 cd $mypathin

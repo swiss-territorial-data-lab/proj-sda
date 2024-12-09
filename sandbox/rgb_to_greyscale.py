@@ -14,6 +14,7 @@ from yaml import load, FullLoader
 
 sys.path.insert(1, '.')
 import functions.fct_misc as misc
+from functions.constants import DONE_MSG
 
 logger = misc.format_logger(logger)
 
@@ -35,7 +36,7 @@ def main(WORKING_DIR, OUTPUT_DIR, IMAGE_DIR, BANDS):
             B = src.read(3)
             # https://en.wikipedia.org/wiki/Grayscale#Colorimetric_(perceptual_luminance-preserving)_conversion_to_grayscale 
             greyscale = 0.2990*R + 0.5870*G + 0.1140*B
-            # rio.plot.show(greyscale, cmap='Greys_r')
+            # rio.plot.show(greyscale, cmap='Greys_r') # Uncomment to visualize
 
         img_name = os.path.basename(image)
 

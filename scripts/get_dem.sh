@@ -1,4 +1,5 @@
 #!/bin/bash
+# Download DEM tif file
 
 mkdir -p ./data/DEM/
 wget https://github.com/lukasmartinelli/swissdem/releases/download/v1.0/switzerland_dem.tif -O ./data/DEM/switzerland_dem.tif
