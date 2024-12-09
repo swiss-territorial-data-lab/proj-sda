@@ -175,7 +175,10 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
     
         p_k[id_cl] = 0 if tp_count == 0 else tp_count / (tp_count + fp_count)
         r_k[id_cl] = 0 if tp_count == 0 else tp_count / (tp_count + fn_count)
+        f1_k[id_cl] = 0 if tp_count == 0 else 2 * p_k[id_cl] * r_k[id_cl] / (p_k[id_cl] + r_k[id_cl])
         count_k[id_cl] = 0 if tp_count == 0 else tp_count + fn_count 
+
+    accuracy = sum(tp_k.values()) / (sum(tp_k.values()) + sum(fp_k.values()) + sum(fn_k.values()))
 
     if method == 'macro-average':   
         precision = sum(p_k.values()) / len(id_classes)
@@ -199,7 +202,7 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
     
     f1 = 2 * precision * recall / (precision + recall)
     
-    return tp_k, fp_k, fn_k, p_k, r_k, precision, recall, f1
+    return tp_k, fp_k, fn_k, p_k, r_k, f1_k, accuracy, precision, recall, f1
 
 
 def intersection_over_union(polygon1_shape, polygon2_shape):
