@@ -31,7 +31,7 @@ The project has been run on a 32 GiB RAM machine with a 16 GiB GPU (NVIDIA Tesla
 - PyTorch version 1.10
 - CUDA version 11.3
 - GDAL version 3.0.4
-- object-detector version [2.3.1](https://github.com/swiss-territorial-data-lab/object-detector/releases/tag/v2.3.1)
+- object-detector version [2.3.2](https://github.com/swiss-territorial-data-lab/object-detector/releases/tag/v2.3.2)
 
 ### Installation
 
