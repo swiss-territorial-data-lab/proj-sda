@@ -4,6 +4,7 @@ input*/
 output*/
 model*/
 config/config_det_*.yaml
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
