@@ -88,6 +88,7 @@ if __name__ == "__main__":
 
     written_files = [] 
 
+
     # Convert input detections to a geodataframe 
     detections_gdf = gpd.read_file(DETECTIONS)
     detections_gdf = detections_gdf.to_crs(2056)
@@ -198,8 +199,8 @@ if __name__ == "__main__":
         slope_gdf = slope_gdf.dissolve()
         slope_gdf['slope_>18%_id'] = slope_gdf.index
         slope_gdf.to_file(feature)
-
-    infos_dict = {'slope_>18%': slope_gdf, 'agri_area': agri_gdf, 'buildings': building_gdf, 'building_areas': building_areas_gdf, 
+    # 'slope_>18%': slope_gdf, 
+    infos_dict = {'agri_area': agri_gdf, 'buildings': building_gdf, 'building_areas': building_areas_gdf, 
     'climatic_areas': climatic_areas_gdf, 'forests': forests_gdf,
     'large_rivers': large_rivers_gdf, 'protected_area': protected_gdf, 'protected_water': protected_water_gdf, 
     'sda': sda_gdf, 'polluted_sites': polluted_sites_gdf, 'waters': waters_gdf, 'zone_compatible_LPN': zone_compatible_lpn_gdf, 
@@ -227,20 +228,20 @@ if __name__ == "__main__":
 
     detections_gdf = detections_score_gdf.copy()
 
-    # Overlay detections with exclusion area polygons
-    check_gdf_len(detections_gdf)
-    if EXCLUSION and len(EXCLUSION) > 0:
-        logger.info(f"Remove part of the detections intersecting exclusion areas.")
-        exclu_gdf = gpd.GeoDataFrame()
-        for key in EXCLUSION:
-            gdf = infos_dict[key].copy()
-            exclu_gdf = pd.concat([exclu_gdf, gdf], axis=0)
+    # # Overlay detections with exclusion area polygons
+    # check_gdf_len(detections_gdf)
+    # if EXCLUSION and len(EXCLUSION) > 0:
+    #     logger.info(f"Remove part of the detections intersecting exclusion areas.")
+    #     exclu_gdf = gpd.GeoDataFrame()
+    #     for key in EXCLUSION:
+    #         gdf = infos_dict[key].copy()
+    #         exclu_gdf = pd.concat([exclu_gdf, gdf], axis=0)
             
-            # Remove the exclusion areas from the dictionnary 
-            del infos_dict[key]
+    #         # Remove the exclusion areas from the dictionnary 
+    #         del infos_dict[key]
         
-        exclu_gdf = exclu_gdf.dissolve()
-        detections_gdf = detections_gdf.overlay(exclu_gdf, how='difference', keep_geom_type=False)
+    #     exclu_gdf = exclu_gdf.dissolve()
+    #     detections_gdf = detections_gdf.overlay(exclu_gdf, how='difference', keep_geom_type=False)
 
     # Spatial join between detections and other vector layers
     check_gdf_len(detections_gdf)
@@ -261,8 +262,16 @@ if __name__ == "__main__":
             del detections_join_gdf
             detections_infos_gdf[f'{key}'] = detections_infos_gdf.apply(lambda x: misc.overlap(x['geometry'], x[f'{key}_geom']) if x['geometry'] and x[f'{key}_geom'] != None else 0, axis=1)
             detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom'])
-            detections_infos_gdf = detections_infos_gdf.groupby('det_id',sort=False).apply(lambda x: x if len(x)==1 else x.loc[x[f'{key}'].ne('no')]).reset_index(drop=True)
-
+            # detections_infos_gdf = detections_infos_gdf.groupby('det_id', sort=False).apply(lambda x: x if len(x)==1 else x.loc[x[f'{key}'].ne('no')]).reset_index(drop=True)
+            # detections_infos'agri_area'gdf['detec_id'] = detections_infos_gdf['det_id']
+            # print(detections_infos_gdf['detec_id'])
+            # inter_df = detections_infos_gdf.groupby(['det_id'])[key].sum().reset_index(drop=True)
+            # detections_infos_gdf = detections_infos_gdf.drop(columns=[key])
+            # detections_infos_gdf = detections_infos_gdf.drop_duplicates(subset='det_id')
+            # detections_infos_gdf = pd.concat([detections_infos_gdf, inter_df], axis=1)
+            key_list = detections_infos_gdf.columns.values.tolist()
+            detections_infos_gdf = detections_infos_gdf.groupby(by=key_list[:-1], as_index=False).agg({key: ['sum']}).droplevel(1, axis=1) 
+        detections_infos_gdf = gpd.GeoDataFrame(detections_infos_gdf, crs=detections_gdf.crs, geometry='geometry')
 
     # Discard polygons with area under a given threshold 
     check_gdf_len(detections_infos_gdf)
