@@ -73,7 +73,7 @@ merge_detections.py:
   score_threshold: 0.05
   assess: 
     enable: False
-    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
+    metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
   
 
 # Filtering and merging detection polygons to improve final results
@@ -102,7 +102,7 @@ filter_detections.py:
     vaud: 
       buildings: Batiments_en_surface_MO.gpkg
       building_areas: affectation_zone_a_batir.gpkg
-      climatic_areas: zones_climatiques_compatibles_sda_vd.gpkg
+      climatic_areas: zones_climatiques_compatibles_sda_VD.gpkg
       polluted sites: Sites_pollues_vd2022.gpkg
       sda: SDA_v5_2.gpkg
       slope: terrain_pente_VD.gpkg
