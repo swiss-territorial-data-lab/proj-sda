@@ -114,6 +114,8 @@ assess_detections.py:
 result_analysis.py:
   working_dir: ./output/trne/
   detections: tagged_detections.gpkg
+  min_year: 1950
+  max_year: 2023
 
 
 # Assess the final results
