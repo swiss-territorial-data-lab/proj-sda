@@ -166,7 +166,7 @@ $ stdl-objdet train_model config/config_trne.yaml
 $ tensorboard --logdir output/trne/logs
 ```
 
-Open the following link with a web browser: `http://localhost:6006` and identify the iteration minimising the validation loss and select the model accordingly (`model_*.pth`) in `config_trne`. For the provided parameters, `model_0004999.pth` is the default one.
+Open the following link with a web browser: `http://localhost:6006` and identify the iteration minimising the validation loss and select the model accordingly (`model_*.pth`) in `config_trne`. For the provided parameters, `model_0002999.pth` is the default one.
 
 Perform and assess detections:
 ```
