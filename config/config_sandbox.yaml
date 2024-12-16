@@ -18,10 +18,11 @@ match_colour.py:
   image_dir: <DIR_PATH>
   output_dir: <DIR_PATH>
   reference: <PATH_TO_REF_IMAGE>
-  method: scikit   # 1: scikit, 2: rasterio
+  method: rasterio   # 1: scikit, 2: rasterio
   plot: False
 
 
+# Clip vectors
 clip.py:
   working_dir: .
   aoi_shapefile: <AOI_SHPFILE_PATH>
@@ -29,12 +30,16 @@ clip.py:
   output_dir: output/
 
 
+# Mosaic raster
 mosaic.py:  
   working_dir: .
   input_dir: <DIR_PATH>
   output_dir: <DIR_PATH>
 
 
+# Plot year distribution of GT labels
 gt_analysis.py:
   working_dir: <DIR_PATH>
-  labels: <GT_SHPFILE>
+  labels: <FILENAME>
+  min_year: 1950
+  max_year: 2025
