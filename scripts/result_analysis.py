@@ -5,8 +5,10 @@ import time
 import yaml
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 
 sys.path.insert(0, '.')
 import functions.fct_misc as misc
@@ -18,7 +20,8 @@ logger = misc.format_logger(logger)
 
 def plot_barchart(df, cat, data):
 
-    fig, ax = plt.subplots(1, 1, figsize=(30,5))
+    plt.rcParams["figure.figsize"] = (10, 5)
+    fig, ax = plt.subplots(1, 1)
 
     if data == 'label':
         df = df[df['CATEGORY']==cat].copy() 
@@ -28,33 +31,46 @@ def plot_barchart(df, cat, data):
         df = df[df['det_category']==cat].copy() 
         df = df[~(df.tag.isin(["FN", "wrong class", "small polygon"]))]
         year = 'year_det'
-  
+
     df = df[[year, 'tag']].astype({year: 'int', 'tag': 'str'})
 
     df['counts'] = 1
 
-    df = pd.pivot_table(data=df, index=[year], columns=['tag'], values='counts', aggfunc='count')
+    df_temp = pd.pivot_table(data=df, index=[year], columns=['tag'], values='counts', aggfunc='count')
+
+    MIN_YEAR = 1950
+    MAX_YEAR = 2025
+
+    year_all_list = np.arange(MIN_YEAR, MAX_YEAR, 1, dtype=int)
+    year_filled_df = pd.DataFrame({year: year_all_list}).sort_values(by=year).reset_index(drop=True)
+    df = year_filled_df.merge(df_temp, how='left', on=year).fillna(0)
 
     if data == 'label':  
         
-        df = df[['TP', 'FN']] 
-        ax = df.plot.bar(rot=0, log=False, stacked=True, color=['turquoise', 'gold'] , width=0.8)
+        df = df[[year, 'TP', 'FN']] 
+        ax = df.plot(x=year, kind='bar', rot=0, log=False, stacked=True, color=['limegreen', 'red'], width=0.9)
     elif data == 'det':    
 
         if 'FP' not in df.keys(): 
             df = df[['TP']] 
         else:
-            df = df[['TP', 'FP']] 
-        ax = df.plot.bar(rot=0, log=False, stacked=True, color=['turquoise', 'red'] , width=0.8)
+            df = df[[year, 'TP', 'FP']] 
+        ax = df.plot(x=year, kind='bar', rot=0, log=False, stacked=True, color=['limegreen', 'royalblue'], width=0.9)
 
     for c in ax.containers:
         labels = [int(a) if a > 0 else "" for a in c.datavalues]
         ax.bar_label(c, label_type='center', color="black", labels=labels, fontsize=8)
 
     plt.gca().set_yticks(plt.gca().get_yticks().tolist())
+    ticks_to_use = df.index[::5]
+    labels = df[year][::5]
 
-    plt.xticks(rotation=45, fontsize=8, ha='center')
-    plt.xlabel(year.replace("_", " "), fontweight='bold')
+    ax.set_xticks(ticks_to_use, labels, rotation=45, fontsize=10, ha='center')
+    ax.xaxis.set_minor_locator(MultipleLocator(1))
+    plt.xlabel('Year', fontweight='bold')
+
+    # plt.xticks(rotation=45, fontsize=8, ha='center')
+    # plt.xlabel(year.replace("_", " "), fontweight='bold')
 
     plt.title(cat, fontweight='bold')
     plt.legend(loc='upper left', frameon=False)    
@@ -116,7 +132,7 @@ if __name__ == "__main__":
     total = len(detections_gdf)
     logger.info(f"{total} input shapes")
 
-    for parameter in ['area', 'score']:  
+    for parameter in ['area', 'score']:
         feature = plot_boxplot(detections_gdf, param=parameter)
         written_files.append(feature)
         logger.success(f"{DONE_MSG} A file was written: {feature}") 
