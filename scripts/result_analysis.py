@@ -18,7 +18,7 @@ from loguru import logger
 logger = misc.format_logger(logger)
 
 
-def plot_barchart(df, cat, min_year, max_year, data):
+def plot_barchart(df, cat, min_year, max_year, class_dict, data):
 
     plt.rcParams["figure.figsize"] = (12, 5)
     fig, ax = plt.subplots(1, 1)
@@ -72,10 +72,11 @@ def plot_barchart(df, cat, min_year, max_year, data):
     ax.xaxis.set_minor_locator(MultipleLocator(1))
     plt.xlabel('Year', fontweight='bold')
 
-    plt.title(cat, fontweight='bold')
+    title = class_dict[cat] if class_dict else cat
+    plt.title(title, fontweight='bold')
     plt.legend(loc='upper left', frameon=False)    
 
-    plot_path = f'{data}_{cat}.png'
+    plot_path = f'{data}_{title}.png'.replace(' ', '_')
     plt.savefig(plot_path, bbox_inches='tight')
     plt.close(fig)
 
@@ -121,6 +122,7 @@ if __name__ == "__main__":
     DETECTIONS = cfg['detections']
     MIN_YEAR = cfg['min_year'] if 'min_year' in cfg.keys() else 1945
     MAX_YEAR = cfg['max_year'] if 'max_year' in cfg.keys() else 2025
+    CLASS_DICT = cfg['class_dict'] if 'class_dict' in cfg.keys() else None
 
     os.chdir(WORKING_DIR)
 
@@ -140,11 +142,11 @@ if __name__ == "__main__":
         logger.success(f"{DONE_MSG} A file was written: {feature}") 
 
     for cat in filter(None, detections_gdf.CATEGORY.unique()): 
-        feature = plot_barchart(detections_gdf, cat, MIN_YEAR, MAX_YEAR, data='label')
+        feature = plot_barchart(detections_gdf, cat, MIN_YEAR, MAX_YEAR, CLASS_DICT, data='label')
         written_files.append(feature)
-        feature = plot_barchart(detections_gdf, cat, MIN_YEAR, MAX_YEAR, data='det')
+        feature = plot_barchart(detections_gdf, cat, MIN_YEAR, MAX_YEAR, CLASS_DICT, data='det')
         written_files.append(feature) 
-        feature = plot_barchart(detections_gdf, cat, MIN_YEAR, MAX_YEAR, data='both')
+        feature = plot_barchart(detections_gdf, cat, MIN_YEAR, MAX_YEAR, CLASS_DICT, data='both')
         written_files.append(feature)
 
     logger.info("The following files were written. Let's check them out!")

@@ -65,6 +65,7 @@ if __name__ == "__main__":
     LABELS = cfg['labels']
     MIN_YEAR = cfg['min_year']
     MAX_YEAR = cfg['max_year']
+    CLASS_DICT = cfg['class_dict'] if 'class_dict' in cfg.keys() else None
 
     os.chdir(WORKING_DIR)
 
@@ -86,10 +87,11 @@ if __name__ == "__main__":
     year_all_list = np.arange(MIN_YEAR, MAX_YEAR, 1, dtype=int)
     df = pd.DataFrame({x: year_all_list}).sort_values(by=x).reset_index(drop=True)
 
-    for v in labels_gdf[y].unique():
-        df_temp = labels_gdf[labels_gdf[y]==v] 
+    for cat in labels_gdf[y].unique():
+        df_temp = labels_gdf[labels_gdf[y]==cat] 
         df_temp = df_temp.groupby(by=x, as_index=False)[y].value_counts()
-        df_temp = df_temp.drop(columns=[y]).rename(columns={z:v})
+        cat = CLASS_DICT[cat] if CLASS_DICT else cat
+        df_temp = df_temp.drop(columns=[y]).rename(columns={z:cat})
         df = df.merge(df_temp, how='left', on=x).fillna(0)
 
     feature = plot_barchart(df)

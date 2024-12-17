@@ -116,6 +116,8 @@ result_analysis.py:
   detections: tagged_detections.gpkg
   min_year: 1950
   max_year: 2023
+  class_dict: {'Activité non agricole': 'Non-agricultural activity', # Provide a customed legend
+                'Mouvement de terrain': 'Land movement'}
 
 
 # Assess the final results

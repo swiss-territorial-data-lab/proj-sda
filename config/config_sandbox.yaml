@@ -39,7 +39,9 @@ mosaic.py:
 
 # Plot year distribution of GT labels
 gt_analysis.py:
-  working_dir: <DIR_PATH>
-  labels: <FILENAME>
+  working_dir: ./data/ground_truth/
+  labels: sda_ground_truth.gpkg
   min_year: 1950
   max_year: 2025
+  class_dict: {'Activité non agricole': 'Non-agricultural activity', # Provide a customed legend
+                'Mouvement de terrain': 'Land movement'}
