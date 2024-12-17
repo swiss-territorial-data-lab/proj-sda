@@ -88,7 +88,6 @@ if __name__ == "__main__":
 
     written_files = [] 
 
-
     # Convert input detections to a geodataframe 
     detections_gdf = gpd.read_file(DETECTIONS)
     detections_gdf = detections_gdf.to_crs(2056)
@@ -199,8 +198,8 @@ if __name__ == "__main__":
         slope_gdf = slope_gdf.dissolve()
         slope_gdf['slope_>18%_id'] = slope_gdf.index
         slope_gdf.to_file(feature)
-    # 'slope_>18%': slope_gdf, 
-    infos_dict = {'agri_area': agri_gdf, 'buildings': building_gdf, 'building_areas': building_areas_gdf, 
+
+    infos_dict = {'slope_>18%': slope_gdf, 'agri_area': agri_gdf, 'buildings': building_gdf, 'building_areas': building_areas_gdf, 
     'climatic_areas': climatic_areas_gdf, 'forests': forests_gdf,
     'large_rivers': large_rivers_gdf, 'protected_area': protected_gdf, 'protected_water': protected_water_gdf, 
     'sda': sda_gdf, 'polluted_sites': polluted_sites_gdf, 'waters': waters_gdf, 'zone_compatible_LPN': zone_compatible_lpn_gdf, 
@@ -228,20 +227,20 @@ if __name__ == "__main__":
 
     detections_gdf = detections_score_gdf.copy()
 
-    # # Overlay detections with exclusion area polygons
-    # check_gdf_len(detections_gdf)
-    # if EXCLUSION and len(EXCLUSION) > 0:
-    #     logger.info(f"Remove part of the detections intersecting exclusion areas.")
-    #     exclu_gdf = gpd.GeoDataFrame()
-    #     for key in EXCLUSION:
-    #         gdf = infos_dict[key].copy()
-    #         exclu_gdf = pd.concat([exclu_gdf, gdf], axis=0)
+    # Overlay detections with exclusion area polygons
+    check_gdf_len(detections_gdf)
+    if EXCLUSION and len(EXCLUSION) > 0:
+        logger.info(f"Remove part of the detections intersecting exclusion areas.")
+        exclu_gdf = gpd.GeoDataFrame()
+        for key in EXCLUSION:
+            gdf = infos_dict[key].copy()
+            exclu_gdf = pd.concat([exclu_gdf, gdf], axis=0)
             
-    #         # Remove the exclusion areas from the dictionnary 
-    #         del infos_dict[key]
+            # Remove the exclusion areas from the dictionnary 
+            del infos_dict[key]
         
-    #     exclu_gdf = exclu_gdf.dissolve()
-    #     detections_gdf = detections_gdf.overlay(exclu_gdf, how='difference', keep_geom_type=False)
+        exclu_gdf = exclu_gdf.dissolve()
+        detections_gdf = detections_gdf.overlay(exclu_gdf, how='difference', keep_geom_type=False)
 
     # Spatial join between detections and other vector layers
     check_gdf_len(detections_gdf)

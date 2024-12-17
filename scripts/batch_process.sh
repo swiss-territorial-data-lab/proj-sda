@@ -3,7 +3,7 @@
 
 echo 'Run batch process to perfrom inference over several SWISSIMAGE years'
 
-canton=ticino
+canton=CANTON                     # provide canton name
 for year in YEAR1 YEAR2 YEAR3     # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)  
 do
     echo '-----------'

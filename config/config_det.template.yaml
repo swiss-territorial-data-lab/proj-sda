@@ -11,7 +11,7 @@ prepare_aoi.py:
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   datasets:
-    shapefile: ./data/AoI/CANTON/aoi_SWISSIMAGE_YEAR_CANTON.gpkg           
+    shapefile: ./data/AoI/CANTON/aoi_SWISSIMAGE_YEAR_CANTON.gpkg
   output_folder: ./output/det/CANTON/SWISSIMAGE_YEAR
   zoom_level: 16 
 
@@ -80,7 +80,7 @@ merge_detections.py:
 filter_detections.py:
   working_dir: ./data
   detections: ../output/det/CANTON/SWISSIMAGE_YEAR/merged_detections_at_0dot05_threshold.gpkg
-  aoi: ./AoI/CANTON/aoi_SWISSIMAGE_YEAR_CANTON.gpkg 
+  aoi: ./AoI/CANTON/aoi_SWISSIMAGE_YEAR_CANTON.gpkg
   canton: CANTON
   infos:
     layers_dir: ./layers/{canton}/
@@ -92,7 +92,7 @@ filter_detections.py:
       forests: Fôrets.shp
       large_rivers: Grandi_corsi.shp
       protected_underground_water: Protezione_acque_sott.shp
-      polluted sites: Siti_inquinati.shp
+      polluted_sites: Siti_inquinati.shp
       sda: Censimento_SAC_2023.shp
       slope: terrain_pente_TC_SA.gpkg
       waters: MU_Acque_TI.shp
@@ -103,7 +103,7 @@ filter_detections.py:
       buildings: Batiments_en_surface_MO.gpkg
       building_areas: affectation_zone_a_batir.gpkg
       climatic_areas: zones_climatiques_compatibles_sda_VD.gpkg
-      polluted sites: Sites_pollues_vd2022.gpkg
+      polluted_sites: Sites_pollues_VD2022.gpkg
       sda: SDA_v5_2.gpkg
       slope: terrain_pente_VD.gpkg
       waters: lakes_VD.gpkg

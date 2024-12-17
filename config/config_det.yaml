@@ -79,9 +79,9 @@ merge_detections.py:
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_dir: ./data
-  detections: ../output/det/ticino/merged_detections_at_0dot05_threshold.gpkg
-  aoi: ./AoI/ticino/<AOI_SHPFILE>
-  canton: ticino
+-  detections: ../output/det/ticino/merged_detections_at_0dot05_threshold.gpkg
+-  aoi: ./AoI/ticino/<AOI_SHPFILE>
+-  canton: ticino
   infos:
     layers_dir: ./layers/{canton}/
     ticino:
@@ -92,7 +92,7 @@ filter_detections.py:
       forests: Fôrets.shp
       large_rivers: Grandi_corsi.shp
       protected_underground_water: Protezione_acque_sott.shp
-      polluted sites: Siti_inquinati.shp
+      polluted_sites: Siti_inquinati.shp
       sda: Censimento_SAC_2023.shp
       slope: terrain_pente_TC_SA.gpkg
       waters: MU_Acque_TI.shp
@@ -103,20 +103,20 @@ filter_detections.py:
       buildings: Batiments_en_surface_MO.gpkg
       building_areas: affectation_zone_a_batir.gpkg
       climatic_areas: zones_climatiques_compatibles_sda_VD.gpkg
-      polluted sites: Sites_pollues_vd2022.gpkg
+      polluted_sites: Sites_pollues_VD2022.gpkg
       sda: SDA_v5_2.gpkg
       slope: terrain_pente_VD.gpkg
       waters: lakes_VD.gpkg
   attribute_names: ./layers/attribute_names.xlsx
   exclusion: [building_areas, forests, zone_non_compatible_LPN, waters] 
   dem: ./DEM/switzerland_dem_EPSG2056.tif
-  elevation_threshold: 900.0 # m, altitude threshold
+  elevation_threshold: 900 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
   area_threshold: 100.0 # m2, area threshold under which polygons are discarded
 
 
 merge_years.py:
-  canton: ticino
+  canton: <CANTON>
   working_dir: ./output/det/{canton}/
   years: [YEAR1, YEAR2, YEAR3]          # choose year
   layer: merged_detections_at_0dot05_threshold_threshold_score-0dot05_area-100_elevation-900.gpkg 
