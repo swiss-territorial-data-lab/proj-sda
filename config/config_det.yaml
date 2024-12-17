@@ -54,7 +54,7 @@ make_detections.py:
     oth: COCO_oth.json
   detectron2_config_file: ../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../models/model_0004999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../../models/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: true
