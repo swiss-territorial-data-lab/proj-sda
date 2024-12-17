@@ -261,13 +261,6 @@ if __name__ == "__main__":
             del detections_join_gdf
             detections_infos_gdf[f'{key}'] = detections_infos_gdf.apply(lambda x: misc.overlap(x['geometry'], x[f'{key}_geom']) if x['geometry'] and x[f'{key}_geom'] != None else 0, axis=1)
             detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom'])
-            # detections_infos_gdf = detections_infos_gdf.groupby('det_id', sort=False).apply(lambda x: x if len(x)==1 else x.loc[x[f'{key}'].ne('no')]).reset_index(drop=True)
-            # detections_infos'agri_area'gdf['detec_id'] = detections_infos_gdf['det_id']
-            # print(detections_infos_gdf['detec_id'])
-            # inter_df = detections_infos_gdf.groupby(['det_id'])[key].sum().reset_index(drop=True)
-            # detections_infos_gdf = detections_infos_gdf.drop(columns=[key])
-            # detections_infos_gdf = detections_infos_gdf.drop_duplicates(subset='det_id')
-            # detections_infos_gdf = pd.concat([detections_infos_gdf, inter_df], axis=1)
             key_list = detections_infos_gdf.columns.values.tolist()
             detections_infos_gdf = detections_infos_gdf.groupby(by=key_list[:-1], as_index=False).agg({key: ['sum']}).droplevel(1, axis=1) 
         detections_infos_gdf = gpd.GeoDataFrame(detections_infos_gdf, crs=detections_gdf.crs, geometry='geometry')
