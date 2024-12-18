@@ -1,7 +1,7 @@
-# Automatic detection of agricultural soils affected by anthropogenic activities
+# Automatic detection of agricultural soils degraded by anthropogenic activities
 
-The aim of the project is to automatically detect anthropogenic activities that have affected agricultural soils in the past. Two main categories have been defined: "non-agricultural activity" and "land movement". The results will make it possible to identify potentially rehabilitable soils that can be used to establish a land crop rotation map. <br>
-This project was developed in collaboration with the Canton of Ticino and of the Canton of Vaud.
+The aim of the project is to automatically detect anthropogenic activities that have degraded agricultural soils in the past. Two main categories have been defined: "non-agricultural activity" and "land movement". The results will make it possible to identify potentially rehabilitable soils that can be used to establish a land crop rotation map. <br>
+This project was developed in collaboration with the Canton of Ticino and of the Canton of Vaud. Detailed documentation of the project and results can be found on the [STDL technical website](https://tech.stdl.ch/PROJ-SDA/).
 
 **Table of content**
 
@@ -63,7 +63,7 @@ $ pip-compile requirements.in
 
 ### Files structure
 
-The folders/files of the project `proj-sda` (in combination with the `object-detector`) are organised as follows. Path names can be customised by the user, and * indicates numbers which may vary:
+The folders/files of the project `proj-sda` (in combination with the `object-detector`) are organised as follows. Path names and values can be customised by the user:
 
 <pre>.
 ├── config                                          # configurations files folder
