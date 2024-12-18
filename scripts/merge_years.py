@@ -8,7 +8,7 @@ import geopandas as gpd
 import pandas as pd
 
 sys.path.insert(0, '.')
-import functions.fct_misc as misc
+import functions.misc as misc
 from functions.constants import DONE_MSG
 
 from loguru import logger
@@ -44,9 +44,14 @@ if __name__ == "__main__":
     written_files = [] 
     detections_final_gdf = gpd.GeoDataFrame()
 
-    for year in YEARS:    
-        detections_gdf = gpd.read_file(str(year) + '/' + LAYER)
-        detections_final_gdf = pd.concat([detections_final_gdf, detections_gdf], ignore_index=True)
+    for year in YEARS: 
+        path = str(year) + '/' + LAYER 
+        if os.path.exists(path): 
+            detections_gdf = gpd.read_file(path)
+            detections_final_gdf = pd.concat([detections_final_gdf, detections_gdf], ignore_index=True)
+        else:
+            logger.warning(f'The file {path} does not exist. Moving on to the next year.')
+            pass
     
     feature = f'detections_anthropogenic_soils_{CANTON}.gpkg'
     detections_final_gdf.to_file(feature)
