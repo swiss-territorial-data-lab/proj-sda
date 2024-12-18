@@ -261,8 +261,9 @@ if __name__ == "__main__":
             del detections_join_gdf
             detections_infos_gdf[f'{key}'] = detections_infos_gdf.apply(lambda x: misc.overlap(x['geometry'], x[f'{key}_geom']) if x['geometry'] and x[f'{key}_geom'] != None else 0, axis=1)
             detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom'])
-            detections_infos_gdf = detections_infos_gdf.groupby('det_id',sort=False).apply(lambda x: x if len(x)==1 else x.loc[x[f'{key}'].ne('no')]).reset_index(drop=True)
-
+            key_list = detections_infos_gdf.columns.values.tolist()
+            detections_infos_gdf = detections_infos_gdf.groupby(by=key_list[:-1], as_index=False).agg({key: ['sum']}).droplevel(1, axis=1) 
+        detections_infos_gdf = gpd.GeoDataFrame(detections_infos_gdf, crs=detections_gdf.crs, geometry='geometry')
 
     # Discard polygons with area under a given threshold 
     check_gdf_len(detections_infos_gdf)

@@ -1,6 +1,9 @@
 # Folders
 data/*
 !data/category_ids.json
+!data/AoI
+!data/ground_truth
+!data/FP
 input*/
 output*/
 model*/

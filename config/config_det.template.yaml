@@ -11,7 +11,7 @@ prepare_aoi.py:
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   datasets:
-    shapefile: ./data/AoI/CANTON/aoi_SWISSIMAGE_YEAR_CANTON.gpkg           
+    shapefile: ./data/AoI/CANTON/aoi_SWISSIMAGE_YEAR_CANTON.gpkg
   output_folder: ./output/det/CANTON/SWISSIMAGE_YEAR
   zoom_level: 16 
 
@@ -54,7 +54,7 @@ make_detections.py:
     oth: COCO_oth.json
   detectron2_config_file: ../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../../models/model_0004999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../../../models/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: true
@@ -73,14 +73,14 @@ merge_detections.py:
   score_threshold: 0.05
   assess: 
     enable: False
-    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
+    metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
 
   
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_dir: ./data
   detections: ../output/det/CANTON/SWISSIMAGE_YEAR/merged_detections_at_0dot05_threshold.gpkg
-  aoi: ./AoI/CANTON/aoi_SWISSIMAGE_YEAR_CANTON.gpkg 
+  aoi: ./AoI/CANTON/aoi_SWISSIMAGE_YEAR_CANTON.gpkg
   canton: CANTON
   infos:
     layers_dir: ./layers/{canton}/
@@ -92,7 +92,7 @@ filter_detections.py:
       forests: Fôrets.shp
       large_rivers: Grandi_corsi.shp
       protected_underground_water: Protezione_acque_sott.shp
-      polluted sites: Siti_inquinati.shp
+      polluted_sites: Siti_inquinati.shp
       sda: Censimento_SAC_2023.shp
       slope: terrain_pente_TC_SA.gpkg
       waters: MU_Acque_TI.shp
@@ -102,8 +102,8 @@ filter_detections.py:
     vaud: 
       buildings: Batiments_en_surface_MO.gpkg
       building_areas: affectation_zone_a_batir.gpkg
-      climatic_areas: zones_climatiques_compatibles_sda_vd.gpkg
-      polluted sites: Sites_pollues_vd2022.gpkg
+      climatic_areas: zones_climatiques_compatibles_sda_VD.gpkg
+      polluted_sites: Sites_pollues_VD2022.gpkg
       sda: SDA_v5_2.gpkg
       slope: terrain_pente_VD.gpkg
       waters: lakes_VD.gpkg

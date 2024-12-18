@@ -224,8 +224,8 @@ if __name__ == "__main__":
                 'TP_k' : tp_k[id_cl],
                 'FP_k' : fp_k[id_cl],
                 'FN_k' : fn_k[id_cl],
-            })
-
+            }) 
+            
         metrics_cl_df_dict = pd.DataFrame.from_records(metrics_dict_by_cl)
 
         # Save the metrics by class for each dataset
