@@ -10,7 +10,7 @@ import pandas as pd
 import rasterio
 
 sys.path.insert(0, '.')
-import functions.fct_misc as misc
+import functions.misc as misc
 from functions.constants import DONE_MSG
 
 from loguru import logger

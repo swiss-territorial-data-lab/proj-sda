@@ -10,7 +10,7 @@ import numpy as np
 from osgeo import gdal
 
 sys.path.insert(1, '.')
-import functions.fct_misc as misc
+import functions.misc as misc
 from functions.constants import DONE_MSG
 
 from loguru import logger

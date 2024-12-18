@@ -13,7 +13,7 @@ from tqdm import tqdm
 from yaml import load, FullLoader
 
 sys.path.insert(1, '.')
-import functions.fct_misc as misc
+import functions.misc as misc
 from functions.constants import DONE_MSG
 
 logger = misc.format_logger(logger)

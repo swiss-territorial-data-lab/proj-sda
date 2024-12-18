@@ -10,7 +10,7 @@ import rasterio as rio
 from pathlib import Path
 
 sys.path.insert(1, '.')
-import functions.fct_misc as misc
+import functions.misc as misc
 
 logger = misc.format_logger(logger)
 
