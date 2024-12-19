@@ -7,14 +7,12 @@ prepare_aoi.py:
   canton_shp: ./{canton}/<CANTON_SHPFILE>
   img_footprint_shp: ./swissimage_footprints/swissimage_footprint_{year}.shp     
 
-
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   datasets:
     shapefile: ./data/AoI/ticino/<AOI_SHPFILE>             
   output_folder: ./output/det/ticino/
   zoom_level: 16 
-
 
 # Fetch of tiles (online server) and split into 3 datasets: train, test, validation
 generate_tilesets.py:
@@ -36,14 +34,13 @@ generate_tilesets.py:
   COCO_metadata:
     year: 2024
     version: 1.0
-    description: Anthropogenic soils (Ticino, Vaud)
-    contributor: swisstopo
-    url: https://swisstopo.ch
+    description: Anthropogenic soils
+    contributor: Ticino and Vaud
+    url: 
     license:
       name: unknown
       url: unknown
     categories_file: ./data/category_ids.json
-
 
 # Object detection with the optimised trained model
 make_detections.py:
@@ -62,7 +59,6 @@ make_detections.py:
   score_lower_threshold: 0.05
   remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained
 
-
 # Assess the final results
 merge_detections.py:
   working_dir: ./output/det/ticino/
@@ -75,7 +71,6 @@ merge_detections.py:
     enable: False
     metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
   
-
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_dir: ./data
@@ -113,7 +108,6 @@ filter_detections.py:
   elevation_threshold: 900 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
   area_threshold: 100.0 # m2, area threshold under which polygons are discarded
-
 
 merge_years.py:
   canton: <CANTON>

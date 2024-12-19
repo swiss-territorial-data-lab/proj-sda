@@ -36,9 +36,9 @@ generate_tilesets.py:
   COCO_metadata:
     year: 2024
     version: 1.0
-    description: Anthropogenic soils (Vaud, Vaud and swissTML3D 2024)
-    contributor: swisstopo
-    url: https://swisstopo.ch
+    description: Anthropogenic soils
+    contributor: Ticino and Vaud
+    url: 
     license:
       name: Unknown
       url:

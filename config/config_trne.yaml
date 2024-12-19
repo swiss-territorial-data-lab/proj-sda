@@ -10,7 +10,6 @@ prepare_data.py:
   output_folder: ./output/trne/
   zoom_level: 16 
 
-
 # Fetch of tiles (online server) and split into 3 datasets: train, test, validation
 generate_tilesets.py:
   debug_mode: 
@@ -26,8 +25,8 @@ generate_tilesets.py:
     image_source:
       # ############# 
       # type: FOLDER
-      # year: multi-year
-      # location: ./output/trne/all-images_src
+      # year: multi-year                     # Optional, supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
+      # location: <IMG_FOLDER_PATH>
       # srs: "EPSG:3857"
       # ############# 
       # type: WMS                               # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
@@ -51,15 +50,14 @@ generate_tilesets.py:
   COCO_metadata:
     year: 2024
     version: 1.0
-    description: Anthropogenic soils (Ticino, Vaud)
-    contributor: swisstopo
-    url: https://swisstopo.ch
+    description: Anthropogenic soils
+    contributor: Ticino and Vaud
+    url: 
     license:
       name: Unknown
       url:
 
-
-# Train the model with the detectron2 algorithm dir p dir path to geotiff images ath to geotiff images 
+# Train the model with the detectron2 algorithm 
 train_model.py:
   working_directory: ./output/trne/
   log_subfolder: logs
@@ -71,7 +69,6 @@ train_model.py:
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
     model_zoo_checkpoint_url: COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml
-
 
 # Object detection with the optimised trained model
 make_detections.py:
@@ -92,7 +89,6 @@ make_detections.py:
   score_lower_threshold: 0.05
   remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained
 
-
 # Evaluate the detection quality for the different datasets by calculating metrics
 assess_detections.py:
   working_directory: ./output/trne/
@@ -108,7 +104,6 @@ assess_detections.py:
   iou_threshold: 0.1
   area_threshold: 50       # area under which the polygons are discarded from assessment
   metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
-
 
 # Plots (optional)
 result_analysis.py:
