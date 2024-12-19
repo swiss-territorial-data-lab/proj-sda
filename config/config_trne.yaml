@@ -135,3 +135,4 @@ merge_detections.py:
 merge_multi_models.py:
   working_dir: output/previous_dets
   output_dir: merged_results
+  threshold: 0.1
