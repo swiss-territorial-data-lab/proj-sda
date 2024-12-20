@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 # the following allows us to import modules from within this file's parent folder
 sys.path.insert(1, '.')
-import functions.fct_misc as misc
+import functions.misc as misc
 
 logger = misc.format_logger(logger)
 

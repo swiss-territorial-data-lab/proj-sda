@@ -10,8 +10,8 @@ import pandas as pd
 import json
 
 sys.path.insert(0, '.')
-import functions.fct_metrics as metrics
-import functions.fct_misc as misc
+import functions.metrics as metrics
+import functions.misc as misc
 from functions.constants import DONE_MSG
 
 from loguru import logger
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
-    WORKING_DIR = cfg['working_dir']
+    WORKING_DIR = cfg['working_directory']
     LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
     DETECTION_FILES = cfg['detections']
     DISTANCE = cfg['distance']
@@ -224,8 +224,8 @@ if __name__ == "__main__":
                 'TP_k' : tp_k[id_cl],
                 'FP_k' : fp_k[id_cl],
                 'FN_k' : fn_k[id_cl],
-            })
-
+            }) 
+            
         metrics_cl_df_dict = pd.DataFrame.from_records(metrics_dict_by_cl)
 
         # Save the metrics by class for each dataset

@@ -1,15 +1,14 @@
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   datasets:
-    shapefile: ./data/ground_truth/<GT_SHPFILE>           # GT labels
-    # fp_shapefile: ./data/FP/<FP_SHPFILE>                # FP labels
+    shapefile: ./data/ground_truth/sda_ground_truth.gpkg  # GT labels
+    # fp_shapefile: ./data/FP/FP_labels.gpkg              # FP labels
     # empty_tiles_aoi: ./data/AoI/<AOI_SHPFILE>           # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
-    # empty_tiles_year: 2023                              # If "empty_tiles_aoi" selected then provide a year. Choice: (1) numeric (i.e. 2020), (2) [year1, year2] (random selection of a year within a given year range) 
+    # empty_tiles_year: <YEAR>                            # If "empty_tiles_aoi" selected then provide a year. Choice: (1) numeric (i.e. 2020), (2) [year1, year2] (random selection of a year within a given year range) 
     # empty_tiles_shp: ./data/empty_tiles/<EMPTY_TILES_SHPFILE>    # Provided shapefile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
-    category: 'Classe'
+    category: Classe
   output_folder: ./output/trne/
   zoom_level: 16 
-
 
 # Fetch of tiles (online server) and split into 3 datasets: train, test, validation
 generate_tilesets.py:
@@ -20,14 +19,14 @@ generate_tilesets.py:
   datasets:
     aoi_tiles: output/trne/tiles.geojson
     ground_truth_labels: output/trne/labels.geojson
-    # fp_labels:
+    # fp_labels:             # Uncomment if FP shapefile exists in prepare_data.py     
     #   fp_shp: output/trne/FP.geojson
     #   frac_trn: 0.7        # fraction of fp tiles to add to the trn dataset, then the remaining tiles will be split in 2 and added to tst and val datasets
     image_source:
       # ############# 
       # type: FOLDER
-      # year: multi-year
-      # location: ./output/trne/all-images_src
+      # year: multi-year                     # Optional, supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
+      # location: <IMG_FOLDER_PATH>
       # srs: "EPSG:3857"
       # ############# 
       # type: WMS                               # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
@@ -51,15 +50,14 @@ generate_tilesets.py:
   COCO_metadata:
     year: 2024
     version: 1.0
-    description: Anthropogenic soils (Ticino, Vaud)
-    contributor: swisstopo
-    url: https://swisstopo.ch
+    description: Anthropogenic soils
+    contributor: Ticino and Vaud
+    url: 
     license:
-      name: Unknown
-      url:
+      name: unknown
+      url: unknown
 
-
-# Train the model with the detectron2 algorithm dir p dir path to geotiff images ath to geotiff images 
+# Train the model with the detectron2 algorithm 
 train_model.py:
   working_directory: ./output/trne/
   log_subfolder: logs
@@ -72,7 +70,6 @@ train_model.py:
   model_weights:
     model_zoo_checkpoint_url: COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml
 
-
 # Object detection with the optimised trained model
 make_detections.py:
   working_directory: ./output/trne/
@@ -84,14 +81,13 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ./logs/model_0004999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ./logs/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
-    enabled: true
+    enabled: True
     epsilon: 2.0        # cf. https://rdp.readthedocs.io/en/latest/
   score_lower_threshold: 0.05
   remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained
-
 
 # Evaluate the detection quality for the different datasets by calculating metrics
 assess_detections.py:
@@ -107,18 +103,21 @@ assess_detections.py:
   output_folder: .
   iou_threshold: 0.1
   area_threshold: 50       # area under which the polygons are discarded from assessment
-  metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
-
+  metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
 
 # Plots (optional)
 result_analysis.py:
-  working_dir: ./output/trne/
+  working_directory: ./output/trne/
   detections: tagged_detections.gpkg
+  min_year: 1950
+  max_year: 2023
+  class_dict: {'Activité non agricole': 'Non-agricultural activity', # Provide a customed legend
+                'Mouvement de terrain': 'Land movement'}
 
 
 # Assess the final results
 merge_detections.py:
-  working_dir: ./output/trne/
+  working_directory: ./output/trne/
   labels: labels.geojson
   detections:
     trn: trn_detections_at_0dot05_threshold.gpkg
@@ -129,4 +128,4 @@ merge_detections.py:
   score_threshold: 0.05
   assess: 
     enable: True
-    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
+    metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
