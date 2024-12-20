@@ -56,12 +56,11 @@ if __name__ == "__main__":
             pass
 
     for year in YEARS: 
-        layer = str(year) + '_' + LAYER
-        path = str(year) + '/' + layer
+        path = str(year) + '/' + LAYER
         if os.path.exists(path): 
             detections_gdf = gpd.read_file(path)
             if FILE=='layers':
-                detections_gdf.to_file(feature, layer=str(layer), driver='GPKG')
+                detections_gdf.to_file(feature, layer=str(str(year) + '_' + LAYER), driver='GPKG')
             elif FILE=='concatenate':
                 detections_final_gdf = pd.concat([detections_final_gdf, detections_gdf], ignore_index=True)
         else:
