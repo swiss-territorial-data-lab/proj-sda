@@ -21,11 +21,12 @@ from functions.constants import DONE_MSG
 
 logger = misc.format_logger(logger)
 
-def plot_histogram(img, ref, matched, output, img_name):
+def plot_histogram(src, ref, matched, output, img_name):
 
     fig, axes = plt.subplots(nrows=4, ncols=3, figsize=(18, 16))
 
-    for i, img in enumerate((img, ref, matched)):
+    for i, img in enumerate((src, ref, matched)):
+        axes[0, i].imshow(img)
         for c, c_color in enumerate(('red', 'green', 'blue')):
             img_hist, bins = exposure.histogram(img[..., c], source_range='dtype')
             axes[c + 1, i].plot(bins, img_hist / img_hist.max())
@@ -38,25 +39,8 @@ def plot_histogram(img, ref, matched, output, img_name):
     axes[0, 2].set_title('Matched to R, G, B')
 
     plt.tight_layout()
-    plt.savefig(os.path.join(output, img_name + '_histo_plot.png'))
-
-
-def plot_image(img, ref, matched, output, img_name):
-
-    fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(8, 3),
-                                        sharex=True, sharey=True)
-    for aa in (ax1, ax2, ax3):
-        aa.set_axis_off()
-
-    ax1.imshow(img)
-    ax1.set_title('Source')
-    ax2.imshow(ref)
-    ax2.set_title('Reference')
-    ax3.imshow(matched)
-    ax3.set_title('Matched to R, G, B')
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(output, img_name + '_image_plot.png'))
+    plt.savefig(os.path.join(output, img_name[:-4] + '_histo_plot.png'))
+    plt.close()
 
 
 if __name__ == "__main__":
@@ -119,5 +103,4 @@ if __name__ == "__main__":
             image_p = image.T
             reference_p = reference.T
             matched_p = matched.T
-            # plot_image(image_p, reference_p, matched_p, output_dir, img_name)
             plot_histogram(image_p, reference_p, matched_p, output_dir, img_name)

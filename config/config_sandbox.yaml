@@ -36,5 +36,5 @@ mosaic.py:
 
 
 gt_analysis.py:
-  working_dir: ./data/ground_truth/
-  labels: 20240916_GT_CH.gpkg
+  working_dir: <DIR_PATH>
+  labels: <GT_SHPFILE>

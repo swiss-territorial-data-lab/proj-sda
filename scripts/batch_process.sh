@@ -4,7 +4,7 @@
 echo 'Run batch process to perfrom inference over several SWISSIMAGE years'
 
 canton=ticino
-for year in 1946 1995 2004 2020      # list of years to process (no comma: YEAR1 YEAR2 YEAR3 ...)  
+for year in YEAR1 YEAR2 YEAR3     # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)  
 do
     echo '-----------'
     echo Canton = $canton
@@ -23,12 +23,10 @@ do
         python ./scripts/prepare_data.py config/config_det_${year}_${canton}.yaml
         echo ' '
         echo 'generate_tilesets.py'
-        python ../object-detector/scripts/generate_tilesets.py config/config_det_${year}_${canton}.yaml
-        # stdl-objdet generate_tilesets config/config_det_${year}_${canton}.yaml
+        stdl-objdet generate_tilesets config/config_det_${year}_${canton}.yaml
         echo ' '
         echo 'make_detections.py'
-        python ../object-detector/scripts/make_detections.py config/config_det_${year}_${canton}.yaml
-        # stdl-objdet make_detections config/config_det_${year}_${canton}.yaml
+        stdl-objdet make_detections config/config_det_${year}_${canton}.yaml
         echo ' '
         echo 'merge_detections.py'
         python ./scripts/merge_detections.py config/config_det_${year}_${canton}.yaml
