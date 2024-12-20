@@ -53,12 +53,12 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
-    WORKING_DIR = cfg['working_dir']
+    WORKING_DIR = cfg['working_directory']
     AOI = cfg['aoi']
     DETECTIONS = cfg['detections']
     CANTON = cfg['canton']
     CANTON_PARAMS = cfg['infos'][CANTON]
-    LAYERS_DIR = cfg['infos']['layers_dir'].replace('{canton}', CANTON)
+    LAYERS_DIR = cfg['infos']['layers_directory'].replace('{canton}', CANTON)
     AGRI_AREA = none_if_undefined(CANTON_PARAMS, 'agri_area') 
     BUILDINGS = none_if_undefined(CANTON_PARAMS, 'buildings') 
     BUILD_AREAS = none_if_undefined(CANTON_PARAMS, 'building_areas') 

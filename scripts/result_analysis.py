@@ -118,7 +118,7 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
-    WORKING_DIR = cfg['working_dir']
+    WORKING_DIR = cfg['working_directory']
     DETECTIONS = cfg['detections']
     MIN_YEAR = cfg['min_year'] if 'min_year' in cfg.keys() else 1945
     MAX_YEAR = cfg['max_year'] if 'max_year' in cfg.keys() else 2025
