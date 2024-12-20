@@ -33,9 +33,11 @@ if __name__ == "__main__":
 
     # Load input parameters
     CANTON = cfg['canton']
-    WORKING_DIR = cfg['working_dir'].replace('{canton}', CANTON)
+    WORKING_DIR = cfg['working_directory'].replace('{canton}', CANTON)
     YEARS = cfg['years']
     LAYER = cfg['layer']
+    OVERWRITE = cfg['overwrite']
+    FILE = cfg['file']
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')
@@ -44,17 +46,30 @@ if __name__ == "__main__":
     written_files = [] 
     detections_final_gdf = gpd.GeoDataFrame()
 
+    feature = f'detections_anthropogenic_soils_{CANTON}.gpkg'
+
+    if OVERWRITE:
+        try:
+            os.remove(feature)
+            logger.warning(f'File {feature} exists and will be overwrite.')
+        except OSError:
+            pass
+
     for year in YEARS: 
-        path = str(year) + '/' + LAYER 
+        layer = str(year) + '_' + LAYER
+        path = str(year) + '/' + layer
         if os.path.exists(path): 
             detections_gdf = gpd.read_file(path)
-            detections_final_gdf = pd.concat([detections_final_gdf, detections_gdf], ignore_index=True)
+            if FILE=='layers':
+                detections_gdf.to_file(feature, layer=str(layer), driver='GPKG')
+            elif FILE=='concatenate':
+                detections_final_gdf = pd.concat([detections_final_gdf, detections_gdf], ignore_index=True)
         else:
             logger.warning(f'The file {path} does not exist. Moving on to the next year.')
             pass
     
-    feature = f'detections_anthropogenic_soils_{CANTON}.gpkg'
-    detections_final_gdf.to_file(feature)
+    if FILE=='concatenate':
+        detections_final_gdf.to_file(feature, driver='GPKG')
 
     logger.info("The following files were written. Let's check them out!")
     for written_file in written_files:
