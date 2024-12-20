@@ -126,7 +126,7 @@ if __name__ == "__main__":
     groupped_detections_gdf = completed_detections_gdf.groupby('group_id', as_index=False).agg('first')
 
     logger.success(f'{DONE_MSG} Once groupped, there are {len(groupped_detections_gdf)} detections.')
-    logger.success(f'The covered area is {round(groupped_detections_gdf.unary_union.area)}.')
+    logger.success(f'The covered area is {round(groupped_detections_gdf.unary_union.area/1000000)} km2.')
 
     logger.info('Remove detection based on score...')
     condition_to_keep = (groupped_detections_gdf.merged_score > THRESHOLD) \
@@ -207,7 +207,7 @@ if __name__ == "__main__":
 
     logger.success(f"{DONE_MSG} {len(final_groupped_dets_gdf)} features were kept.")
     logger.success(f"Once dissolved, {len(merged_detections_gdf)} features are left")
-    logger.success(f'The covered area is {round(merged_detections_gdf.unary_union.area)}.')
+    logger.success(f'The covered area is {round(merged_detections_gdf.unary_union.area/1000000)} km2.')
     logger.success(f"{len(removed_dets_gdf)} features were removed.")
 
     logger.info('The following files were written:')
