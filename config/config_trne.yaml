@@ -107,7 +107,7 @@ assess_detections.py:
 
 # Plots (optional)
 result_analysis.py:
-  working_dir: ./output/trne/
+  working_directory: ./output/trne/
   detections: tagged_detections.gpkg
   min_year: 1950
   max_year: 2023
@@ -117,7 +117,7 @@ result_analysis.py:
 
 # Assess the final results
 merge_detections.py:
-  working_dir: ./output/trne/
+  working_directory: ./output/trne/
   labels: labels.geojson
   detections:
     trn: trn_detections_at_0dot05_threshold.gpkg

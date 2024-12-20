@@ -61,7 +61,7 @@ make_detections.py:
 
 # Assess the final results
 merge_detections.py:
-  working_dir: ./output/det/ticino/
+  working_directory: ./output/det/ticino/
   detections:
     oth: oth_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
@@ -73,12 +73,12 @@ merge_detections.py:
   
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
-  working_dir: ./data
+  working_directory: ./data
   detections: ../output/det/ticino/merged_detections_at_0dot05_threshold.gpkg
   aoi: ./AoI/ticino/<AOI_SHPFILE>
   canton: ticino
   infos:
-    layers_dir: ./layers/{canton}/
+    layers_directory: ./layers/{canton}/
     ticino:
       agri_area: Idoneità_Agricola.shp
       building_areas: Zones_batir_Ind.shp
@@ -111,6 +111,8 @@ filter_detections.py:
 
 merge_years.py:
   canton: <CANTON>
-  working_dir: ./output/det/{canton}/
+  working_directory: ./output/det/{canton}/
   years: [YEAR1, YEAR2, YEAR3]          # choose year
   layer: merged_detections_at_0dot05_threshold_threshold_score-0dot05_area-100_elevation-900.gpkg 
+  overwrite: True
+  file: concatenate   # supported values: 1. layers, 2. concatenate
