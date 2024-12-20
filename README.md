@@ -1,7 +1,7 @@
 # Automatic detection of agricultural soils degraded by anthropogenic activities
 
 The aim of the project is to automatically detect anthropogenic activities that have degraded agricultural soils in the past. Two main categories have been defined: "non-agricultural activity" and "land movement". The results will make it possible to identify potentially rehabilitable soils that can be used to establish a land crop rotation map. <br>
-This project was developed in collaboration with the Canton of Ticino and of the Canton of Vaud. Detailed documentation of the project and results can be found on the [STDL technical website](https://tech.stdl.ch/PROJ-SDA/).
+This project was developed in collaboration with the Canton of Ticino and of the Canton of Vaud. A detailed documentation of the project and results can be found on the [STDL technical website](https://tech.stdl.ch/PROJ-SDA/).
 
 **Table of content**
 
@@ -71,7 +71,7 @@ The folders/files of the project `proj-sda` (in combination with the `object-det
 │   ├── config_det.yaml                             # detection workflow
 │   ├── config_sandbox.yaml                         # sandbox workflow
 │   ├── config_trne.yaml                            # training and evaluation workflow
-│   └── detectron2_config_dqry.yaml                 # detectron 2
+│   └── detectron2_config.yaml                      # detectron 2
 ├── data                                            # folder containing the input data
 │   ├── AoI                                         # available on request
 │   ├── DEM
@@ -187,9 +187,15 @@ $ python scripts/merge_detections.py config/config_trne.yaml
 
 **Inference**: 
 
-Colour processing on images can be performed if needed prior to inference. <br>
-Copy the selected trained model to the folder `models`.
- 
+Colour processing on images can be performed if needed prior to inference with scripts available in the [sandbox](#sandbox) folder. 
+
+Copy the selected trained model to the folder `models`:
+```
+$ mkdir models
+$ cp output/trne/logs/<selected_model_pth> models
+```
+
+Process images:
 ```
 $ python scripts/prepare_aoi.py config/config_det.yaml
 $ python scripts/prepare_data.py config/config_det.yaml
@@ -207,7 +213,6 @@ $ scripts/batch_process.sh
 ```
 
 Finally, all the detection layers obtained for each year are merged into a single geopackage.
-
 ```
 $ python scripts/merge_years.py config/config_det.yaml
 ```
