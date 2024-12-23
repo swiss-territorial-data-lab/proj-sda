@@ -7,14 +7,12 @@ prepare_aoi.py:
   canton_shp: ./{canton}/<CANTON_SHPFILE>
   img_footprint_shp: ./swissimage_footprints/swissimage_footprint_{year}.shp     
 
-
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   datasets:
     shapefile: ./data/AoI/ticino/<AOI_SHPFILE>             
   output_folder: ./output/det/ticino/
   zoom_level: 16 
-
 
 # Fetch of tiles (online server) and split into 3 datasets: train, test, validation
 generate_tilesets.py:
@@ -36,14 +34,13 @@ generate_tilesets.py:
   COCO_metadata:
     year: 2024
     version: 1.0
-    description: Anthropogenic soils (Ticino, Vaud)
-    contributor: swisstopo
-    url: https://swisstopo.ch
+    description: Anthropogenic soils
+    contributor: Ticino and Vaud
+    url: 
     license:
       name: unknown
       url: unknown
     categories_file: data/category_ids.json
-
 
 # Object detection with the optimised trained model
 make_detections.py:
@@ -54,18 +51,17 @@ make_detections.py:
     oth: COCO_oth.json
   detectron2_config_file: ../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../models/model_0004999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../../models/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
-    enabled: true
+    enabled: True
     epsilon: 2.0        # cf. https://rdp.readthedocs.io/en/latest/
   score_lower_threshold: 0.05
   remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained
 
-
 # Assess the final results
 merge_detections.py:
-  working_dir: ./output/det/ticino/
+  working_directory: ./output/det/ticino/
   detections:
     oth: oth_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
@@ -73,12 +69,11 @@ merge_detections.py:
   score_threshold: 0.05
   assess: 
     enable: False
-    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
+    metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
   
-
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
-  working_dir: ./data
+  working_directory: ./data
   detections: ../output/det/ticino/merged_detections_at_0dot05_threshold.gpkg
   aoi: ./AoI/ticino/<AOI_SHPFILE>
   canton: ticino
@@ -92,7 +87,7 @@ filter_detections.py:
       forests: Fôrets.shp
       large_rivers: Grandi_corsi.shp
       protected_underground_water: Protezione_acque_sott.shp
-      polluted sites: Siti_inquinati.shp
+      polluted_sites: Siti_inquinati.shp
       sda: Censimento_SAC_2023.shp
       slope: terrain_pente_TC_SA.gpkg
       waters: MU_Acque_TI.shp
@@ -102,8 +97,8 @@ filter_detections.py:
     vaud: 
       buildings: Batiments_en_surface_MO.gpkg
       building_areas: affectation_zone_a_batir.gpkg
-      climatic_areas: zones_climatiques_compatibles_sda_vd.gpkg
-      polluted sites: Sites_pollues_vd2022.gpkg
+      climatic_areas: zones_climatiques_compatibles_sda_VD.gpkg
+      polluted_sites: Sites_pollues_VD2022.gpkg
       sda: SDA_v5_2.gpkg
       slope: terrain_pente_VD.gpkg
       waters: lakes_VD.gpkg
@@ -114,9 +109,10 @@ filter_detections.py:
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
   area_threshold: 100.0 # m2, area threshold under which polygons are discarded
 
-
 merge_years.py:
-  canton: ticino
-  working_dir: ./output/det/{canton}/
+  canton: <CANTON>
+  working_directory: ./output/det/{canton}/
   years: [YEAR1, YEAR2, YEAR3]          # choose year
   layer: merged_detections_at_0dot05_threshold_threshold_score-0dot05_area-100_elevation-900.gpkg 
+  overwrite: True
+  file: concatenate   # supported values: 1. layers, 2. concatenate

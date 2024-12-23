@@ -10,8 +10,8 @@ import pandas as pd
 import json
 
 sys.path.insert(0, '.')
-import functions.fct_metrics as metrics
-import functions.fct_misc as misc
+import functions.metrics as metrics
+import functions.misc as misc
 from functions.constants import DONE_MSG
 
 from loguru import logger
@@ -226,8 +226,8 @@ if __name__ == "__main__":
                 'TP_k' : tp_k[id_cl],
                 'FP_k' : fp_k[id_cl],
                 'FN_k' : fn_k[id_cl],
-            })
-
+            }) 
+            
         metrics_cl_df_dict = pd.DataFrame.from_records(metrics_dict_by_cl)
 
         # Save the metrics by class for each dataset

@@ -10,7 +10,7 @@ import pandas as pd
 import rasterio
 
 sys.path.insert(0, '.')
-import functions.fct_misc as misc
+import functions.misc as misc
 from functions.constants import DONE_MSG
 
 from loguru import logger
@@ -53,12 +53,12 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
-    WORKING_DIR = cfg['working_dir']
+    WORKING_DIR = cfg['working_directory']
     AOI = cfg['aoi']
     DETECTIONS = cfg['detections']
     CANTON = cfg['canton']
     CANTON_PARAMS = cfg['infos'][CANTON]
-    LAYERS_DIR = cfg['infos']['layers_dir'].replace('{canton}', CANTON)
+    LAYERS_DIR = cfg['infos']['layers_directory'].replace('{canton}', CANTON)
     AGRI_AREA = none_if_undefined(CANTON_PARAMS, 'agri_area') 
     BUILDINGS = none_if_undefined(CANTON_PARAMS, 'buildings') 
     BUILD_AREAS = none_if_undefined(CANTON_PARAMS, 'building_areas') 
@@ -261,8 +261,9 @@ if __name__ == "__main__":
             del detections_join_gdf
             detections_infos_gdf[f'{key}'] = detections_infos_gdf.apply(lambda x: misc.overlap(x['geometry'], x[f'{key}_geom']) if x['geometry'] and x[f'{key}_geom'] != None else 0, axis=1)
             detections_infos_gdf = detections_infos_gdf.drop(columns=[f'{key}_geom'])
-            detections_infos_gdf = detections_infos_gdf.groupby('det_id',sort=False).apply(lambda x: x if len(x)==1 else x.loc[x[f'{key}'].ne('no')]).reset_index(drop=True)
-
+            key_list = detections_infos_gdf.columns.values.tolist()
+            detections_infos_gdf = detections_infos_gdf.groupby(by=key_list[:-1], as_index=False).agg({key: ['sum']}).droplevel(1, axis=1) 
+        detections_infos_gdf = gpd.GeoDataFrame(detections_infos_gdf, crs=detections_gdf.crs, geometry='geometry')
 
     # Discard polygons with area under a given threshold 
     check_gdf_len(detections_infos_gdf)

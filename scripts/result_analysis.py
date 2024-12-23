@@ -5,20 +5,23 @@ import time
 import yaml
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 
 sys.path.insert(0, '.')
-import functions.fct_misc as misc
+import functions.misc as misc
 from functions.constants import DONE_MSG
 
 from loguru import logger
 logger = misc.format_logger(logger)
 
 
-def plot_barchart(df, cat, data):
+def plot_barchart(df, cat, min_year, max_year, class_dict, data):
 
-    fig, ax = plt.subplots(1, 1, figsize=(30,5))
+    plt.rcParams["figure.figsize"] = (12, 5)
+    fig, ax = plt.subplots(1, 1)
 
     if data == 'label':
         df = df[df['CATEGORY']==cat].copy() 
@@ -28,38 +31,52 @@ def plot_barchart(df, cat, data):
         df = df[df['det_category']==cat].copy() 
         df = df[~(df.tag.isin(["FN", "wrong class", "small polygon"]))]
         year = 'year_det'
-  
-    df = df[[year, 'tag']].astype({year: 'int', 'tag': 'str'})
+    elif data == 'both':
+        df['category'] = df['CATEGORY'].mask(df['CATEGORY'].isna(), df['det_category'])
+        df = df[df['category']==cat].copy() 
+        df['year'] = df['year_det'].mask(df['year_det'].isna(), df['year_label'])     
+        year = 'year'
 
+    df = df[[year, 'tag']].astype({year: 'int', 'tag': 'str'})
     df['counts'] = 1
 
-    df = pd.pivot_table(data=df, index=[year], columns=['tag'], values='counts', aggfunc='count')
+    df_temp = pd.pivot_table(data=df, index=[year], columns=['tag'], values='counts', aggfunc='count')
 
-    if data == 'label':  
-        
-        df = df[['TP', 'FN']] 
-        ax = df.plot.bar(rot=0, log=False, stacked=True, color=['turquoise', 'gold'] , width=0.8)
+    year_all_list = np.arange(min_year, max_year, 1, dtype=int)
+    year_filled_df = pd.DataFrame({year: year_all_list}).sort_values(by=year).reset_index(drop=True)
+    df = year_filled_df.merge(df_temp, how='left', on=year).fillna(0)
+
+    if data == 'label':        
+        df = df[[year, 'TP', 'FN']] 
+        ax = df.plot(x=year, kind='bar', rot=0, log=False, stacked=True, color=['limegreen', 'red'], width=0.9)
     elif data == 'det':    
-
         if 'FP' not in df.keys(): 
             df = df[['TP']] 
         else:
-            df = df[['TP', 'FP']] 
-        ax = df.plot.bar(rot=0, log=False, stacked=True, color=['turquoise', 'red'] , width=0.8)
-
-    for c in ax.containers:
-        labels = [int(a) if a > 0 else "" for a in c.datavalues]
-        ax.bar_label(c, label_type='center', color="black", labels=labels, fontsize=8)
+            df = df[[year, 'TP', 'FP']] 
+        ax = df.plot(x=year, kind='bar', rot=0, log=False, stacked=True, color=['limegreen', 'royalblue'], width=0.9)
+    elif data == 'both':
+        df = df[[year, 'TP', 'FN', 'FP']]
+        ax = df.plot(x=year, kind='bar', rot=0, log=False, stacked=True, color=['limegreen', 'red', 'royalblue'], width=0.9)
+    
+    ## Uncomment to add bar labels
+    # for c in ax.containers:
+    #     labels = [int(a) if a > 0 else "" for a in c.datavalues]
+    #     ax.bar_label(c, label_type='center', color="black", labels=labels, fontsize=7)
 
     plt.gca().set_yticks(plt.gca().get_yticks().tolist())
+    ticks_to_use = df.index[::5]
+    labels = df[year][::5]
 
-    plt.xticks(rotation=45, fontsize=8, ha='center')
-    plt.xlabel(year.replace("_", " "), fontweight='bold')
+    ax.set_xticks(ticks_to_use, labels, rotation=45, fontsize=10, ha='center')
+    ax.xaxis.set_minor_locator(MultipleLocator(1))
+    plt.xlabel('Year', fontweight='bold')
 
-    plt.title(cat, fontweight='bold')
+    title = class_dict[cat] if class_dict else cat
+    plt.title(title, fontweight='bold')
     plt.legend(loc='upper left', frameon=False)    
 
-    plot_path = f'{data}_{cat}.png'
+    plot_path = f'{data}_{title}.png'.replace(' ', '_')
     plt.savefig(plot_path, bbox_inches='tight')
     plt.close(fig)
 
@@ -101,8 +118,11 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
-    WORKING_DIR = cfg['working_dir']
+    WORKING_DIR = cfg['working_directory']
     DETECTIONS = cfg['detections']
+    MIN_YEAR = cfg['min_year'] if 'min_year' in cfg.keys() else 1945
+    MAX_YEAR = cfg['max_year'] if 'max_year' in cfg.keys() else 2025
+    CLASS_DICT = cfg['class_dict'] if 'class_dict' in cfg.keys() else None
 
     os.chdir(WORKING_DIR)
 
@@ -116,21 +136,22 @@ if __name__ == "__main__":
     total = len(detections_gdf)
     logger.info(f"{total} input shapes")
 
-    for parameter in ['area', 'score']:  
+    for parameter in ['area', 'score']:
         feature = plot_boxplot(detections_gdf, param=parameter)
         written_files.append(feature)
         logger.success(f"{DONE_MSG} A file was written: {feature}") 
 
     for cat in filter(None, detections_gdf.CATEGORY.unique()): 
-        feature = plot_barchart(detections_gdf, cat, data='label')
+        feature = plot_barchart(detections_gdf, cat, MIN_YEAR, MAX_YEAR, CLASS_DICT, data='label')
         written_files.append(feature)
-        logger.success(f"{DONE_MSG} A file was written: {feature}")  
-        feature = plot_barchart(detections_gdf, cat, data='det')
+        feature = plot_barchart(detections_gdf, cat, MIN_YEAR, MAX_YEAR, CLASS_DICT, data='det')
+        written_files.append(feature) 
+        feature = plot_barchart(detections_gdf, cat, MIN_YEAR, MAX_YEAR, CLASS_DICT, data='both')
         written_files.append(feature)
-        logger.success(f"{DONE_MSG} A file was written: {feature}")  
+
     logger.info("The following files were written. Let's check them out!")
     for written_file in written_files:
-        logger.info(written_file)
+        logger.info(WORKING_DIR + written_file)
 
     # Stop chronometer  
     toc = time.time()

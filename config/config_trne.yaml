@@ -10,7 +10,6 @@ prepare_data.py:
   output_folder: output/trne/
   zoom_level: 16 
 
-
 # Fetch of tiles (online server) and split into 3 datasets: train, test, validation
 generate_tilesets.py:
   debug_mode: 
@@ -20,7 +19,7 @@ generate_tilesets.py:
   datasets:
     aoi_tiles: output/trne/tiles.geojson
     ground_truth_labels: output/trne/labels.geojson
-    # fp_labels:
+    # fp_labels:             # Uncomment if FP shapefile exists in prepare_data.py     
     #   fp_shp: output/trne/FP.geojson
     #   frac_trn: 0.7        # fraction of fp tiles to add to the trn dataset, then the remaining tiles will be split in 2 and added to tst and val datasets
     image_source:
@@ -51,15 +50,14 @@ generate_tilesets.py:
   COCO_metadata:
     year: 2024
     version: 1.0
-    description: Anthropogenic soils (Ticino, Vaud)
-    contributor: swisstopo
-    url: https://swisstopo.ch
+    description: Anthropogenic soils
+    contributor: Ticino and Vaud
+    url: 
     license:
-      name: Unknown
-      url:
+      name: unknown
+      url: unknown
 
-
-# Train the model with the detectron2 algorithm dir p dir path to geotiff images ath to geotiff images 
+# Train the model with the detectron2 algorithm 
 train_model.py:
   working_directory: output/trne/
   log_subfolder: logs
@@ -71,7 +69,6 @@ train_model.py:
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
     model_zoo_checkpoint_url: COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml
-
 
 # Object detection with the optimised trained model
 make_detections.py:
@@ -88,11 +85,10 @@ make_detections.py:
     pth_file: ../../models/model_102_0001999.pth # trained model minimising the validation loss curve
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
-    enabled: true
+    enabled: True
     epsilon: 2.0        # cf. https://rdp.readthedocs.io/en/latest/
   score_lower_threshold: 0.05
   remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained
-
 
 # Evaluate the detection quality for the different datasets by calculating metrics
 assess_detections.py:
@@ -108,13 +104,16 @@ assess_detections.py:
   output_folder: .
   iou_threshold: 0.1
   area_threshold: 50       # area under which the polygons are discarded from assessment
-  metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
-
+  metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
 
 # Plots (optional)
 result_analysis.py:
   working_dir: output/trne/run102
   detections: tagged_detections.gpkg
+  min_year: 1950
+  max_year: 2023
+  class_dict: {'Activité non agricole': 'Non-agricultural activity', # Provide a customed legend
+                'Mouvement de terrain': 'Land movement'}
 
 
 # Assess the final results

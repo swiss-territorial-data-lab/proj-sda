@@ -5,11 +5,13 @@ import time
 import yaml
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 
 sys.path.insert(0, '.')
-import functions.fct_misc as misc
+import functions.misc as misc
 from functions.constants import DONE_MSG
 
 from loguru import logger
@@ -18,19 +20,24 @@ logger = misc.format_logger(logger)
 
 def plot_barchart(df):
 
-    fig, ax = plt.subplots(1, 1, figsize=(30,5))
+    plt.rcParams["figure.figsize"] = (10, 5)
+    fig, ax = plt.subplots(1, 1)
 
-    ax = df.groupby('Classe')['canton'].value_counts().unstack().plot.bar(stacked=True, color=['turquoise', 'gold', 'pink'])
+    ax = df.plot(x='year', kind='bar', stacked=True, width=0.9, color=['turquoise', 'gold'])
     plt.legend(loc='upper left', frameon=False)    
 
     for c in ax.containers:
         labels = [int(a) if a > 0 else "" for a in c.datavalues]
         ax.bar_label(c, label_type='center', color="black", labels=labels, fontsize=8)
 
-    plt.xticks(rotation=0, fontsize=10, ha='center')
-    plt.xlabel("")
+    ticks_to_use = df.index[::5]
+    labels = df.year[::5]
 
-    plot_path = 'gt.png' 
+    ax.set_xticks(ticks_to_use, labels, rotation=45, fontsize=10, ha='center')
+    ax.xaxis.set_minor_locator(MultipleLocator(1))
+    plt.xlabel('Year', fontweight='bold')
+
+    plot_path = f'gt_{x}.png' 
     plt.savefig(plot_path, bbox_inches='tight')
     plt.close(fig)
 
@@ -56,6 +63,9 @@ if __name__ == "__main__":
     # Load input parameters
     WORKING_DIR = cfg['working_dir']
     LABELS = cfg['labels']
+    MIN_YEAR = cfg['min_year']
+    MAX_YEAR = cfg['max_year']
+    CLASS_DICT = cfg['class_dict'] if 'class_dict' in cfg.keys() else None
 
     os.chdir(WORKING_DIR)
 
@@ -68,7 +78,23 @@ if __name__ == "__main__":
     total = len(labels_gdf)
     logger.info(f"{total} input shapes")
 
-    feature = plot_barchart(labels_gdf[['Classe', 'canton']] )
+    x = 'year'
+    y = 'Classe'
+    z = 'count'
+
+    labels_gdf[x] = labels_gdf[x].astype(int)
+
+    year_all_list = np.arange(MIN_YEAR, MAX_YEAR, 1, dtype=int)
+    df = pd.DataFrame({x: year_all_list}).sort_values(by=x).reset_index(drop=True)
+
+    for cat in labels_gdf[y].unique():
+        df_temp = labels_gdf[labels_gdf[y]==cat] 
+        df_temp = df_temp.groupby(by=x, as_index=False)[y].value_counts()
+        cat = CLASS_DICT[cat] if CLASS_DICT else cat
+        df_temp = df_temp.drop(columns=[y]).rename(columns={z:cat})
+        df = df.merge(df_temp, how='left', on=x).fillna(0)
+
+    feature = plot_barchart(df)
     written_files.append(feature)
     logger.success(f"{DONE_MSG} A file was written: {feature}") 
 

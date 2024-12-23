@@ -1,7 +1,7 @@
-# Automatic detection of agricultural soils affected by anthropogenic activities
+# Automatic detection of agricultural soils degraded by anthropogenic activities
 
-The aim of the project is to automatically detect anthropogenic activities that have affected agricultural soils in the past. Two main categories have been defined: "non-agricultural activity" and "land movement". The results will make it possible to identify potentially rehabilitable soils that can be used to establish a land crop rotation map. <br>
-This project was developed in collaboration with the Canton of Ticino and of the Canton of Vaud.
+The aim of the project is to automatically detect anthropogenic activities that have degraded agricultural soils in the past. Two main categories have been defined: "non-agricultural activity" and "land movement". The results will make it possible to identify potentially rehabilitable soils that can be used to establish a land crop rotation map. <br>
+This project was developed in collaboration with the Canton of Ticino and of the Canton of Vaud. A detailed documentation of the project and results can be found on the [STDL technical website](https://tech.stdl.ch/PROJ-SDA/).
 
 **Table of content**
 
@@ -63,7 +63,7 @@ $ pip-compile requirements.in
 
 ### Files structure
 
-The folders/files of the project `proj-sda` (in combination with the `object-detector`) are organised as follows. Path names can be customised by the user, and * indicates numbers which may vary:
+The folders/files of the project `proj-sda` (in combination with the `object-detector`) are organised as follows. Path names and values can be customised by the user:
 
 <pre>.
 ├── config                                          # configurations files folder
@@ -71,13 +71,12 @@ The folders/files of the project `proj-sda` (in combination with the `object-det
 │   ├── config_det.yaml                             # detection workflow
 │   ├── config_sandbox.yaml                         # sandbox workflow
 │   ├── config_trne.yaml                            # training and evaluation workflow
-│   └── detectron2_config_dqry.yaml                 # detectron 2
+│   └── detectron2_config.yaml                      # detectron 2
 ├── data                                            # folder containing the input data
 │   ├── AoI                                         # available on request
 │   ├── DEM
-│   ├── empty_tiles                     
 │   ├── FP
-│   ├── ground_truth                                # available on request                              
+│   ├── ground_truth                                                             
 │   ├── layers                                      # available on request 
 │   └── categories_ids.json                         # class dictionnary     
 ├── functions
@@ -112,12 +111,14 @@ The folders/files of the project `proj-sda` (in combination with the `object-det
 Below, the description of input data used for this project. 
 
 - images: [_SWISSIMAGE Journey_](https://map.geo.admin.ch/#/map?lang=fr&center=2660000,1190000&z=1&bgLayer=ch.swisstopo.pixelkarte-farbe&topic=ech&layers=ch.swisstopo.swissimage-product@year=2024;ch.swisstopo.swissimage-product.metadata@year=2024) is an annual dataset of aerial images of Switzerland from 1946 to today. The images are downloaded from the [geo.admin.ch](https://www.geo.admin.ch/fr) server using [XYZ](https://api3.geo.admin.ch/services/sdiservices.html#xyz) connector. 
-- swissimage footprints: image acquisition footprints by year (swissimage_footprint_*.shp) can be found [here](https://map.geo.admin.ch/#/map?lang=fr&center=2660000,1190000&z=1&bgLayer=ch.swisstopo.pixelkarte-farbe&topic=ech&layers=ch.swisstopo.zeitreihen@year=1864,f;ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.astra.wanderland-sperrungen_umleitungen,f;ch.swisstopo.swissimage-product@year=2021;ch.swisstopo.swissimage-product.metadata@year=2021&timeSlider=2021). 
-- canton: shapefile of the canton's borders used to define the AoI. The limits of Canton of Ticino and Canton of Vaud are available on request
-- ground truth: labels vectorised by the domain experts. Available on request.
-- layers: list of vector layers provided by the domain experts to be spatially intersect with the results to either excluded or to add intersection information in the final attribute table. Available on request.
+- Area of Interests (AoIs):
+    - swissimage footprints: image acquisition footprints by year (swissimage_footprint_*.shp) can be found [here](https://map.geo.admin.ch/#/map?lang=fr&center=2660000,1190000&z=1&bgLayer=ch.swisstopo.pixelkarte-farbe&topic=ech&layers=ch.swisstopo.zeitreihen@year=1864,f;ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.astra.wanderland-sperrungen_umleitungen,f;ch.swisstopo.swissimage-product@year=2021;ch.swisstopo.swissimage-product.metadata@year=2021&timeSlider=2021). The shapefiles of _SWISSIMAGE_ acquisition footprint from 2015 to 2023 are provided in this repository.
+    - canton: shapefile of the canton's borders used to define the AoI. The limits of Canton of Ticino and Canton of Vaud.
+- ground truth: labels vectorised by the domain experts. <br>
+**Disclaimer:** the ground truth dataset is unofficial and has been produced specifically for the purposes of this project.
+- layers: list of vector layers provided by the domain experts to be spatially intersect with the results to either excluded or to add intersection information in the final attribute table. The data is available on the cantonal geoportals ([Ticino](https://www4.ti.ch/dt/sg/sai/ugeo/temi/geoportale-ticino/geoportale/geodati) and [Vaud](https://www.geo.vd.ch/)) or are available on request.
 - category_ids.json: categories attributed to the detections.
-- models: the trained models used to produce the results presented in the documentation is available on request.
+- models: the trained models used to produce the results presented in the documentation are available on request.
 
 ## Scripts
 
@@ -158,7 +159,7 @@ $ stdl-objdet train_model config/config_trne.yaml
 $ tensorboard --logdir output/trne/logs
 ```
 
-Open the following link with a web browser: `http://localhost:6006` and identify the iteration minimising the validation loss and select the model accordingly (`model_*.pth`) in `config_trne`. For the provided parameters, `model_0004999.pth` is the default one.
+Open the following link with a web browser: `http://localhost:6006` and identify the iteration minimising the validation loss and select the model accordingly (`model_*.pth`) in `config_trne`. For the provided parameters, `model_0002999.pth` is the default one.
 
 Perform and assess detections:
 ```
@@ -178,9 +179,15 @@ $ python scripts/merge_detections.py config/config_trne.yaml
 
 **Inference**: 
 
-Colour processing on images can be performed if needed prior to inference. <br>
-Copy the selected trained model to the folder `models`.
- 
+Colour processing on images can be performed if needed prior to inference with scripts available in the [sandbox](#sandbox) folder. 
+
+Copy the selected trained model to the folder `models`:
+```
+$ mkdir models
+$ cp output/trne/logs/<selected_model_pth> models
+```
+
+Process images:
 ```
 $ python scripts/prepare_aoi.py config/config_det.yaml
 $ python scripts/prepare_data.py config/config_det.yaml
@@ -198,7 +205,6 @@ $ scripts/batch_process.sh
 ```
 
 Finally, all the detection layers obtained for each year are merged into a single geopackage.
-
 ```
 $ python scripts/merge_years.py config/config_det.yaml
 ```

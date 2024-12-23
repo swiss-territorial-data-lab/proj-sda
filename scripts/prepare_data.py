@@ -15,7 +15,7 @@ import pandas as pd
 from shapely.geometry import Polygon
 
 sys.path.insert(0, '.')
-import functions.fct_misc as misc
+import functions.misc as misc
 from functions.constants import DONE_MSG
 
 from loguru import logger
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     if CATEGORY and CATEGORY in labels_4326_gdf.keys():
         labels_4326_gdf['CATEGORY'] = labels_4326_gdf[CATEGORY]
         category = labels_4326_gdf['CATEGORY'].unique()
-        logger.info(f'Working with {len(category)} classe.s: {category}')
+        logger.info(f'Working with {len(category)} class.es: {category}')
         labels_4326_gdf['SUPERCATEGORY'] = 'anthropogenic soils'
     else:
         logger.warning(f'No category column in {SHPFILE}. A unique category will be assigned')
