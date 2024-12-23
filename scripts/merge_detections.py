@@ -36,6 +36,7 @@ if __name__ == "__main__":
 
     # Load input parameters
     WORKING_DIR = cfg['working_dir']
+    OUTPUT_DIR = cfg['output_dir']
     LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
     DETECTION_FILES = cfg['detections']
     DISTANCE = cfg['distance']
@@ -47,6 +48,7 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     written_files = [] 
 
@@ -207,7 +209,7 @@ if __name__ == "__main__":
         logger.info(f'Method = {METHOD}: precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
 
         # Save tagged processed results 
-        feature = os.path.join(f'tagged_merged_detections_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
+        feature = os.path.join(OUTPUT_DIR, f'tagged_merged_detections_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
         tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
         tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category'}, errors='raise')
         tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'label_class', 'label_category', 'year_label', 'det_class', 'det_category', 'year_det']]\
@@ -238,14 +240,14 @@ if __name__ == "__main__":
             for det_class in metrics_by_cl_df['class'].to_numpy()
         ] 
 
-        file_to_write = os.path.join('metrics_by_class_merged_detections.csv')
+        file_to_write = os.path.join(OUTPUT_DIR, 'metrics_by_class_merged_detections.csv')
         metrics_by_cl_df[
             ['class', 'category', 'TP_k', 'FP_k', 'FN_k', 'precision_k', 'recall_k', 'f1_k']
         ].sort_values(by=['class']).to_csv(file_to_write, index=False)
         written_files.append(file_to_write)
 
     # Save processed results
-    feature = os.path.join(f'merged_detections_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
+    feature = os.path.join(OUTPUT_DIR, f'merged_detections_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
     detections_merge_gdf = detections_merge_gdf.to_crs(2056)
     detections_merge_gdf[['geometry', 'score', 'det_class', 'det_category', 'year_det']]\
         .to_file(feature, driver='GPKG', index=False)

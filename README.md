@@ -89,15 +89,7 @@ The folders/files of the project `proj-sda` (in combination with the `object-det
 ├── output                                          # outputs folders
 │   ├── det                            
 │   └── trne
-├── sandbox
-│   ├── clip.py                                     # script clipping detections to the AoI
-│   ├── gt_analysis.py                              # script plotting GT characteristics
-│   ├── match_colour.py                             # script matching colour histogram to a reference image
-│   ├── mosaic.py                                   # script mosaicking images
-│   ├── rgb_to_greyscale.py                         # script converting RGB images to greyscale images
-│   ├── rgb_to_greyscale.sh                         # script converting RGB images to greyscale images
-│   └── tiff2geotiff.py                             # convert tiff to geotiff
-dataset 
+├── sandbox                                         # scripts tested to improve the results without conclusive results
 ├── scripts
 │   ├── batch_process.sh                            # script to execute several commands
 │   ├── filter_detections.py                        # script detections filtering 

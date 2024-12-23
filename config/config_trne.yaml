@@ -1,13 +1,13 @@
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   datasets:
-    shapefile: ./data/ground_truth/<GT_SHPFILE>           # GT labels
-    # fp_shapefile: ./data/FP/<FP_SHPFILE>                # FP labels
-    # empty_tiles_aoi: ./data/AoI/<AOI_SHPFILE>           # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
+    shapefile: data/ground_truth/20240916_GT_CH.gpkg           # GT labels
+    # fp_shapefile: data/FP/<FP_SHPFILE>                # FP labels
+    # empty_tiles_aoi: data/AoI/<AOI_SHPFILE>           # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
     # empty_tiles_year: 2023                              # If "empty_tiles_aoi" selected then provide a year. Choice: (1) numeric (i.e. 2020), (2) [year1, year2] (random selection of a year within a given year range) 
-    # empty_tiles_shp: ./data/empty_tiles/<EMPTY_TILES_SHPFILE>    # Provided shapefile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
+    # empty_tiles_shp: data/empty_tiles/<EMPTY_TILES_SHPFILE>    # Provided shapefile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
     category: 'Classe'
-  output_folder: ./output/trne/
+  output_folder: output/trne/
   zoom_level: 16 
 
 
@@ -27,7 +27,7 @@ generate_tilesets.py:
       # ############# 
       # type: FOLDER
       # year: multi-year
-      # location: ./output/trne/all-images_src
+      # location: output/trne/all-images_src
       # srs: "EPSG:3857"
       # ############# 
       # type: WMS                               # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
@@ -61,7 +61,7 @@ generate_tilesets.py:
 
 # Train the model with the detectron2 algorithm dir p dir path to geotiff images ath to geotiff images 
 train_model.py:
-  working_directory: ./output/trne/
+  working_directory: output/trne/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files: # relative paths, w/ respect to the working_folder
@@ -75,7 +75,8 @@ train_model.py:
 
 # Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/trne/
+  working_directory: output/trne
+  output_folder: run102
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -84,7 +85,7 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ./logs/model_0005499.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../models/model_102_0001999.pth # trained model minimising the validation loss curve
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: true
@@ -95,15 +96,15 @@ make_detections.py:
 
 # Evaluate the detection quality for the different datasets by calculating metrics
 assess_detections.py:
-  working_directory: ./output/trne/
+  working_directory: output/trne
   datasets:
     ground_truth_labels: labels.geojson
     split_aoi_tiles: split_aoi_tiles.geojson # aoi = Area of Interest
     categories: category_ids.json
     detections:
-      trn: trn_detections_at_0dot05_threshold.gpkg
-      val: val_detections_at_0dot05_threshold.gpkg
-      tst: tst_detections_at_0dot05_threshold.gpkg
+      trn: run102/trn_detections_at_0dot05_threshold.gpkg
+      val: run102/val_detections_at_0dot05_threshold.gpkg
+      tst: run102/tst_detections_at_0dot05_threshold.gpkg
   output_folder: .
   iou_threshold: 0.1
   area_threshold: 50       # area under which the polygons are discarded from assessment
@@ -112,18 +113,19 @@ assess_detections.py:
 
 # Plots (optional)
 result_analysis.py:
-  working_dir: ./output/trne/
+  working_dir: output/trne/run102
   detections: tagged_detections.gpkg
 
 
 # Assess the final results
 merge_detections.py:
-  working_dir: ./output/trne/
+  working_dir: output/trne
+  output_dir: run102
   labels: labels.geojson
   detections:
-    trn: trn_detections_at_0dot05_threshold.gpkg
-    val: val_detections_at_0dot05_threshold.gpkg
-    tst: tst_detections_at_0dot05_threshold.gpkg
+    trn: run102/trn_detections_at_0dot05_threshold.gpkg
+    val: run102/val_detections_at_0dot05_threshold.gpkg
+    tst: run102/tst_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
   iou_threshold: 0.1
   score_threshold: 0.05
@@ -133,6 +135,6 @@ merge_detections.py:
 
 
 merge_multi_models.py:
-  working_dir: output/previous_dets
+  working_dir: output/trne
   output_dir: merged_results
   threshold: 0.1
