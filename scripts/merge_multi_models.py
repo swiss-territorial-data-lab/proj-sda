@@ -141,8 +141,8 @@ if __name__ == "__main__":
     intersecting_detections_gdf = group_detections(detections_gdf, 0.5)
 
     logger.info('Count number of dets in each group...')
-    groups_df = intersecting_detections_gdf['group_id'].value_counts().reset_index()
-    groups_df['percentage'] = groups_df['count']/len(detections_list)
+    groups_df = intersecting_detections_gdf['group_id'].value_counts().reset_index().rename(columns={'count': 'count_dets'})
+    groups_df['percentage'] = groups_df['count_dets']/len(detections_list)
 
     # Bring group info back to the detections
     completed_detections_gdf = pd.merge(intersecting_detections_gdf, groups_df, how='left', left_on='group_id', right_on='group_id')
@@ -228,14 +228,14 @@ if __name__ == "__main__":
     dets_to_merge_gdf = final_groupped_dets_gdf.drop(columns='group_id')
     dets_to_merge_gdf.loc[:, 'geometry'] = dets_to_merge_gdf.buffer(5)
     intersecting_detections_gdf = group_detections(dets_to_merge_gdf, 0.01)
-    intersecting_detections_gdf.drop(columns=excessive_columns+['second_IoU'], inplace=True)
+    intersecting_detections_gdf.drop(columns=['second_IoU'], inplace=True)
     intersecting_detections_gdf.sort_values('merged_score', ascending=False, inplace=True)
     merged_detections_gdf = intersecting_detections_gdf.dissolve('group_id', aggfunc='first', as_index=False)
     merged_detections_gdf.loc[:, 'geometry'] = merged_detections_gdf.buffer(-5)
     merged_detections_gdf.set_crs(2056, inplace=True)
 
     filepath = os.path.join(OUTPUT_DIR, 'merged_detections.gpkg')
-    merged_detections_gdf.to_file(filepath, crs='EPSG:2056', index=False)
+    merged_detections_gdf.drop(columns=excessive_columns).to_file(filepath, crs='EPSG:2056', index=False)
     written_files.append(filepath)
 
     logger.success(f"{len(final_groupped_dets_gdf)} features were kept.")
@@ -266,7 +266,7 @@ if __name__ == "__main__":
         metrics_cl_df_dict = {}
 
         tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = metrics.get_fractional_sets(
-            merged_detections_gdf, labels_w_id_gdf, 0.1, 0.05)
+            merged_detections_gdf.drop(columns=excessive_columns), labels_w_id_gdf, 0.1, 0.05)
 
         tp_gdf['tag'] = 'TP'
         fp_gdf['tag'] = 'FP'
@@ -296,8 +296,32 @@ if __name__ == "__main__":
             .to_file(feature, driver='GPKG', index=False)
         written_files.append(feature)
 
+    logger.info('Merge overlapping components while ignoring the year...')
+    dets_to_merge_gdf = merged_detections_gdf.drop(columns='group_id')
+    dets_to_merge_gdf.loc[:, 'geometry'] = dets_to_merge_gdf.buffer(5)
+    intersecting_detections_gdf = group_detections(dets_to_merge_gdf, 0.5, ignore_year=True)
+    intersecting_detections_gdf.sort_values('merged_score', ascending=False, inplace=True)
+    intersecting_detections_gdf.drop(columns=excessive_columns, inplace=True)
 
-    
+    merged_dets_across_years_gdf = intersecting_detections_gdf.dissolve('group_id', aggfunc='first', as_index=False)
+    min_year_df = intersecting_detections_gdf[['group_id', 'year_det']].groupby('group_id', as_index=False).min().rename(columns={'year_det': 'first_year'})
+    max_year_df = intersecting_detections_gdf[['group_id', 'year_det']].groupby('group_id', as_index=False).max().rename(columns={'year_det': 'last_year'})
+    count_year_df = intersecting_detections_gdf.group_id.value_counts().reset_index().rename(columns={'count': 'count_years'})
+
+    for df in  [min_year_df, max_year_df, count_year_df]:
+        merged_dets_across_years_gdf = pd.merge(merged_dets_across_years_gdf, df, on='group_id', how='left')
+    merged_dets_across_years_gdf.loc[:, 'merged_score'] = merged_dets_across_years_gdf.apply(
+        lambda x: min(1, x['merged_score'] + 0.1 * (x['count_years']-1)), axis=1
+    )
+
+    merged_dets_across_years_gdf.loc[:, 'geometry'] = merged_dets_across_years_gdf.buffer(-5)
+    merged_dets_across_years_gdf.set_crs(2056, inplace=True)
+
+    filepath = os.path.join(OUTPUT_DIR, 'merged_detections_across_years.gpkg')
+    merged_dets_across_years_gdf.to_file(filepath, crs='EPSG:2056', index=False)
+    written_files.append(filepath)
+
+    logger.success(f"{DONE_MSG} {len(merged_dets_across_years_gdf)} features were left after merging across years.")    
 
     logger.info('The following files were written:')
     for written_file in written_files:

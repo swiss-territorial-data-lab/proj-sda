@@ -4,7 +4,7 @@ from loguru import logger
 import pygeohash as pgh
 import networkx as nx
 
-from functions.fct_misc import format_logger
+from functions.misc import format_logger
 
 logger = format_logger(logger)
 

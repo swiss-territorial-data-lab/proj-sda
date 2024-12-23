@@ -75,17 +75,7 @@ if __name__ == "__main__":
     logger.success(f"{DONE_MSG} {len(detections_gdf)} features were found.")
 
     # get classe ids
-    filepath = open(os.path.join('category_ids.json'))
-    categories_json = json.load(filepath)
-    filepath.close()
-    categories_info_df = pd.DataFrame()
-    for key in categories_json.keys():
-        categories_tmp = {sub_key: [value] for sub_key, value in categories_json[key].items()}
-        categories_info_df = pd.concat([categories_info_df, pd.DataFrame(categories_tmp)], ignore_index=True)
-    categories_info_df.sort_values(by=['id'], inplace=True, ignore_index=True)
-    categories_info_df.drop(['supercategory'], axis=1, inplace=True)
-    categories_info_df.rename(columns={'name':'CATEGORY', 'id': 'label_class'},inplace=True)
-    id_classes = range(len(categories_json))
+    categories_info_df, id_classes = misc.get_categories(os.path.join('category_ids.json'))
 
     # Merge features
     logger.info(f"Merge adjacent polygons overlapping tiles with a buffer of {DISTANCE} m...")

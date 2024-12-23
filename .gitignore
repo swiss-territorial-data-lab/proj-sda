@@ -1,8 +1,15 @@
 # Folders
 data/*
 !data/category_ids.json
-!data/AoI
-!data/ground_truth
+!data/AoI/swissimage_footprints/swissimage_footprint_2015*
+!data/AoI/swissimage_footprints/swissimage_footprint_2016*
+!data/AoI/swissimage_footprints/swissimage_footprint_2017*
+!data/AoI/swissimage_footprints/swissimage_footprint_2018*
+!data/AoI/swissimage_footprints/swissimage_footprint_2019*
+!data/AoI/swissimage_footprints/swissimage_footprint_202*
+!data/AoI/ticino
+!data/AoI/vaud
+!data/ground_truth/sda_ground_truth.gpkg
 !data/FP
 input*/
 output*/

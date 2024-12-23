@@ -3,6 +3,8 @@ import sys
 from loguru import logger
 from shapely.validation import make_valid
 
+import json
+import pandas as pd
 
 def check_validity(poly_gdf, correct=False):
     '''
@@ -101,6 +103,21 @@ def format_logger(logger):
 
     return logger
 
+
+def get_categories(filepath):
+    file = open(filepath)
+    categories_json = json.load(file)
+    file.close()
+    categories_info_df = pd.DataFrame()
+    for key in categories_json.keys():
+        categories_tmp = {sub_key: [value] for sub_key, value in categories_json[key].items()}
+        categories_info_df = pd.concat([categories_info_df, pd.DataFrame(categories_tmp)], ignore_index=True)
+    categories_info_df.sort_values(by=['id'], inplace=True, ignore_index=True)
+    categories_info_df.drop(['supercategory'], axis=1, inplace=True)
+    categories_info_df.rename(columns={'name':'CATEGORY', 'id': 'label_class'},inplace=True)
+    id_classes = range(len(categories_json))
+
+    return categories_info_df, id_classes
 
 def overlap(polygon1_shape, polygon2_shape):
     """Determine the overlap area of one polygon with another one
