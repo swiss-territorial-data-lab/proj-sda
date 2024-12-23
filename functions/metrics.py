@@ -146,7 +146,7 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
             - float: f1 score.
     """
 
-    by_class_dict = {key: None for key in id_classes}
+    by_class_dict = {key: 0 for key in id_classes}
     tp_k = by_class_dict.copy()
     fp_k = by_class_dict.copy()
     fn_k = by_class_dict.copy()
@@ -173,10 +173,11 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
         fp_k[id_cl] = fp_count
         fn_k[id_cl] = fn_count
     
-        p_k[id_cl] = 0 if tp_count == 0 else tp_count / (tp_count + fp_count)
-        r_k[id_cl] = 0 if tp_count == 0 else tp_count / (tp_count + fn_count)
-        f1_k[id_cl] = 0 if tp_count == 0 else 2 * p_k[id_cl] * r_k[id_cl] / (p_k[id_cl] + r_k[id_cl])
-        count_k[id_cl] = 0 if tp_count == 0 else tp_count + fn_count 
+        if tp_count > 0:
+            p_k[id_cl] = tp_count / (tp_count + fp_count)
+            r_k[id_cl] = tp_count / (tp_count + fn_count)
+            f1_k[id_cl] = 2 * p_k[id_cl] * r_k[id_cl] / (p_k[id_cl] + r_k[id_cl])
+        count_k[id_cl] = tp_count + fn_count 
 
     accuracy = sum(tp_k.values()) / (sum(tp_k.values()) + sum(fp_k.values()) + sum(fn_k.values()))
 
@@ -190,7 +191,7 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
         precision = sum(pw_k.values()) / len(id_classes)
         recall = sum(rw_k.values()) / len(id_classes)
     elif method == 'micro-average':  
-        if sum(tp_k.values()) == 0 and sum(fp_k.values()) == 0:
+        if sum(tp_k.values()) == 0:
             precision = 0
             recall = 0
         else:
