@@ -9,10 +9,11 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
+import json
 from hashlib import md5
 
 sys.path.insert(0, '.')
-import functions.fct_graphs as graphs
+import functions.graphs as graphs
 import functions.metrics as metrics
 import functions.misc as misc
 from functions.constants import DONE_MSG
@@ -21,9 +22,34 @@ from loguru import logger
 logger = misc.format_logger(logger)
 
 
-def group_detections(detections_gdf, IoU_threshold):
+def group_detections(detections_gdf, IoU_threshold, ignore_year=False):
+    """
+    Mark detections representing the same object as a group.
+
+    Given a GeoDataFrame of detections, find the detections that overlap
+    with each other and assign them the same group_id. This is done by
+    computing the intersection over union of each pair of detections and
+    then grouping the detections using a graph algorithm.
+
+    Parameters
+    ----------
+    detections_gdf : GeoDataFrame
+        A GeoDataFrame containing the detections to be grouped.
+    IoU_threshold : float
+        The minimum intersection over union required for two detections to
+        be considered as overlapping.
+    ignore_year : bool
+        If True, ignore the year condition when computing the IoU.
+
+    Returns
+    -------
+    new_dets_gdf : GeoDataFrame
+        A GeoDataFrame containing the same information as the input
+        detections_gdf but with an additional column 'group_id' that
+        assigns a unique group_id to each group of overlapping detections.
+    """
     
-    overlap_detections_gdf = self_intersect(detections_gdf)
+    overlap_detections_gdf = self_intersect(detections_gdf, ignore_year)
     geom1 = overlap_detections_gdf.geom_left.tolist()
     geom2 = overlap_detections_gdf.geom_right.tolist()
     iou = []
@@ -45,7 +71,7 @@ def group_detections(detections_gdf, IoU_threshold):
     return new_dets_gdf
 
 
-def self_intersect(gdf):
+def self_intersect(gdf, ignore_year=False):
     _gdf = gdf.copy()
     _gdf['geom'] = _gdf.geometry
 
@@ -53,7 +79,7 @@ def self_intersect(gdf):
     overlap_detections_gdf = overlap_detections_gdf[
         (overlap_detections_gdf.merged_id_left>=overlap_detections_gdf.merged_id_right) # We keep self-intersection, so that alone dets don't have a presence of 0.
         # & (overlap_detections_gdf.det_category_left==overlap_detections_gdf.det_category_right)
-        & (overlap_detections_gdf.year_det_left==overlap_detections_gdf.year_det_right)
+        & (True if ignore_year else overlap_detections_gdf.year_det_left==overlap_detections_gdf.year_det_right)
     ].copy()
 
     return overlap_detections_gdf
@@ -80,6 +106,11 @@ if __name__ == "__main__":
     OUTPUT_DIR = cfg['output_dir']
 
     THRESHOLD = cfg['threshold']
+    ASSESS = cfg['assess']['enable']
+    if ASSESS:
+        METHOD = cfg['assess']['metrics_method']
+        LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
+        CATEGORIES = cfg['categories']
 
     written_files = []
     os.chdir(WORKING_DIR)
@@ -91,6 +122,7 @@ if __name__ == "__main__":
     nbr_dets_list = []
     detections_gdf = gpd.GeoDataFrame()
     for file in detections_list:
+        logger.info(f"Reading {file}")
         model_name = os.path.dirname(file)
         tmp_gdf = gpd.read_file(file)
         tmp_gdf['model'] = os.path.dirname(file)    
@@ -179,7 +211,7 @@ if __name__ == "__main__":
     for detection in intersecting_dets_gdf.itertuples():
         if removed_dets_gdf.loc[removed_dets_gdf.merged_id==detection.merged_id_bottom, 'percentage'].iloc[0] >= 0.75:
             det_score = final_groupped_dets_gdf.loc[final_groupped_dets_gdf.merged_id==detection.merged_id_top, 'merged_score'].iloc[0]
-            final_groupped_dets_gdf.loc[final_groupped_dets_gdf.merged_id==detection.merged_id_top, 'merged_score'] = det_score + 0.1 if det_score < 0.9 else det_score
+            final_groupped_dets_gdf.loc[final_groupped_dets_gdf.merged_id==detection.merged_id_top, 'merged_score'] = min(det_score + 0.1, 1)
 
     excessive_columns = ['wkb_geom', 'merged_id_bottom', 'merged_id_top']
     filepath = os.path.join(OUTPUT_DIR, 'groupped_detections.gpkg')
@@ -192,23 +224,80 @@ if __name__ == "__main__":
 
     del overlap_detections_gdf, intersecting_dets_gdf, filtered_groupped_dets_gdf
 
-    logger.info('Merge overlapping components...')
+    logger.info('Merge overlapping components of the same year...')
     dets_to_merge_gdf = final_groupped_dets_gdf.drop(columns='group_id')
-    dets_to_merge_gdf.loc[:, 'geometry'] = dets_to_merge_gdf.buffer(1)
+    dets_to_merge_gdf.loc[:, 'geometry'] = dets_to_merge_gdf.buffer(5)
     intersecting_detections_gdf = group_detections(dets_to_merge_gdf, 0.01)
     intersecting_detections_gdf.drop(columns=excessive_columns+['second_IoU'], inplace=True)
     intersecting_detections_gdf.sort_values('merged_score', ascending=False, inplace=True)
     merged_detections_gdf = intersecting_detections_gdf.dissolve('group_id', aggfunc='first', as_index=False)
-    merged_detections_gdf.loc[:, 'geometry'] = merged_detections_gdf.buffer(-1)
+    merged_detections_gdf.loc[:, 'geometry'] = merged_detections_gdf.buffer(-5)
+    merged_detections_gdf.set_crs(2056, inplace=True)
 
     filepath = os.path.join(OUTPUT_DIR, 'merged_detections.gpkg')
     merged_detections_gdf.to_file(filepath, crs='EPSG:2056', index=False)
     written_files.append(filepath)
 
-    logger.success(f"{DONE_MSG} {len(final_groupped_dets_gdf)} features were kept.")
+    logger.success(f"{len(final_groupped_dets_gdf)} features were kept.")
     logger.success(f"Once dissolved, {len(merged_detections_gdf)} features are left")
     logger.success(f'The covered area is {round(merged_detections_gdf.unary_union.area/1000000)} km2.')
     logger.success(f"{len(removed_dets_gdf)} features were removed.")
+
+    if ASSESS:
+        logger.info("Loading labels as a GeoPandas DataFrame...")
+        labels_gdf = gpd.read_file(LABELS)
+        labels_gdf = labels_gdf.to_crs(2056)
+        if 'year' in labels_gdf.keys():  
+            labels_gdf['year'] = labels_gdf.year.astype(int)       
+            labels_gdf = labels_gdf.rename(columns={"year": "year_label"})
+        logger.success(f"{DONE_MSG} {len(labels_gdf)} features were found.")
+
+        # get classe ids
+        categories_info_df, id_classes = misc.get_categories(CATEGORIES)
+
+        # append class ids to labels
+        labels_gdf['CATEGORY'] = labels_gdf.CATEGORY.astype(str)
+        labels_w_id_gdf = labels_gdf.merge(categories_info_df, on='CATEGORY', how='left')
+
+        logger.info('Tag detections and get metrics...')
+
+        metrics_dict = {}
+        metrics_dict_by_cl = []
+        metrics_cl_df_dict = {}
+
+        tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = metrics.get_fractional_sets(
+            merged_detections_gdf, labels_w_id_gdf, 0.1, 0.05)
+
+        tp_gdf['tag'] = 'TP'
+        fp_gdf['tag'] = 'FP'
+        fn_gdf['tag'] = 'FN'
+        mismatched_class_gdf['tag'] = 'wrong class'
+        small_poly_gdf['tag'] = 'small polygon'
+
+        tp_k, fp_k, fn_k, p_k, r_k, f1_k, accuracy, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes, method=METHOD)
+        logger.info(f'Detection score threshold = 0.05')
+        logger.info(f'accuracy = {accuracy:.3f}')
+        logger.info(f'Method = {METHOD}: precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
+
+        tagged_dets_gdf = pd.concat([tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf], ignore_index=True)
+
+        logger.info(f'TP = {len(tp_gdf)}, FP = {len(fp_gdf)}, FN = {len(fn_gdf)}')
+        tagged_dets_gdf['det_category'] = [
+            categories_info_df.loc[categories_info_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
+            if not np.isnan(det_class) else None
+            for det_class in tagged_dets_gdf.det_class.to_numpy()
+        ] 
+
+        # Save tagged processed results 
+        feature = os.path.join(OUTPUT_DIR, f'tagged_merged_detections_at_0dot05_threshold.gpkg'.replace('0.', '0dot'))
+        tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
+        tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category'}, errors='raise')
+        tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'label_class', 'label_category', 'year_label', 'det_class', 'det_category', 'year_det']]\
+            .to_file(feature, driver='GPKG', index=False)
+        written_files.append(feature)
+
+
+    
 
     logger.info('The following files were written:')
     for written_file in written_files:
