@@ -75,7 +75,7 @@ make_detections.py:
   working_directory: output/trne
   output_folder: run68
   log_subfolder: logs
-  sample_tagged_img_subfolder: sample_tagged_images
+  sample_tagged_img_subfolder: run68/sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
     trn: COCO_trn.json
     val: COCO_val.json

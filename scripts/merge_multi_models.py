@@ -339,7 +339,68 @@ if __name__ == "__main__":
     merged_dets_across_years_gdf.to_file(filepath, crs='EPSG:2056', index=False)
     written_files.append(filepath)
 
-    logger.success(f"{DONE_MSG} {len(merged_dets_across_years_gdf)} features were left after merging across years.")    
+    logger.success(f"{DONE_MSG} {len(merged_dets_across_years_gdf)} features were left after merging across years.")
+
+    if ASSESS:
+        labels_w_id_gdf.drop(columns='year_label', inplace=True)
+        merged_dets_across_years_gdf.drop(columns='year_det', inplace=True)
+
+        logger.info('Tag detections and get metrics...')
+
+        metrics_dict = {}
+        metrics_dict_by_cl = []
+        metrics_cl_df_dict = {}
+
+        tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = metrics.get_fractional_sets(
+            merged_dets_across_years_gdf, labels_w_id_gdf, 0.1, 0.05)
+
+        tp_gdf['tag'] = 'TP'
+        fp_gdf['tag'] = 'FP'
+        fn_gdf['tag'] = 'FN'
+        mismatched_class_gdf['tag'] = 'wrong class'
+        small_poly_gdf['tag'] = 'small polygon'
+
+        tp_k, fp_k, fn_k, p_k, r_k, f1_k, accuracy, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes, method=METHOD)
+        logger.info(f'Detection score threshold = 0.05')
+        logger.info(f'accuracy = {accuracy:.3f}')
+        logger.info(f'Method = {METHOD}: precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
+
+        tagged_dets_gdf = pd.concat([tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf], ignore_index=True)
+
+        logger.info(f'TP = {len(tp_gdf)}, FP = {len(fp_gdf)}, FN = {len(fn_gdf)}')
+        tagged_dets_gdf['det_category'] = [
+            categories_info_df.loc[categories_info_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
+            if not np.isnan(det_class) else None
+            for det_class in tagged_dets_gdf.det_class.to_numpy()
+        ] 
+
+        # Save tagged processed results 
+        feature = os.path.join(OUTPUT_DIR, f'tagged_merged_across_years_at_0dot05_threshold.gpkg'.replace('0.', '0dot'))
+        tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
+        tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category'}, errors='raise')
+        tagged_dets_gdf[
+            ['geometry', 'det_id', 'score', 'merged_score', 'tag', 'label_class', 'label_category', 'det_class', 'det_category', 
+             'first_year', 'last_year', 'count_years']
+        ].to_file(feature, driver='GPKG', index=False)
+        written_files.append(feature)
+                
+        # Get bin accuracy
+        tmp_dets_gdf = tagged_dets_gdf.loc[
+            tagged_dets_gdf.tag.isin(['FP', 'TP', 'wrong class']),
+            ['score', 'det_class', 'det_category', 'label_class', 'label_category', 'merged_score', 'tag']
+        ]
+
+        file_to_write = os.path.join(OUTPUT_DIR, 'reliability_merged_across_years.jpeg')
+        metrics.reliability_diagram(tmp_dets_gdf, 'merged_score', file_to_write)
+        written_files.append(file_to_write)
+
+        # Get bin accuracy
+        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'det_category'] = 'human activity'
+        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'label_category'] = 'human activity'
+
+        file_to_write = os.path.join(OUTPUT_DIR, 'reliability_merged_across_years_single_class.jpeg')
+        metrics.reliability_diagram(tmp_dets_gdf, 'merged_score', file_to_write)
+        written_files.append(file_to_write)
 
     logger.info('The following files were written:')
     for written_file in written_files:

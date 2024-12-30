@@ -79,8 +79,9 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
     best_matches_gdf.drop_duplicates(subset=['det_id'], inplace=True)
 
     # Detection, resp labels, with IOU lower than threshold value are considered as FP, resp FN, and saved as such
+    col_subset = ['det_id', 'year_det'] if 'year_det' in best_matches_gdf.keys() else ['det_id']
     actual_matches_gdf = best_matches_gdf[best_matches_gdf['IOU'] >= iou_threshold].copy()
-    actual_matches_gdf = actual_matches_gdf.sort_values(by=['IOU'], ascending=False).drop_duplicates(subset=['det_id', 'year_det'])
+    actual_matches_gdf = actual_matches_gdf.sort_values(by=['IOU'], ascending=False).drop_duplicates(subset=col_subset)
     actual_matches_gdf['IOU'] = actual_matches_gdf.IOU.round(3)
 
     matched_label_ids = actual_matches_gdf['label_id'].unique().tolist()
@@ -112,8 +113,9 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
     # FALSE NEGATIVES
     right_join = gpd.sjoin(_dets_gdf, _labels_gdf, how='right', predicate='intersects', lsuffix='left', rsuffix='right')
 
+    col_subset = ['label_id', 'year_label'] if 'year_label' in right_join.keys() else ['label_id']
     fn_gdf = right_join[right_join.score.isna()].copy()
-    fn_gdf.drop_duplicates(subset=['label_id', 'year_label'], inplace=True)
+    fn_gdf.drop_duplicates(subset=col_subset, inplace=True)
     fn_gdf = pd.concat([fn_gdf_temp, fn_gdf], ignore_index=True)
     fn_gdf.drop(
         columns=_dets_gdf.drop(columns='geometry').columns.to_list() + ['dataset_left', 'index_right', 'x', 'y', 'z', 'label_geom', 'IOU', 'index_left'], 
@@ -232,7 +234,7 @@ def reliability_diagram(dets_gdf, score='score', output_path='reliability_diagra
     det_count = []
     for threshold in threshold_bins:
         dets_in_bin = dets_gdf[
-            (dets_gdf[score] > threshold-0.5)
+            (dets_gdf[score] > threshold-0.05)
             & (dets_gdf[score] <= threshold)
         ]
 
