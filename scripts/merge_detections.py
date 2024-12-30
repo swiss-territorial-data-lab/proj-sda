@@ -7,7 +7,6 @@ import yaml
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import json
 
 sys.path.insert(0, '.')
 import functions.metrics as metrics
@@ -35,7 +34,7 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
-    WORKING_DIR = cfg['working_dir']
+    WORKING_DIR = cfg['working_directory']
     OUTPUT_DIR = cfg['output_dir']
     LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
     DETECTION_FILES = cfg['detections']
@@ -234,6 +233,24 @@ if __name__ == "__main__":
         metrics_by_cl_df[
             ['class', 'category', 'TP_k', 'FP_k', 'FN_k', 'precision_k', 'recall_k', 'f1_k']
         ].sort_values(by=['class']).to_csv(file_to_write, index=False)
+        written_files.append(file_to_write)
+        
+        # Get bin accuracy
+        tmp_dets_gdf = tagged_dets_gdf.loc[
+            tagged_dets_gdf.tag.isin(['FP', 'TP', 'wrong class']),
+            ['score', 'det_class', 'det_category', 'label_class', 'label_category', 'tag', 'year_det']
+        ]
+
+        file_to_write = os.path.join(OUTPUT_DIR, 'reliability_diagram_merged_detections.jpeg')
+        metrics.reliability_diagram(tmp_dets_gdf, 'score', file_to_write)
+        written_files.append(file_to_write)
+
+        # Get bin accuracy
+        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'det_category'] = 'human activity'
+        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'label_category'] = 'human activity'
+
+        file_to_write = os.path.join(OUTPUT_DIR, 'reliability_diagram_merged_detections_single_class.jpeg')
+        metrics.reliability_diagram(tmp_dets_gdf, 'score', file_to_write)
         written_files.append(file_to_write)
 
     # Save processed results

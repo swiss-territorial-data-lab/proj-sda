@@ -102,7 +102,7 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
-    WORKING_DIR = cfg['working_dir']
+    WORKING_DIR = cfg['working_directory']
     OUTPUT_DIR = cfg['output_dir']
 
     THRESHOLD = cfg['threshold']
@@ -289,12 +289,30 @@ if __name__ == "__main__":
         ] 
 
         # Save tagged processed results 
-        feature = os.path.join(OUTPUT_DIR, f'tagged_merged_detections_at_0dot05_threshold.gpkg'.replace('0.', '0dot'))
+        feature = os.path.join(OUTPUT_DIR, f'tagged_merged_results_at_0dot05_threshold.gpkg'.replace('0.', '0dot'))
         tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
         tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category'}, errors='raise')
-        tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'label_class', 'label_category', 'year_label', 'det_class', 'det_category', 'year_det']]\
+        tagged_dets_gdf[['geometry', 'det_id', 'score', 'merged_score', 'tag', 'label_class', 'label_category', 'year_label', 'det_class', 'det_category', 'year_det']]\
             .to_file(feature, driver='GPKG', index=False)
         written_files.append(feature)
+                
+        # Get bin accuracy
+        tmp_dets_gdf = tagged_dets_gdf.loc[
+            tagged_dets_gdf.tag.isin(['FP', 'TP', 'wrong class']),
+            ['score', 'det_class', 'det_category', 'label_class', 'label_category', 'merged_score', 'tag', 'year_det']
+        ]
+
+        file_to_write = os.path.join(OUTPUT_DIR, 'reliability_diagram_merged_results.jpeg')
+        metrics.reliability_diagram(tmp_dets_gdf, 'merged_score', file_to_write)
+        written_files.append(file_to_write)
+
+        # Get bin accuracy
+        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'det_category'] = 'human activity'
+        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'label_category'] = 'human activity'
+
+        file_to_write = os.path.join(OUTPUT_DIR, 'reliability_diagram_merged_results_single_class.jpeg')
+        metrics.reliability_diagram(tmp_dets_gdf, 'merged_score', file_to_write)
+        written_files.append(file_to_write)
 
     logger.info('Merge overlapping components while ignoring the year...')
     dets_to_merge_gdf = merged_detections_gdf.drop(columns='group_id')

@@ -1,4 +1,5 @@
 import geopandas as gpd
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -222,3 +223,53 @@ def intersection_over_union(polygon1_shape, polygon2_shape):
     polygon_union = polygon1_shape.area + polygon2_shape.area - polygon_intersection
 
     return polygon_intersection / polygon_union
+
+
+def reliability_diagram(dets_gdf, score='score', output_path='reliability_diagram.jpeg', det_number=True):
+    threshold_bins = np.arange(0, 1.05, 0.05)
+    bin_values = []
+    threshold_values = []
+    det_count = []
+    for threshold in threshold_bins:
+        dets_in_bin = dets_gdf[
+            (dets_gdf[score] > threshold-0.5)
+            & (dets_gdf[score] <= threshold)
+        ]
+
+        if not dets_in_bin.empty:
+            det_count.append(dets_in_bin.shape[0])
+            bin_values.append(
+                dets_in_bin[dets_in_bin.det_category == dets_in_bin.label_category].shape[0] / dets_in_bin.shape[0]
+            )
+            threshold_values.append(threshold)
+
+    # Make the bin accuracy
+    plt.rcParams["figure.figsize"] = (5, 5)
+    if det_number:
+        fig, ax = plt.subplots(1, 1)
+
+        # Create the barplot
+        ax.bar(threshold_values, det_count, alpha=0.5, label='Number of dets', width=0.03)
+        ax.set_ylabel('Number of dets in bin')
+        # ax.legend(loc='center left')
+
+        # Create a secondary axis
+        ax2 = ax.twinx()
+    
+    else:
+        fig, ax2 = plt.subplots(1, 1)
+
+    ax2.scatter(threshold_values, bin_values, marker='o', color='red')
+    ax2.plot(threshold_values, bin_values, color='red', label='Detection accuracy')
+
+    ax2.scatter(threshold_bins, threshold_bins, marker='+', color='green')
+    ax2.plot(threshold_bins, threshold_bins, color='green', label='Reference line')
+
+    ax2.legend(loc='upper left')
+
+    plt.xlabel(score.replace("_", " "))
+    plt.ylabel('bin accuracy')
+    plt.title(f'Calibration curve of the {score.replace("_", " ")}')
+    plt.grid(True, alpha=0.5)
+    
+    fig.savefig(output_path, bbox_inches='tight')

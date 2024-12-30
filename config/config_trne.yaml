@@ -73,7 +73,7 @@ train_model.py:
 # Object detection with the optimised trained model
 make_detections.py:
   working_directory: output/trne
-  output_folder: run72
+  output_folder: run68
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
@@ -82,7 +82,7 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../models/model_72_0002499.pth # trained model minimising the validation loss curve
+    pth_file: ../../models/model_68_0002999.pth # trained model minimising the validation loss curve
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: True
@@ -98,9 +98,9 @@ assess_detections.py:
     split_aoi_tiles: split_aoi_tiles.geojson # aoi = Area of Interest
     categories: category_ids.json
     detections:
-      trn: run72/trn_detections_at_0dot05_threshold.gpkg
-      val: run72/val_detections_at_0dot05_threshold.gpkg
-      tst: run72/tst_detections_at_0dot05_threshold.gpkg
+      trn: run68/trn_detections_at_0dot05_threshold.gpkg
+      val: run68/val_detections_at_0dot05_threshold.gpkg
+      tst: run68/tst_detections_at_0dot05_threshold.gpkg
   output_folder: .
   iou_threshold: 0.1
   area_threshold: 50       # area under which the polygons are discarded from assessment
@@ -108,7 +108,7 @@ assess_detections.py:
 
 # Plots (optional)
 result_analysis.py:
-  working_dir: output/trne/run72
+  working_directory: output/trne/run68
   detections: tagged_detections.gpkg
   min_year: 1950
   max_year: 2023
@@ -118,13 +118,13 @@ result_analysis.py:
 
 # Assess the final results
 merge_detections.py:
-  working_dir: output/trne
-  output_dir: run72
+  working_directory: output/trne
+  output_dir: run68
   labels: labels.geojson
   detections:
-    trn: run72/trn_detections_at_0dot05_threshold.gpkg
-    val: run72/val_detections_at_0dot05_threshold.gpkg
-    tst: run72/tst_detections_at_0dot05_threshold.gpkg
+    trn: run68/trn_detections_at_0dot05_threshold.gpkg
+    val: run68/val_detections_at_0dot05_threshold.gpkg
+    tst: run68/tst_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
   iou_threshold: 0.1
   score_threshold: 0.05
@@ -134,7 +134,7 @@ merge_detections.py:
 
 
 merge_multi_models.py:
-  working_dir: output/trne
+  working_directory: output/trne
   output_dir: merged_results
   labels: labels.geojson
   categories: category_ids.json
