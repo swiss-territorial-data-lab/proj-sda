@@ -11,7 +11,7 @@ import geopandas as gpd
 
 sys.path.insert(0, '.')
 import functions.misc as misc
-from functions.constants import DONE_MSG
+from functions.constants import DONE_MSG, OVERWRITE
 
 from loguru import logger
 logger = misc.format_logger(logger)
@@ -23,6 +23,11 @@ def main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_SHP):
     logger.info(f'Working directory set to {WORKING_DIR}')
 
     written_files = []
+
+    feature = f'{CANTON}/aoi_{YEAR}_{CANTON}.gpkg'
+    if os.path.exists(feature) and not OVERWRITE:
+        logger.success(f"{DONE_MSG} A file already exists: {feature}")
+        return
     
     # Read shapefiles
     logger.info("Loading canton border.")
@@ -42,7 +47,6 @@ def main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_SHP):
 
     # Save shapefile
     if len(aoi_intersection_gdf) > 0:
-        feature = f'{CANTON}/aoi_{YEAR}_{CANTON}.gpkg'
         aoi_intersection_gdf.to_file(feature)
         written_files.append(feature) 
         logger.success(f"{DONE_MSG} A file was written: {feature}") 

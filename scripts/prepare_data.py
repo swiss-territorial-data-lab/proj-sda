@@ -16,7 +16,7 @@ from shapely.geometry import Polygon
 
 sys.path.insert(0, '.')
 import functions.misc as misc
-from functions.constants import DONE_MSG
+from functions.constants import DONE_MSG, OVERWRITE
 
 from loguru import logger
 logger = misc.format_logger(logger)
@@ -159,6 +159,13 @@ if __name__ == "__main__":
         os.makedirs(OUTPUT_DIR)
 
     written_files = []
+
+    label_filepath = os.path.join(OUTPUT_DIR, 'labels.geojson')
+    tile_filepath = os.path.join(OUTPUT_DIR, 'tiles.geojson')
+    fp_filepath = os.path.join(OUTPUT_DIR, 'FP.geojson')
+    if os.path.exists(tile_filepath) and (not FP_SHPFILE or os.path.exists(fp_filepath)) and not OVERWRITE:           
+        logger.success(f"{DONE_MSG} All files already exist in folder {OUTPUT_DIR}. Exiting.")
+        sys.exit(0)
     
     # Prepare the tiles
 
@@ -185,8 +192,6 @@ if __name__ == "__main__":
 
     gt_labels_4326_gdf = labels_4326_gdf.copy()
     
-    label_filename = 'labels.geojson'
-    label_filepath = os.path.join(OUTPUT_DIR, label_filename)
     gt_labels_4326_gdf.to_file(label_filepath, driver='GeoJSON')
     written_files.append(label_filepath)  
     logger.success(f"{DONE_MSG} A file was written: {label_filepath}")
@@ -207,11 +212,9 @@ if __name__ == "__main__":
         nb_fp_labels = len(fp_labels_4326_gdf)
         logger.info(f"There are {nb_fp_labels} polygons in {FP_SHPFILE}")
 
-        filename = 'FP.geojson'
-        filepath = os.path.join(OUTPUT_DIR, filename)
-        fp_labels_4326_gdf.to_file(filepath, driver='GeoJSON')
-        written_files.append(filepath)  
-        logger.success(f"{DONE_MSG} A file was written: {filepath}")
+        fp_labels_4326_gdf.to_file(fp_filepath, driver='GeoJSON')
+        written_files.append(fp_filepath)  
+        logger.success(f"{DONE_MSG} A file was written: {fp_filepath}")
         labels_4326_gdf = pd.concat([labels_4326_gdf, fp_labels_4326_gdf], ignore_index=True)
 
     # Tiling of the AoI
@@ -281,9 +284,7 @@ if __name__ == "__main__":
         logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_4326_fp_gdf)}")
 
     # Save tile shapefile
-    logger.info("Export tiles to GeoJSON (EPSG:4326)...")  
-    tile_filename = 'tiles.geojson'
-    tile_filepath = os.path.join(OUTPUT_DIR, tile_filename)
+    logger.info("Export tiles to GeoJSON (EPSG:4326)...") 
     tiles_4326_all_gdf.to_file(tile_filepath, driver='GeoJSON')
     written_files.append(tile_filepath)  
     logger.success(f"{DONE_MSG} A file was written: {tile_filepath}")

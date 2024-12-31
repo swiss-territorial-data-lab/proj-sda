@@ -16,7 +16,7 @@ sys.path.insert(0, '.')
 import functions.graphs as graphs
 import functions.metrics as metrics
 import functions.misc as misc
-from functions.constants import DONE_MSG
+from functions.constants import DONE_MSG, OVERWRITE
 
 from loguru import logger
 logger = misc.format_logger(logger)
@@ -115,6 +115,12 @@ if __name__ == "__main__":
     written_files = []
     os.chdir(WORKING_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    last_written_file = os.path.join(OUTPUT_DIR, 'merged_detections_across_years.gpkg')
+    last_metric_file = os.path.join(OUTPUT_DIR, 'reliability_merged_across_years_single_class.jpeg')
+    if os.path.exists(last_written_file) and (not ASSESS or os.path.exists(last_metric_file)) and not OVERWRITE:           
+        logger.success(f"{DONE_MSG} All files already exist in folder {OUTPUT_DIR}. Exiting.")
+        sys.exit(0)
 
     logger.info('Read data...')
     detections_list = glob("*/**/merged_detections_at_0dot05_threshold.gpkg", recursive=True)
@@ -335,9 +341,8 @@ if __name__ == "__main__":
     merged_dets_across_years_gdf.loc[:, 'geometry'] = merged_dets_across_years_gdf.buffer(-5)
     merged_dets_across_years_gdf.set_crs(2056, inplace=True)
 
-    filepath = os.path.join(OUTPUT_DIR, 'merged_detections_across_years.gpkg')
-    merged_dets_across_years_gdf.to_file(filepath, crs='EPSG:2056', index=False)
-    written_files.append(filepath)
+    merged_dets_across_years_gdf.to_file(last_written_file, crs='EPSG:2056', index=False)
+    written_files.append(last_written_file)
 
     logger.success(f"{DONE_MSG} {len(merged_dets_across_years_gdf)} features were left after merging across years.")
 
@@ -398,9 +403,8 @@ if __name__ == "__main__":
         tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'det_category'] = 'human activity'
         tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'label_category'] = 'human activity'
 
-        file_to_write = os.path.join(OUTPUT_DIR, 'reliability_merged_across_years_single_class.jpeg')
-        metrics.reliability_diagram(tmp_dets_gdf, 'merged_score', file_to_write)
-        written_files.append(file_to_write)
+        metrics.reliability_diagram(tmp_dets_gdf, 'merged_score', last_metric_file)
+        written_files.append(last_metric_file)
 
     logger.info('The following files were written:')
     for written_file in written_files:

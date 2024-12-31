@@ -11,7 +11,7 @@ import pandas as pd
 sys.path.insert(0, '.')
 import functions.metrics as metrics
 import functions.misc as misc
-from functions.constants import DONE_MSG
+from functions.constants import DONE_MSG, OVERWRITE
 
 from loguru import logger
 logger = misc.format_logger(logger)
@@ -50,6 +50,12 @@ if __name__ == "__main__":
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     written_files = [] 
+
+    last_written_file = os.path.join(OUTPUT_DIR, f'merged_detections_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
+    last_metric_file = os.path.join(OUTPUT_DIR, 'reliability_diagram_merged_detections_single_class.jpeg')
+    if os.path.exists(last_written_file) and (not ASSESS or os.path.exists(last_metric_file)) and not OVERWRITE:           
+        logger.success(f"{DONE_MSG} All files already exist in folder {OUTPUT_DIR}. Exiting.")
+        sys.exit(0)
 
     logger.info("Loading split AoI tiles as a GeoPandas DataFrame...")
     tiles_gdf = gpd.read_file('split_aoi_tiles.geojson')
@@ -146,14 +152,15 @@ if __name__ == "__main__":
 
     # Remove duplicate detection for a given year
     detections_merge_gdf = detections_year.drop_duplicates(subset=['geometry', 'year_det'])
-    
     td = len(detections_merge_gdf)
-    logger.info(f"... {td} clustered detections remains after shape union")
     
     # Filter dataframe by score value
     detections_merge_gdf = detections_merge_gdf[detections_merge_gdf.score > SCORE_THD]
     sc = len(detections_merge_gdf)
     logger.info(f"{td - sc} detections were removed by score filtering (score threshold = {SCORE_THD})")
+
+    logger.success(f"{DONE_MSG} {len(detections_merge_gdf)} features were kept.")
+    logger.success(f'The covered area is {round(detections_merge_gdf.unary_union.area/1000000)} km2.')
 
     if ASSESS:
         logger.info("Loading labels as a GeoPandas DataFrame...")
@@ -249,16 +256,14 @@ if __name__ == "__main__":
         tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'det_category'] = 'human activity'
         tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'label_category'] = 'human activity'
 
-        file_to_write = os.path.join(OUTPUT_DIR, 'reliability_diagram_merged_detections_single_class.jpeg')
-        metrics.reliability_diagram(tmp_dets_gdf, 'score', file_to_write)
-        written_files.append(file_to_write)
+        metrics.reliability_diagram(tmp_dets_gdf, 'score', last_metric_file)
+        written_files.append(last_metric_file)
 
     # Save processed results
-    feature = os.path.join(OUTPUT_DIR, f'merged_detections_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
     detections_merge_gdf = detections_merge_gdf.to_crs(2056)
     detections_merge_gdf[['geometry', 'score', 'det_class', 'det_category', 'year_det']]\
-        .to_file(feature, driver='GPKG', index=False)
-    written_files.append(feature)       
+        .to_file(last_written_file, driver='GPKG', index=False)
+    written_files.append(last_written_file)       
 
     print()
     logger.info("The following files were written. Let's check them out!")
