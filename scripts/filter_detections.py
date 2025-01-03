@@ -88,6 +88,7 @@ if __name__ == "__main__":
 
     written_files = [] 
 
+    logger.info('Read detections and AOI...')
     # Convert input detections to a geodataframe 
     detections_gdf = gpd.read_file(DETECTIONS)
     detections_gdf = detections_gdf.to_crs(2056)
@@ -101,6 +102,7 @@ if __name__ == "__main__":
     aoi_gdf = gpd.read_file(AOI)
     aoi_gdf = aoi_gdf.to_crs(2056)
 
+    logger.info('Read objects of interests...')
     if AGRI_AREA:
         agri_gdf = gpd.read_file(os.path.join(LAYERS_DIR, AGRI_AREA))
         agri_gdf = agri_gdf.to_crs(2056)
@@ -205,6 +207,7 @@ if __name__ == "__main__":
     'sda': sda_gdf, 'polluted_sites': polluted_sites_gdf, 'waters': waters_gdf, 'zone_compatible_LPN': zone_compatible_lpn_gdf, 
     'zone_compatible_LPN_extensive': zone_compatible_lpn_extensive_gdf, 'zone_non_compatible_LPN': zone_non_compatible_lpn_gdf}
 
+    logger.info('Control altitude...')
     # Discard polygons detected at/below 0 m and above the threshold elevation and above a given slope
     dem = rasterio.open(DEM)
 
@@ -293,11 +296,13 @@ if __name__ == "__main__":
             detections_infos_gdf = detections_infos_gdf.rename(columns={attribute_names_df['argument'][i]: attribute_names_df['name'][i]})
 
     # Formatting the output name of the filtered detection  
-    feature = f'{DETECTIONS[:-5]}_threshold_score-{SCORE_THD}_area-{int(AREA_THD)}_elevation-{int(ELEVATION_THD)}'.replace('0.', '0dot') + '.gpkg'
+    feature = f'{DETECTIONS[:-5]}_score-{SCORE_THD}_area-{int(AREA_THD)}_elevation-{int(ELEVATION_THD)}'.replace('0.', '0dot') + '.gpkg'
     detections_infos_gdf.to_file(feature)
 
     written_files.append(feature)
     logger.success(f"{DONE_MSG} A file was written: {feature}")  
+    logger.success(f"{DONE_MSG} {len(detections_infos_gdf)} features were kept.")
+    logger.success(f'The covered area is {round(detections_infos_gdf.unary_union.area/1000000)} km2.')
 
     logger.info("The following files were written. Let's check them out!")
     for written_file in written_files:
