@@ -123,7 +123,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     logger.info('Read data...')
-    detections_list = glob("*/**/merged_detections_at_0dot05_threshold.gpkg", recursive=True)
+    detections_list = glob("run*/merged_detections_at_0dot05_threshold.gpkg", recursive=True)
 
     nbr_dets_list = []
     detections_gdf = gpd.GeoDataFrame()
@@ -246,7 +246,7 @@ if __name__ == "__main__":
 
     logger.success(f"{len(final_groupped_dets_gdf)} features were kept.")
     logger.success(f"Once dissolved, {len(merged_detections_gdf)} features are left")
-    logger.success(f'The covered area is {round(merged_detections_gdf.unary_union.area/1000000)} km2.')
+    logger.success(f'The covered area is {round(merged_detections_gdf.unary_union.area/1000000, 2)} km2.')
     logger.success(f"{len(removed_dets_gdf)} features were removed.")
 
     if ASSESS:
@@ -265,60 +265,13 @@ if __name__ == "__main__":
         labels_gdf['CATEGORY'] = labels_gdf.CATEGORY.astype(str)
         labels_w_id_gdf = labels_gdf.merge(categories_info_df, on='CATEGORY', how='left')
 
-        logger.info('Tag detections and get metrics...')
-
-        metrics_dict = {}
-        metrics_dict_by_cl = []
-        metrics_cl_df_dict = {}
-
-        tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = metrics.get_fractional_sets(
-            merged_detections_gdf.drop(columns=excessive_columns), labels_w_id_gdf, 0.1, 0.05)
-
-        tp_gdf['tag'] = 'TP'
-        fp_gdf['tag'] = 'FP'
-        fn_gdf['tag'] = 'FN'
-        mismatched_class_gdf['tag'] = 'wrong class'
-        small_poly_gdf['tag'] = 'small polygon'
-
-        tp_k, fp_k, fn_k, p_k, r_k, f1_k, accuracy, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes, method=METHOD)
-        logger.info(f'Detection score threshold = 0.05')
-        logger.info(f'accuracy = {accuracy:.3f}')
-        logger.info(f'Method = {METHOD}: precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
-
-        tagged_dets_gdf = pd.concat([tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf], ignore_index=True)
-
-        logger.info(f'TP = {len(tp_gdf)}, FP = {len(fp_gdf)}, FN = {len(fn_gdf)}')
-        tagged_dets_gdf['det_category'] = [
-            categories_info_df.loc[categories_info_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
-            if not np.isnan(det_class) else None
-            for det_class in tagged_dets_gdf.det_class.to_numpy()
-        ] 
-
-        # Save tagged processed results 
-        feature = os.path.join(OUTPUT_DIR, f'tagged_merged_results_at_0dot05_threshold.gpkg'.replace('0.', '0dot'))
-        tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
-        tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category'}, errors='raise')
-        tagged_dets_gdf[['geometry', 'det_id', 'score', 'merged_score', 'tag', 'label_class', 'label_category', 'year_label', 'det_class', 'det_category', 'year_det']]\
-            .to_file(feature, driver='GPKG', index=False)
-        written_files.append(feature)
-                
-        # Get bin accuracy
-        tmp_dets_gdf = tagged_dets_gdf.loc[
-            tagged_dets_gdf.tag.isin(['FP', 'TP', 'wrong class']),
-            ['score', 'det_class', 'det_category', 'label_class', 'label_category', 'merged_score', 'tag', 'year_det']
-        ]
-
-        file_to_write = os.path.join(OUTPUT_DIR, 'reliability_diagram_merged_results.jpeg')
-        metrics.reliability_diagram(tmp_dets_gdf, 'merged_score', file_to_write)
-        written_files.append(file_to_write)
-
-        # Get bin accuracy
-        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'det_category'] = 'human activity'
-        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'label_category'] = 'human activity'
-
-        file_to_write = os.path.join(OUTPUT_DIR, 'reliability_diagram_merged_results_single_class.jpeg')
-        metrics.reliability_diagram(tmp_dets_gdf, 'merged_score', file_to_write)
-        written_files.append(file_to_write)
+        written_files.extend(
+            metrics.perform_assessment(
+                merged_detections_gdf, labels_w_id_gdf, categories_info_df, METHOD, OUTPUT_DIR,
+                score='merged_score', additional_columns=['year_label', 'year_det', 'score'], 
+                tagged_results_filename='tagged_merged_results', reliability_diagram_filename='reliability_diagram_merged_results'
+            )
+        )
 
     logger.info('Merge overlapping components while ignoring the year...')
     dets_to_merge_gdf = merged_detections_gdf.drop(columns='group_id')
@@ -350,61 +303,13 @@ if __name__ == "__main__":
         labels_w_id_gdf.drop(columns='year_label', inplace=True)
         merged_dets_across_years_gdf.drop(columns='year_det', inplace=True)
 
-        logger.info('Tag detections and get metrics...')
-
-        metrics_dict = {}
-        metrics_dict_by_cl = []
-        metrics_cl_df_dict = {}
-
-        tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = metrics.get_fractional_sets(
-            merged_dets_across_years_gdf, labels_w_id_gdf, 0.1, 0.05)
-
-        tp_gdf['tag'] = 'TP'
-        fp_gdf['tag'] = 'FP'
-        fn_gdf['tag'] = 'FN'
-        mismatched_class_gdf['tag'] = 'wrong class'
-        small_poly_gdf['tag'] = 'small polygon'
-
-        tp_k, fp_k, fn_k, p_k, r_k, f1_k, accuracy, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes, method=METHOD)
-        logger.info(f'Detection score threshold = 0.05')
-        logger.info(f'accuracy = {accuracy:.3f}')
-        logger.info(f'Method = {METHOD}: precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
-
-        tagged_dets_gdf = pd.concat([tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf], ignore_index=True)
-
-        logger.info(f'TP = {len(tp_gdf)}, FP = {len(fp_gdf)}, FN = {len(fn_gdf)}')
-        tagged_dets_gdf['det_category'] = [
-            categories_info_df.loc[categories_info_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
-            if not np.isnan(det_class) else None
-            for det_class in tagged_dets_gdf.det_class.to_numpy()
-        ] 
-
-        # Save tagged processed results 
-        feature = os.path.join(OUTPUT_DIR, f'tagged_merged_across_years_at_0dot05_threshold.gpkg'.replace('0.', '0dot'))
-        tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
-        tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category'}, errors='raise')
-        tagged_dets_gdf[
-            ['geometry', 'det_id', 'score', 'merged_score', 'tag', 'label_class', 'label_category', 'det_class', 'det_category', 
-             'first_year', 'last_year', 'count_years']
-        ].to_file(feature, driver='GPKG', index=False)
-        written_files.append(feature)
-                
-        # Get bin accuracy
-        tmp_dets_gdf = tagged_dets_gdf.loc[
-            tagged_dets_gdf.tag.isin(['FP', 'TP', 'wrong class']),
-            ['score', 'det_class', 'det_category', 'label_class', 'label_category', 'merged_score', 'tag']
-        ]
-
-        file_to_write = os.path.join(OUTPUT_DIR, 'reliability_merged_across_years.jpeg')
-        metrics.reliability_diagram(tmp_dets_gdf, 'merged_score', file_to_write)
-        written_files.append(file_to_write)
-
-        # Get bin accuracy
-        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'det_category'] = 'human activity'
-        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'label_category'] = 'human activity'
-
-        metrics.reliability_diagram(tmp_dets_gdf, 'merged_score', last_metric_file)
-        written_files.append(last_metric_file)
+        written_files.exxtend(
+            metrics.perform_assessment(
+                merged_dets_across_years_gdf, labels_w_id_gdf, categories_info_df, METHOD, OUTPUT_DIR,
+                score='merged_score', additional_columns=['score', 'first_year', 'last_year', 'count_years'], 
+                tagged_results_filename='tagged_merged_results_across_years', reliability_diagram_filename='reliability_diagram_merged_results_across_years'
+            )
+        )
 
     logger.info('The following files were written:')
     for written_file in written_files:

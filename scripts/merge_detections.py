@@ -160,7 +160,7 @@ if __name__ == "__main__":
     logger.info(f"{td - sc} detections were removed by score filtering (score threshold = {SCORE_THD})")
 
     logger.success(f"{DONE_MSG} {len(detections_merge_gdf)} features were kept.")
-    logger.success(f'The covered area is {round(detections_merge_gdf.unary_union.area/1000000)} km2.')
+    logger.success(f'The covered area is {round(detections_merge_gdf.unary_union.area/1000000, 2)} km2.')
 
     if ASSESS:
         logger.info("Loading labels as a GeoPandas DataFrame...")
@@ -175,89 +175,12 @@ if __name__ == "__main__":
         labels_gdf['CATEGORY'] = labels_gdf.CATEGORY.astype(str)
         labels_w_id_gdf = labels_gdf.merge(categories_info_df, on='CATEGORY', how='left')
 
-        logger.info('Tag detections and get metrics...')
-
-        metrics_dict = {}
-        metrics_dict_by_cl = []
-        metrics_cl_df_dict = {}
-
-        tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = metrics.get_fractional_sets(
-            detections_merge_gdf, labels_w_id_gdf, IOU_THD, AREA_THD)
-
-        tp_gdf['tag'] = 'TP'
-        fp_gdf['tag'] = 'FP'
-        fn_gdf['tag'] = 'FN'
-        mismatched_class_gdf['tag'] = 'wrong class'
-        small_poly_gdf['tag'] = 'small polygon'
-
-        tagged_dets_gdf = pd.concat([tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf], ignore_index=True)
-
-        logger.info(f'TP = {len(tp_gdf)}, FP = {len(fp_gdf)}, FN = {len(fn_gdf)}')
-        tagged_dets_gdf['det_category'] = [
-            categories_info_df.loc[categories_info_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
-            if not np.isnan(det_class) else None
-            for det_class in tagged_dets_gdf.det_class.to_numpy()
-        ] 
-
-        tp_k, fp_k, fn_k, p_k, r_k, f1_k, accuracy, precision, recall, f1 = metrics.get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes, method=METHOD)
-        logger.info(f'Detection score threshold = {SCORE_THD}')
-        logger.info(f'accuracy = {accuracy:.3f}')
-        logger.info(f'Method = {METHOD}: precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
-
-        # Save tagged processed results 
-        feature = os.path.join(OUTPUT_DIR, f'tagged_merged_detections_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
-        tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
-        tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category'}, errors='raise')
-        tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'label_class', 'label_category', 'year_label', 'det_class', 'det_category', 'year_det']]\
-            .to_file(feature, driver='GPKG', index=False)
-        written_files.append(feature)
-
-        # label classes starting at 1 and detection classes starting at 0.
-        for id_cl in id_classes:
-            metrics_dict_by_cl.append({
-                'class': id_cl,
-                'precision_k': p_k[id_cl],
-                'recall_k': r_k[id_cl],
-                'f1_k': f1_k[id_cl],
-                'TP_k' : tp_k[id_cl],
-                'FP_k' : fp_k[id_cl],
-                'FN_k' : fn_k[id_cl],
-            }) 
-            
-        metrics_cl_df_dict = pd.DataFrame.from_records(metrics_dict_by_cl)
-
-        # Save the metrics by class for each dataset
-        metrics_by_cl_df = pd.DataFrame()
-        dataset_df = metrics_cl_df_dict.copy()
-        metrics_by_cl_df = pd.concat([metrics_by_cl_df, dataset_df], ignore_index=True)
-
-        metrics_by_cl_df['category'] = [
-            categories_info_df.loc[categories_info_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
-            for det_class in metrics_by_cl_df['class'].to_numpy()
-        ] 
-
-        file_to_write = os.path.join(OUTPUT_DIR, 'metrics_by_class_merged_detections.csv')
-        metrics_by_cl_df[
-            ['class', 'category', 'TP_k', 'FP_k', 'FN_k', 'precision_k', 'recall_k', 'f1_k']
-        ].sort_values(by=['class']).to_csv(file_to_write, index=False)
-        written_files.append(file_to_write)
-        
-        # Get bin accuracy
-        tmp_dets_gdf = tagged_dets_gdf.loc[
-            tagged_dets_gdf.tag.isin(['FP', 'TP', 'wrong class']),
-            ['score', 'det_class', 'det_category', 'label_class', 'label_category', 'tag', 'year_det']
-        ]
-
-        file_to_write = os.path.join(OUTPUT_DIR, 'reliability_diagram_merged_detections.jpeg')
-        metrics.reliability_diagram(tmp_dets_gdf, 'score', file_to_write)
-        written_files.append(file_to_write)
-
-        # Get bin accuracy
-        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'det_category'] = 'human activity'
-        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'label_category'] = 'human activity'
-
-        metrics.reliability_diagram(tmp_dets_gdf, 'score', last_metric_file)
-        written_files.append(last_metric_file)
+        written_files.extend(
+            metrics.perform_assessment(
+                detections_merge_gdf, labels_w_id_gdf, categories_info_df, METHOD, OUTPUT_DIR, IOU_THD, SCORE_THD, AREA_THD,
+                additional_columns=['year_label', 'year_det'], reliability_diagram_filename='reliability_diagram_merged_detections', by_class=True
+            )
+        )
 
     # Save processed results
     detections_merge_gdf = detections_merge_gdf.to_crs(2056)

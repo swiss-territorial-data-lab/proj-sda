@@ -1,7 +1,13 @@
+import os
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from loguru import logger
+from functions.misc import format_logger
+
+logger = format_logger(logger)
 
 
 def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold=None):
@@ -225,6 +231,101 @@ def intersection_over_union(polygon1_shape, polygon2_shape):
     polygon_union = polygon1_shape.area + polygon2_shape.area - polygon_intersection
 
     return polygon_intersection / polygon_union
+
+
+def perform_assessment(dets_gdf, labels_gdf, categories_df, method, output_dir, 
+                       iou_threshold=0.1, score_threshold=0.05, area_threshold=None, score='score', additional_columns=[],
+                       tagged_results_filename='tagged_detections', reliability_diagram_filename='relability_diagram', 
+                       by_class=False):
+        logger.info('Tag detections and get metrics...')
+
+        id_classes = range(len(categories_df))
+        written_files = []
+        metrics_dict_by_cl = []
+        metrics_cl_df_dict = {}
+
+        tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = get_fractional_sets(
+            dets_gdf, labels_gdf, iou_threshold, area_threshold)
+
+        tp_gdf['tag'] = 'TP'
+        fp_gdf['tag'] = 'FP'
+        fn_gdf['tag'] = 'FN'
+        mismatched_class_gdf['tag'] = 'wrong class'
+        small_poly_gdf['tag'] = 'small polygon'
+
+        tp_k, fp_k, fn_k, p_k, r_k, f1_k, accuracy, precision, recall, f1 = get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes, method=method)
+        logger.info(f'Detection score threshold = {score_threshold}')
+        logger.info(f'accuracy = {accuracy:.3f}')
+        logger.info(f'Method = {method}: precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
+
+        tagged_dets_gdf = pd.concat([tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf], ignore_index=True)
+
+        logger.info(f'TP = {len(tp_gdf)}, FP = {len(fp_gdf)}, FN = {len(fn_gdf)}')
+        tagged_dets_gdf['det_category'] = [
+            categories_df.loc[categories_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
+            if not np.isnan(det_class) else None
+            for det_class in tagged_dets_gdf.det_class.to_numpy()
+        ] 
+
+        # Save tagged processed results 
+        feature = os.path.join(output_dir, f'{tagged_results_filename}_at_{score_threshold}_threshold.gpkg'.replace('0.', '0dot'))
+        tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
+        tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category'}, errors='raise')
+        tagged_dets_gdf[
+            ['geometry', 'det_id', score, 'tag', 'label_class', 'label_category', 'det_class', 'det_category'] + additional_columns
+        ].to_file(feature, driver='GPKG', index=False)
+        written_files.append(feature)
+
+        if by_class:
+            # label classes starting at 1 and detection classes starting at 0.
+            for id_cl in id_classes:
+                metrics_dict_by_cl.append({
+                    'class': id_cl,
+                    'precision_k': p_k[id_cl],
+                    'recall_k': r_k[id_cl],
+                    'f1_k': f1_k[id_cl],
+                    'TP_k' : tp_k[id_cl],
+                    'FP_k' : fp_k[id_cl],
+                    'FN_k' : fn_k[id_cl],
+                }) 
+                
+            metrics_cl_df_dict = pd.DataFrame.from_records(metrics_dict_by_cl)
+
+            # Save the metrics by class for each dataset
+            metrics_by_cl_df = pd.DataFrame()
+            dataset_df = metrics_cl_df_dict.copy()
+            metrics_by_cl_df = pd.concat([metrics_by_cl_df, dataset_df], ignore_index=True)
+
+            metrics_by_cl_df['category'] = [
+                categories_df.loc[categories_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
+                for det_class in metrics_by_cl_df['class'].to_numpy()
+            ] 
+
+            file_to_write = os.path.join(output_dir, 'metrics_by_class_merged_detections.csv')
+            metrics_by_cl_df[
+                ['class', 'category', 'TP_k', 'FP_k', 'FN_k', 'precision_k', 'recall_k', 'f1_k']
+            ].sort_values(by=['class']).to_csv(file_to_write, index=False)
+            written_files.append(file_to_write)
+        
+        # Get bin accuracy
+        tmp_dets_gdf = tagged_dets_gdf.loc[
+            tagged_dets_gdf.tag.isin(['FP', 'TP', 'wrong class']),
+            [score, 'det_class', 'det_category', 'label_class', 'label_category', 'tag']
+        ]
+
+        file_to_write = os.path.join(output_dir, reliability_diagram_filename + '.jpeg')
+        reliability_diagram(tmp_dets_gdf, score, file_to_write)
+        written_files.append(file_to_write)
+
+        # Get bin accuracy
+        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'det_category'] = 'human activity'
+        tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'label_category'] = 'human activity'
+
+        file_to_write = os.path.join(output_dir, reliability_diagram_filename + '_single_class.jpeg')
+        reliability_diagram(tmp_dets_gdf, score, file_to_write)
+        written_files.append(file_to_write)
+
+        return written_files
 
 
 def reliability_diagram(dets_gdf, score='score', output_path='reliability_diagram.jpeg', det_number=True):
