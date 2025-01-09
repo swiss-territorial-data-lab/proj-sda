@@ -133,12 +133,58 @@ merge_detections.py:
     metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
 
 
-merge_multi_models.py:
+merge_multi_results.py:
   working_directory: output/trne
   output_dir: merged_results
   labels: labels.geojson
   categories: category_ids.json
   threshold: 0.1
+  assess: 
+    enable: True
+    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
+
+
+# Filtering and merging detection polygons to improve final results
+filter_detections.py:
+  working_directory: data
+  detections: ../output/trne/merged_results/merged_detections.gpkg
+  aoi: AoI/ticino/aoi_2015_ticino.gpkg
+  canton: ticino
+  infos:
+    layers_directory: layers/ticino/
+    ticino:
+      agri_area: Idoneità_Agricola.shp
+      building_areas: Zones_batir_Ind.shp
+      climatic_areas: zones_climatiques_compatibles_sda_tc.gpkg
+      compatible_SDA: Compatibilita_LPN-SAC_20241010.gpkg
+      forests: Fôrets.shp
+      large_rivers: Grandi_corsi.shp
+      protected_underground_water: Protezione_acque_sott.shp
+      polluted_sites: Siti_inquinati.shp
+      sda: Censimento_SAC_2023.shp
+      slope: terrain_pente_TC_SA.gpkg
+      waters: MU_Acque_TI.shp
+      zone_compatible_LPN: Zona_SAC_compatibile_con_i_disposti_LPN.gpkg
+      zone_compatible_LPN_extensive: Zona_SAC_compatibile_con_i_disposti_LPN_previa_gestione_estensiva.gpkg
+      zone_non_compatible_LPN: Zona_SAC_non_compatibile_con_i_disposti_LPN.gpkg
+    vaud: 
+      buildings: Batiments_en_surface_MO.gpkg
+      building_areas: affectation_zone_a_batir.gpkg
+      climatic_areas: zones_climatiques_compatibles_sda_VD.gpkg
+      polluted_sites: Sites_pollues_VD2022.gpkg
+      sda: SDA_v5_2.gpkg
+      slope: terrain_pente_VD.gpkg
+      waters: lakes_VD.gpkg
+  attribute_names: layers/attribute_names.xlsx
+  exclusion: [building_areas, forests, zone_non_compatible_LPN, waters] 
+  dem: DEM/switzerland_dem_EPSG2056.tif
+  labels: ../output/trne/filtered_ground_truth.gpkg
+  categories: ../output/trne/category_ids.json
+  elevation_threshold: 900.0 # m, altitude threshold
+  score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
+  area_threshold: 100.0 # m2, area threshold under which polygons are discarded
+  area_ratio_threshold: 0.33 # ratio between the original and the final valid area under which polygons are discarded
+  compactness_threshold: 0.1
   assess: 
     enable: True
     metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average

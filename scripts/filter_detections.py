@@ -10,6 +10,7 @@ import pandas as pd
 import rasterio
 
 sys.path.insert(0, '.')
+import functions.metrics as metrics
 import functions.misc as misc
 from functions.constants import DONE_MSG
 
@@ -85,6 +86,12 @@ if __name__ == "__main__":
     AREA_RATIO_THD = cfg['area_ratio_threshold']
     COMPACTNESS_THD = cfg['compactness_threshold']
     ELEVATION_THD = cfg['elevation_threshold']
+
+    ASSESS = cfg['assess']['enable']
+    if ASSESS:
+        METHOD = cfg['assess']['metrics_method']
+        LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
+        CATEGORIES = cfg['categories']
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')
@@ -320,6 +327,29 @@ if __name__ == "__main__":
     logger.success(f"{DONE_MSG} A file was written: {feature}")  
     logger.success(f"{DONE_MSG} {len(detections_infos_gdf)} features were kept.")
     logger.success(f'The covered area is {round(detections_infos_gdf.unary_union.area/1000000, 2)} km2.')
+
+    if ASSESS:
+        logger.info("Loading labels as a GeoPandas DataFrame...")
+        labels_gdf = gpd.read_file(LABELS)
+        labels_gdf = labels_gdf.to_crs(2056)
+        if 'year' in labels_gdf.keys():  
+            labels_gdf['year'] = labels_gdf.year.astype(int)       
+            labels_gdf = labels_gdf.rename(columns={"year": "year_label"})
+        logger.success(f"{DONE_MSG} {len(labels_gdf)} features were found.")
+
+        # get classe ids
+        categories_info_df, id_classes = misc.get_categories(CATEGORIES)
+
+        # append class ids to labels
+        labels_gdf['CATEGORY'] = labels_gdf.CATEGORY.astype(str)
+
+        written_files.extend(
+            metrics.perform_assessment(
+                detections_infos_gdf, labels_gdf, categories_info_df, METHOD, os.path.dirname(DETECTIONS),
+                score=SCORE, additional_columns=['area_ratio', 'compactness', 'year_label'],
+                tagged_results_filename='tagged_final_dets', reliability_diagram_filename='final_reliability_diagram'
+            )
+        )
 
     logger.info("The following files were written. Let's check them out!")
     for written_file in written_files:
