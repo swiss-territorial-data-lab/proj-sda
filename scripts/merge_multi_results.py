@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     # Load input parameters
     WORKING_DIR = cfg['working_directory']
-    OUTPUT_DIR = cfg['output_dir']
+    OUTPUT_DIR = cfg['output_directory']
 
     THRESHOLD = cfg['threshold']
     ASSESS = cfg['assess']['enable']
@@ -116,8 +116,8 @@ if __name__ == "__main__":
     os.chdir(WORKING_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    last_written_file = os.path.join(OUTPUT_DIR, 'merged_detections_across_years.gpkg')
-    last_metric_file = os.path.join(OUTPUT_DIR, 'reliability_merged_across_years_single_class.jpeg')
+    last_written_file = os.path.join(OUTPUT_DIR, 'merged_detections.gpkg')
+    last_metric_file = os.path.join(OUTPUT_DIR, 'reliability_diagram_merged_results_single_class.jpeg')
     if os.path.exists(last_written_file) and (not ASSESS or os.path.exists(last_metric_file)) and not OVERWRITE:           
         logger.success(f"{DONE_MSG} All files already exist in folder {OUTPUT_DIR}. Exiting.")
         sys.exit(0)
@@ -270,44 +270,6 @@ if __name__ == "__main__":
                 merged_detections_gdf, labels_w_id_gdf, categories_info_df, METHOD, OUTPUT_DIR,
                 score='merged_score', additional_columns=['year_label', 'year_det', 'score'], 
                 tagged_results_filename='tagged_merged_results', reliability_diagram_filename='reliability_diagram_merged_results'
-            )
-        )
-
-    logger.info('Merge overlapping components while ignoring the year...')
-    dets_to_merge_gdf = merged_detections_gdf.drop(columns='group_id')
-    dets_to_merge_gdf.loc[:, 'geometry'] = dets_to_merge_gdf.buffer(5)
-    intersecting_detections_gdf = group_detections(dets_to_merge_gdf, 0.5, ignore_year=True)
-    intersecting_detections_gdf.sort_values('merged_score', ascending=False, inplace=True)
-    intersecting_detections_gdf.drop(columns=excessive_columns, inplace=True)
-
-    merged_dets_across_years_gdf = intersecting_detections_gdf.dissolve('group_id', aggfunc='first', as_index=False)
-    min_year_df = intersecting_detections_gdf[['group_id', 'year_det']].groupby('group_id', as_index=False).min().rename(columns={'year_det': 'first_year'})
-    max_year_df = intersecting_detections_gdf[['group_id', 'year_det']].groupby('group_id', as_index=False).max().rename(columns={'year_det': 'last_year'})
-    count_year_df = intersecting_detections_gdf.group_id.value_counts().reset_index().rename(columns={'count': 'count_years'})
-
-    for df in  [min_year_df, max_year_df, count_year_df]:
-        merged_dets_across_years_gdf = pd.merge(merged_dets_across_years_gdf, df, on='group_id', how='left')
-    merged_dets_across_years_gdf.loc[:, 'merged_score'] = merged_dets_across_years_gdf.apply(
-        lambda x: min(1, x['merged_score'] + 0.1 * (x['count_years']-1)), axis=1
-    )
-
-    merged_dets_across_years_gdf.loc[:, 'geometry'] = merged_dets_across_years_gdf.buffer(-5)
-    merged_dets_across_years_gdf.set_crs(2056, inplace=True)
-
-    merged_dets_across_years_gdf.to_file(last_written_file, crs='EPSG:2056', index=False)
-    written_files.append(last_written_file)
-
-    logger.success(f"{DONE_MSG} {len(merged_dets_across_years_gdf)} features were left after merging across years.")
-
-    if ASSESS:
-        labels_w_id_gdf.drop(columns='year_label', inplace=True)
-        merged_dets_across_years_gdf.drop(columns='year_det', inplace=True)
-
-        written_files.exxtend(
-            metrics.perform_assessment(
-                merged_dets_across_years_gdf, labels_w_id_gdf, categories_info_df, METHOD, OUTPUT_DIR,
-                score='merged_score', additional_columns=['score', 'first_year', 'last_year', 'count_years'], 
-                tagged_results_filename='tagged_merged_results_across_years', reliability_diagram_filename='reliability_diagram_merged_results_across_years'
             )
         )
 
