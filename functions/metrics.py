@@ -208,7 +208,7 @@ def get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatch_gdf, id_classes=0, method='macr
             recall = sum(tp_k.values()) / (sum(tp_k.values()) + sum(fn_k.values()))
 
     if precision==0 and recall==0:
-        return tp_k, fp_k, fn_k, p_k, r_k, 0, 0, 0
+        return tp_k, fp_k, fn_k, p_k, r_k, f1_k, accuracy, 0, 0, 0
     
     f1 = 2 * precision * recall / (precision + recall)
     

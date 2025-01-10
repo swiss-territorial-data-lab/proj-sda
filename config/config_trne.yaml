@@ -135,10 +135,21 @@ merge_detections.py:
 
 merge_multi_results.py:
   working_directory: output/trne
-  output_dir: merged_results
+  output_directory: merged_results
   labels: labels.geojson
   categories: category_ids.json
   threshold: 0.1
+  assess: 
+    enable: True
+    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
+
+  
+merge_across_years.py:
+  working_directory: output/trne
+  output_directory: merged_results
+  detections: merged_results/merged_detections.gpkg
+  labels: labels.geojson
+  categories: category_ids.json
   assess: 
     enable: True
     metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
@@ -147,11 +158,11 @@ merge_multi_results.py:
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_directory: data
-  detections: ../output/trne/merged_results/merged_detections.gpkg
-  aoi: AoI/ticino/aoi_2015_ticino.gpkg
-  canton: ticino
+  detections: ../output/trne/merged_results/merged_detections_vaud.gpkg
+  aoi: AoI/vaud/AoI_test_VD.shp
+  canton: vaud
   infos:
-    layers_directory: layers/ticino/
+    layers_directory: layers/{canton}/    # {canton} is replaced in-script with the right name
     ticino:
       agri_area: Idoneità_Agricola.shp
       building_areas: Zones_batir_Ind.shp
@@ -176,15 +187,15 @@ filter_detections.py:
       slope: terrain_pente_VD.gpkg
       waters: lakes_VD.gpkg
   attribute_names: layers/attribute_names.xlsx
-  exclusion: [building_areas, forests, zone_non_compatible_LPN, waters] 
+  exclusion: [waters] 
   dem: DEM/switzerland_dem_EPSG2056.tif
-  labels: ../output/trne/filtered_ground_truth.gpkg
+  labels: ../output/trne/filtered_ground_truth_{canton}.gpkg
   categories: ../output/trne/category_ids.json
   elevation_threshold: 900.0 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
   area_threshold: 100.0 # m2, area threshold under which polygons are discarded
-  area_ratio_threshold: 0.33 # ratio between the original and the final valid area under which polygons are discarded
-  compactness_threshold: 0.1
+  area_ratio_threshold: 0.25 # ratio between the original and the final valid area under which polygons are discarded
+  compactness_threshold: 0.2
   assess: 
     enable: True
     metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
