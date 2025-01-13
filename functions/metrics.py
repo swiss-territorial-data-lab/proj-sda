@@ -112,7 +112,10 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
     right_join = gpd.sjoin(_dets_gdf, _labels_gdf, how='right', predicate='intersects', lsuffix='left', rsuffix='right')
 
     fn_gdf = right_join[right_join.score.isna()].copy()
-    fn_gdf.drop_duplicates(subset=['label_id', 'year_label'], inplace=True)
+    if 'year_label' in fn_gdf.keys():
+        fn_gdf.drop_duplicates(subset=['label_id', 'year_label'], inplace=True)
+    else:
+        fn_gdf.drop_duplicates(subset=['label_id'], inplace=True)
     fn_gdf = pd.concat([fn_gdf_temp, fn_gdf], ignore_index=True)
     fn_gdf.drop(
         columns=_dets_gdf.drop(columns='geometry').columns.to_list() + ['dataset_left', 'index_right', 'x', 'y', 'z', 'label_geom', 'IOU', 'index_left'], 
