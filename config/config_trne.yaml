@@ -52,7 +52,7 @@ generate_tilesets.py:
     version: 1.0
     description: Anthropogenic soils
     contributor: Ticino and Vaud
-    url: 
+    url: unknow
     license:
       name: unknown
       url: unknown
@@ -87,7 +87,7 @@ make_detections.py:
     enabled: True
     epsilon: 2.0        # cf. https://rdp.readthedocs.io/en/latest/
   score_lower_threshold: 0.05
-  remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained
+  remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained. Use with multi-class.
 
 # Evaluate the detection quality for the different datasets by calculating metrics
 assess_detections.py:

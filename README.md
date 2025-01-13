@@ -96,7 +96,6 @@ The folders/files of the project `proj-sda` (in combination with the `object-det
 │   ├── rgb_to_greyscale.py                         # script converting RGB images to greyscale images
 │   ├── rgb_to_greyscale.sh                         # script converting RGB images to greyscale images
 │   └── tiff2geotiff.py                             # convert tiff to geotiff
-dataset 
 ├── scripts
 │   ├── batch_process.sh                            # script to execute several commands
 │   ├── filter_detections.py                        # script detections filtering 
@@ -149,7 +148,7 @@ The `proj-sda` repository contains scripts to prepare and post-process the data 
 Object detection is performed with tools present in the [`object-detector`](https://github.com/swiss-territorial-data-lab/object-detector) git repository. 
 
 
- ## Workflow instructions
+## Workflow instructions
 
 The workflow can be executed by running the following list of actions and commands. Adjust the paths and input values of the configuration files accordingly. The contents of the configuration files in square brackets must be assigned. 
 
