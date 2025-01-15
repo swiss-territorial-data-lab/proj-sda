@@ -1,18 +1,20 @@
 # Prepare the AoI
 prepare_aoi.py:  
   working_directory: data/AoI/
-  canton: ticino
-  year: 2022
+  canton: {canton}
+  year: {year}
   srs: EPSG:2056
   canton_shp: ./{canton}/<CANTON_SHPFILE>
-  img_footprint_shp: ./swissimage_footprints/swissimage_footprint_{year}.shp     
+  img_footprint_shp: swissimage_footprints/swissimage_footprint_{year}.shp
 
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   datasets:
-    shapefile: ./data/AoI/ticino/<AOI_SHPFILE>             
-  output_folder: ./output/det/ticino/
+    shapefile: data/AoI/{canton}/<AOI_SHPFILE>             
+  output_folder: output/det/{canton}/
   zoom_level: 16 
+  dem: data/DEM/switzerland_dem_EPSG2056.tif
+  elevation_threshold: 1000
 
 # Fetch of tiles (online server) and split into 3 datasets: train, test, validation
 generate_tilesets.py:
@@ -21,12 +23,12 @@ generate_tilesets.py:
     nb_tiles_max: 2000
   working_directory: .
   datasets:
-    aoi_tiles: ./output/det/ticino/tiles.geojson
+    aoi_tiles: output/det/{canton}/tiles.geojson
     image_source:
       type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
-      year: 2022                  # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
+      year: <YEAR>                  # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
       location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
-  output_folder: ./output/det/ticino/
+  output_folder: output/det/{canton}/
   tile_size: 256      # per side, in pixels
   overwrite: True
   n_jobs: 10
@@ -44,14 +46,15 @@ generate_tilesets.py:
 
 # Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/det/ticino/
+  working_directory: output/det/{canton}/single_year
+  output_folder: {model}
   log_subfolder: logs
-  sample_tagged_img_subfolder: sample_tagged_images
+  sample_tagged_img_subfolder: {model}/sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
     oth: COCO_oth.json
   detectron2_config_file: ../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../models/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../../models/{model}.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: True
@@ -59,9 +62,10 @@ make_detections.py:
   score_lower_threshold: 0.05
   remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained
 
-# Assess the final results
+# Merge detections across tiles
 merge_detections.py:
-  working_directory: ./output/det/ticino/
+  working_directory: output/det/{canton}/single_year
+  output_dir: .
   detections:
     oth: oth_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
@@ -69,16 +73,42 @@ merge_detections.py:
   score_threshold: 0.05
   assess: 
     enable: False
-    metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
+
+# Merge years in one file or database
+merge_years.py:
+  canton: <CANTON>
+  working_directory: output/det/{canton}/single_year  # canton remplaced in script
+  years: [YEAR1, YEAR2, YEAR3]          # choose year
+  layer: merged_detections_at_0dot05_threshold.gpkg 
+  overwrite: True
+  file: concatenate   # supported values: 1. layers, 2. concatenate
+
+# Merge results from various models
+merge_multi_results.py:
+  working_directory: output/det/{canton}/single_year
+  output_dir: merged_results
+  glob_det_path: /**/yearly_dets_{canton}.gpkg
+  categories: category_ids.json
+  threshold: 0.1
+  assess: 
+    enable: False
+
+# Merge results across years
+merge_across_year.py:
+  working_directory: output/det/{canton}/single_year
+  output_directory: merged_results
+  detections: merged_results/merged_detections.gpkg
+  categories: category_ids.json
+  assess: 
+    enable: False
   
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
-  working_directory: ./data
-  detections: ../output/det/ticino/merged_detections_at_0dot05_threshold.gpkg
-  aoi: ./AoI/ticino/<AOI_SHPFILE>
-  canton: ticino
+  working_directory: data
+  detections: ../output/det/{canton}/single_year{model}/merged_detections_at_0dot05_threshold.gpkg
+  canton: {canton}
   infos:
-    layers_dir: layers/{canton}/
+    layers_directory: layers/{canton}/
     ticino:
       agri_area: Idoneità_Agricola.shp
       building_areas: Zones_batir_Ind.shp
@@ -103,16 +133,11 @@ filter_detections.py:
       slope: terrain_pente_VD.gpkg
       waters: lakes_VD.gpkg
   attribute_names: layers/attribute_names.xlsx
-  exclusion: [building_areas, forests, zone_non_compatible_LPN, waters] 
   dem: DEM/switzerland_dem_EPSG2056.tif
   elevation_threshold: 900.0 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
   area_threshold: 100.0 # m2, area threshold under which polygons are discarded
-
-merge_years.py:
-  canton: <CANTON>
-  working_directory: ./output/det/{canton}/
-  years: [YEAR1, YEAR2, YEAR3]          # choose year
-  layer: merged_detections_at_0dot05_threshold_threshold_score-0dot05_area-100_elevation-900.gpkg 
-  overwrite: True
-  file: concatenate   # supported values: 1. layers, 2. concatenate
+  area_ratio_threshold: 0.25 # ratio between the original and the final valid area under which polygons are discarded
+  compactness_threshold: 0.2
+  assess:
+    enable: False

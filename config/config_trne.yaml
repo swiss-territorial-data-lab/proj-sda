@@ -1,7 +1,7 @@
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   datasets:
-    shapefile: data/ground_truth/20240916_GT_CH.gpkg           # GT labels
+    shapefile: data/ground_truth/sda_ground_truth.gpkg           # GT labels
     # fp_shapefile: data/FP/<FP_SHPFILE>                # FP labels
     # empty_tiles_aoi: data/AoI/<AOI_SHPFILE>           # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
     # empty_tiles_year: 2023                              # If "empty_tiles_aoi" selected then provide a year. Choice: (1) numeric (i.e. 2020), (2) [year1, year2] (random selection of a year within a given year range) 
@@ -82,7 +82,7 @@ make_detections.py:
     tst: COCO_tst.json
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../models/model_68_0002999.pth # trained model minimising the validation loss curve
+    pth_file: ../../models/model_68.pth # trained model minimising the validation loss curve
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: True
@@ -136,6 +136,7 @@ merge_detections.py:
 merge_multi_results.py:
   working_directory: output/trne
   output_directory: merged_results
+  glob_det_path: run*/merged_detections_at_0dot05_threshold.gpkg
   labels: labels.geojson
   categories: category_ids.json
   threshold: 0.1
@@ -158,9 +159,8 @@ merge_across_years.py:
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_directory: data
-  detections: ../output/trne/merged_results/merged_detections_vaud.gpkg
-  aoi: AoI/vaud/AoI_test_VD.shp
-  canton: vaud
+  detections: ../output/trne/merged_results/merged_detections_ticino.gpkg
+  canton: ticino
   infos:
     layers_directory: layers/{canton}/    # {canton} is replaced in-script with the right name
     ticino:
@@ -187,7 +187,6 @@ filter_detections.py:
       slope: terrain_pente_VD.gpkg
       waters: lakes_VD.gpkg
   attribute_names: layers/attribute_names.xlsx
-  exclusion: [waters] 
   dem: DEM/switzerland_dem_EPSG2056.tif
   labels: ../output/trne/filtered_ground_truth_{canton}.gpkg
   categories: ../output/trne/category_ids.json

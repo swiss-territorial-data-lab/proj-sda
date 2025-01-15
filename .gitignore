@@ -14,7 +14,7 @@ data/*
 input*/
 output*/
 model*/
-config/config_det_*.yaml
+config/**/config_det_*.yaml
 .vscode/
 
 # Byte-compiled / optimized / DLL files
