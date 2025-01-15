@@ -38,7 +38,6 @@ if __name__ == "__main__":
     YEARS = cfg['years']
     LAYER = cfg['layer']
     OVERWRITE = cfg['overwrite']
-    MERGE = cfg['merge']
     FILE = cfg['file']
 
     os.chdir(WORKING_DIR)
@@ -48,7 +47,7 @@ if __name__ == "__main__":
     written_files = [] 
     detections_final_gdf = gpd.GeoDataFrame()
 
-    feature = f'detections_anthropogenic_soils_{CANTON}.gpkg'
+    feature = f'yearly_dets_{CANTON}.gpkg'
 
     if OVERWRITE:
         try:
@@ -71,9 +70,6 @@ if __name__ == "__main__":
     
     if FILE=='concatenate':
         detections_final_gdf.to_file(feature, driver='GPKG')
-
-        if MERGE:
-            written_files.extend(merge_across_years.main(detections_final_gdf))
 
     logger.info("The following files were written. Let's check them out!")
     for written_file in written_files:

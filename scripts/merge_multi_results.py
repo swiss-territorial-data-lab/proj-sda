@@ -105,6 +105,7 @@ if __name__ == "__main__":
     WORKING_DIR = cfg['working_directory']
     OUTPUT_DIR = cfg['output_directory']
 
+    GLOB_DET_PATH = cfg['glob_det_path']
     THRESHOLD = cfg['threshold']
     ASSESS = cfg['assess']['enable']
     if ASSESS:
@@ -123,7 +124,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     logger.info('Read data...')
-    detections_list = glob("run*/merged_detections_at_0dot05_threshold.gpkg", recursive=True)
+    detections_list = glob(GLOB_DET_PATH, recursive=True)
 
     nbr_dets_list = []
     detections_gdf = gpd.GeoDataFrame()
@@ -148,12 +149,12 @@ if __name__ == "__main__":
 
     logger.info('Count number of dets in each group...')
     groups_df = intersecting_detections_gdf['group_id'].value_counts().reset_index().rename(columns={'count': 'count_dets'})
-    groups_df['percentage'] = groups_df['count_dets']/len(detections_list)
+    groups_df['presence'] = groups_df['count_dets']/len(detections_list)
 
     # Bring group info back to the detections
     completed_detections_gdf = pd.merge(intersecting_detections_gdf, groups_df, how='left', left_on='group_id', right_on='group_id')
-    completed_detections_gdf.loc[completed_detections_gdf['group_id'].isna(), 'percentage'] = 0     # Currently, no det is removed before groupping
-    completed_detections_gdf['merged_score'] = completed_detections_gdf['score'] * completed_detections_gdf['percentage']
+    completed_detections_gdf.loc[completed_detections_gdf['group_id'].isna(), 'presence'] = 0     # Currently, no det is removed before groupping
+    completed_detections_gdf['merged_score'] = completed_detections_gdf['score'] * completed_detections_gdf['presence']
 
     completed_detections_gdf.sort_values('score', inplace=True, ascending=False)
     groupped_detections_gdf = completed_detections_gdf.groupby('group_id', as_index=False).agg('first')
@@ -167,7 +168,7 @@ if __name__ == "__main__":
     logger.success(f'The covered area is {round(groupped_detections_gdf.unary_union.area/1000000)} km2.')
 
     logger.info('Remove detections based on presence...')
-    condition_to_keep = groupped_detections_gdf.percentage > 0.2
+    condition_to_keep = groupped_detections_gdf.presence > 0.2
     multi_presence_dets_gdf = groupped_detections_gdf[condition_to_keep]
     removed_dets_gdf = groupped_detections_gdf[~condition_to_keep]
 
@@ -220,7 +221,7 @@ if __name__ == "__main__":
         & intersecting_dets_gdf.merged_id_bottom.isin(removed_dets_gdf.merged_id.unique().tolist())
     ] 
     for detection in intersecting_dets_gdf.itertuples():
-        if removed_dets_gdf.loc[removed_dets_gdf.merged_id==detection.merged_id_bottom, 'percentage'].iloc[0] >= 0.75:
+        if removed_dets_gdf.loc[removed_dets_gdf.merged_id==detection.merged_id_bottom, 'presence'].iloc[0] >= 0.75:
             det_score = final_groupped_dets_gdf.loc[final_groupped_dets_gdf.merged_id==detection.merged_id_top, 'merged_score'].iloc[0]
             final_groupped_dets_gdf.loc[final_groupped_dets_gdf.merged_id==detection.merged_id_top, 'merged_score'] = min(det_score + 0.1, 1)
 

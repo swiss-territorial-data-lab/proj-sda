@@ -38,7 +38,7 @@ def main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_SHP):
     img_fp_gdf = misc.convert_crs(img_fp_gdf, epsg=SRS)
     img_fp_gdf['flight_year'] = YEAR
 
-    # Intersect shapefiles
+    logger.info("Intersect shapefiles...")
     aoi_intersection_gdf = canton_aoi_gdf.overlay(img_fp_gdf, how='intersection')
     aoi_intersection_gdf = aoi_intersection_gdf[['geometry', 'flight_year']] 
     aoi_intersection_gdf['canton'] = CANTON

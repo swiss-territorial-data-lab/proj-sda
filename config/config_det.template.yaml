@@ -47,14 +47,14 @@ generate_tilesets.py:
 # Object detection with the optimised trained model
 make_detections.py:
   working_directory: output/det/CANTON/SWISSIMAGE_YEAR
-  output_folder: ../MODEL/SWISSIMAGE_YEAR
+  output_folder: ../modelMODEL/SWISSIMAGE_YEAR
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
     oth: COCO_oth.json
   detectron2_config_file: ../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../../models/MODEL.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../../../models/model_MODEL.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: True
@@ -64,7 +64,7 @@ make_detections.py:
 
 # Assess the final results
 merge_detections.py:
-  working_directory: output/det/CANTON/MODEL/SWISSIMAGE_YEAR
+  working_directory: output/det/CANTON/modelMODEL/SWISSIMAGE_YEAR
   output_dir: .
   detections:
     oth: oth_detections_at_0dot05_threshold.gpkg
@@ -78,7 +78,7 @@ merge_detections.py:
 # Merge years in one file or database
 merge_years.py:
   canton: <CANTON>
-  working_directory: output/det/{canton}/MODEL
+  working_directory: output/det/{canton}/modelMODEL
   years: [YEAR1, YEAR2, YEAR3]          # choose year
   layer: merged_detections_at_0dot05_threshold.gpkg 
   overwrite: True

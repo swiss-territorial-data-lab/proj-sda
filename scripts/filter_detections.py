@@ -86,7 +86,6 @@ if __name__ == "__main__":
 
     # Load input parameters
     WORKING_DIR = cfg['working_directory']
-    AOI = cfg['aoi']
     DETECTIONS = cfg['detections']
     DEM = cfg['dem']
 
@@ -111,7 +110,6 @@ if __name__ == "__main__":
     ZONE_NON_COMPATIBLE_LPN = none_if_undefined(CANTON_PARAMS, 'zone_non_compatible_LPN')
 
     ATTRIBUTE_NAMES = cfg['attribute_names']
-    EXCLUSION = none_if_undefined(cfg, 'exclusion')
     SCORE_THD = cfg['score_threshold']
     AREA_THD = cfg['area_threshold']
     AREA_RATIO_THD = cfg['area_ratio_threshold']
@@ -128,6 +126,13 @@ if __name__ == "__main__":
     logger.info(f'Working directory set to {WORKING_DIR}')
 
     logger.info(f'Canton: {CANTON}')
+
+    if CANTON == 'vaud':
+        AOI = 'AoI/vaud/MN95_CAD_TPR_LAD_MO_VD.shp'
+        EXCLUSION = ['waters']
+    elif CANTON == 'ticino':
+        AOI = 'AoI/ticino/limiti_cantone_2012_MN95.shp'
+        EXCLUSION = ['building_areas', 'forests', 'zone_non_compatible_LPN', 'waters']
 
     written_files = [] 
 
