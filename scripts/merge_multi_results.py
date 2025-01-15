@@ -155,22 +155,27 @@ if __name__ == "__main__":
     completed_detections_gdf.loc[completed_detections_gdf['group_id'].isna(), 'percentage'] = 0     # Currently, no det is removed before groupping
     completed_detections_gdf['merged_score'] = completed_detections_gdf['score'] * completed_detections_gdf['percentage']
 
-    filepath = os.path.join(OUTPUT_DIR, 'all_detections.gpkg')
-    completed_detections_gdf.drop(columns='wkb_geom').to_file(filepath, driver='GPKG', index=False)
-    written_files.append(filepath)
-    del detections_gdf, intersecting_detections_gdf,
-
     completed_detections_gdf.sort_values('score', inplace=True, ascending=False)
     groupped_detections_gdf = completed_detections_gdf.groupby('group_id', as_index=False).agg('first')
+    del detections_gdf, intersecting_detections_gdf, completed_detections_gdf
+
+    filepath = os.path.join(OUTPUT_DIR, 'groupped_detections.gpkg')
+    groupped_detections_gdf.drop(columns=['wkb_geom']).to_file(filepath, crs='EPSG:2056', driver='GPKG', index=False)
+    written_files.append(filepath)
 
     logger.success(f'{DONE_MSG} Once groupped, there are {len(groupped_detections_gdf)} detections.')
     logger.success(f'The covered area is {round(groupped_detections_gdf.unary_union.area/1000000)} km2.')
 
-    logger.info('Remove detection based on score...')
-    condition_to_keep = (groupped_detections_gdf.merged_score > THRESHOLD) \
-        & ((groupped_detections_gdf.merged_score > 0.2) | (groupped_detections_gdf.area < 100000))
-    filtered_groupped_dets_gdf = groupped_detections_gdf[condition_to_keep]
+    logger.info('Remove detections based on presence...')
+    condition_to_keep = groupped_detections_gdf.percentage > 0.2
+    multi_presence_dets_gdf = groupped_detections_gdf[condition_to_keep]
     removed_dets_gdf = groupped_detections_gdf[~condition_to_keep]
+
+    logger.info('Remove detections based on score...')
+    condition_to_keep = (multi_presence_dets_gdf.merged_score > THRESHOLD) \
+        & ((multi_presence_dets_gdf.merged_score > 0.2) | (multi_presence_dets_gdf.area < 100000))
+    filtered_groupped_dets_gdf = multi_presence_dets_gdf[condition_to_keep]
+    removed_dets_gdf = pd.concat([removed_dets_gdf, multi_presence_dets_gdf[~condition_to_keep]], ignore_index=True)
 
     logger.info('Remove detections inside other detections...')
     overlap_detections_gdf = self_intersect(filtered_groupped_dets_gdf[['geometry', 'merged_id', 'year_det', 'det_category']])
@@ -220,10 +225,6 @@ if __name__ == "__main__":
             final_groupped_dets_gdf.loc[final_groupped_dets_gdf.merged_id==detection.merged_id_top, 'merged_score'] = min(det_score + 0.1, 1)
 
     excessive_columns = ['wkb_geom', 'merged_id_bottom', 'merged_id_top']
-    filepath = os.path.join(OUTPUT_DIR, 'groupped_detections.gpkg')
-    final_groupped_dets_gdf.drop(columns=excessive_columns).to_file(filepath, crs='EPSG:2056', driver='GPKG', index=False)
-    written_files.append(filepath)
-
     filepath = os.path.join(OUTPUT_DIR, 'removed_detections.gpkg')
     removed_dets_gdf.drop(columns=excessive_columns).to_file(filepath, crs='EPSG:2056', driver='GPKG', index=False)
     written_files.append(filepath)
