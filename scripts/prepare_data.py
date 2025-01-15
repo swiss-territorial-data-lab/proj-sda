@@ -12,6 +12,7 @@ import geopandas as gpd
 import morecantile
 import numpy as np
 import pandas as pd
+import rasterio as rio
 from shapely.geometry import Polygon
 
 sys.path.insert(0, '.')
@@ -139,6 +140,7 @@ if __name__ == "__main__":
     SHPFILE = cfg['datasets']['shapefile']
     FP_SHPFILE = cfg['datasets']['fp_shapefile'] if 'fp_shapefile' in cfg['datasets'].keys() else None
     EPT_YEAR = cfg['datasets']['empty_tiles_year'] if 'empty_tiles_year' in cfg['datasets'].keys() else None
+    DEM = cfg['dem'] if 'dem' in cfg.keys() else None
     if 'empty_tiles_aoi' in cfg['datasets'].keys() and 'empty_tiles_shp' in cfg['datasets'].keys():
         logger.error("Choose between supplying an AoI shapefile ('empty_tiles_aoi') in which empty tiles will be selected, or a shapefile with selected empty tiles ('empty_tiles_shp')")
         sys.exit(1)    
@@ -152,6 +154,7 @@ if __name__ == "__main__":
         EPT_SHPFILE = None
         EPT = None
     CATEGORY = cfg['datasets']['category'] if 'category' in cfg['datasets'].keys() else False
+    ELEVATION_THD = cfg['elevation_threshold'] if 'elevation_threshold' in cfg.keys() else None
     ZOOM_LEVEL = cfg['zoom_level']
 
     # Create an output directory in case it doesn't exist
@@ -282,6 +285,17 @@ if __name__ == "__main__":
         tiles_4326_fp_gdf = gpd.sjoin(tiles_4326_all_gdf, fp_labels_4326_gdf, how='inner', predicate='intersects')
         tiles_4326_fp_gdf.drop_duplicates(['id'], inplace=True)
         logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_4326_fp_gdf)}")
+
+    if ELEVATION_THD:
+        logger.info("Control altitude...")
+        dem = rio.open(DEM)
+        tiles_4326_all_gdf = misc.check_validity(tiles_4326_all_gdf, correct=True)
+        tiles_2056_all_gdf = tiles_4326_all_gdf.to_crs(epsg=2056)
+
+        row, col = dem.index(tiles_2056_all_gdf.centroid.x, tiles_2056_all_gdf.centroid.y)
+        elevation = dem.read(1)[row, col]
+        tiles_4326_all_gdf['elevation'] = elevation
+        tiles_4326_all_gdf = tiles_4326_all_gdf[tiles_4326_all_gdf.elevation < ELEVATION_THD]
 
     # Save tile shapefile
     logger.info("Export tiles to GeoJSON (EPSG:4326)...") 
