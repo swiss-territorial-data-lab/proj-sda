@@ -4,9 +4,10 @@
 echo 'Run batch process to perfrom inference over several SWISSIMAGE years'
 mkdir -p config/batch_process
 
-canton=ticino                     # provide canton name
+SECOND=0
+canton=CANTON                     # provide canton name
 dl_model=68
-for year in 2021     # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)  
+for year in YEAR1 YEAR2 YEAR3     # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)  
 # !! Shapefile with cantonal boundaries must be indicated in config template manually !!
 
 do
@@ -21,7 +22,7 @@ do
     echo 'prepare_aoi.py'
     python scripts/prepare_aoi.py config/batch_process/config_det_${year}_${canton}.yaml
     echo ' '
-    file=./data/AoI/$canton/aoi_${year}_${canton}.gpkg
+    file=data/AoI/$canton/aoi_${year}_${canton}.gpkg
     if [ -e $file ]; then
         echo ' '
         echo 'prepare_data.py'
@@ -50,4 +51,7 @@ echo ' '
 echo 'merge_across_years.py'
 python scripts/merge_across_years.py config/batch_process/config_det_${year}_${canton}.yaml
 echo 'filter_detections.py'
-python ./scripts/filter_detections.py config/batch_process/config_det_${year}_${canton}.yaml 
+python ./scripts/filter_detections.py config/batch_process/config_det_${year}_${canton}.yaml
+
+duration=$SECONDS
+echo "$((duration / 60)) minutes and $((duration % 60)) seconds elapsed."

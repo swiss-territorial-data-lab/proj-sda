@@ -154,6 +154,7 @@ if __name__ == "__main__":
         EPT_SHPFILE = None
         EPT = None
     CATEGORY = cfg['datasets']['category'] if 'category' in cfg['datasets'].keys() else False
+    WATERS = cfg['waters'] if 'waters' in cfg.keys() else None
     ELEVATION_THD = cfg['elevation_threshold'] if 'elevation_threshold' in cfg.keys() else None
     ZOOM_LEVEL = cfg['zoom_level']
 
@@ -286,6 +287,17 @@ if __name__ == "__main__":
         tiles_4326_fp_gdf.drop_duplicates(['id'], inplace=True)
         logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_4326_fp_gdf)}")
 
+    if WATERS:
+        logger.info('Remove tiles in water...')
+        waters_gdf = gpd.read_file(WATERS).to_crs(2056)
+        waters_gdf.loc[:, 'geometry'] = waters_gdf.buffer(-420)     # Remove borders for the size of a tile
+        waters_poly = waters_gdf[~waters_gdf.geometry.is_empty].unary_union
+
+        tiles_2056_all_gdf = tiles_4326_all_gdf.to_crs(epsg=2056)
+        tiles_2056_all_gdf.loc[:, 'geometry'] = tiles_2056_all_gdf.centroid
+        tiles_in_waters = tiles_2056_all_gdf.loc[tiles_2056_all_gdf.intersects(waters_poly), 'id'].tolist()
+        tiles_4326_all_gdf = tiles_4326_all_gdf[~tiles_4326_all_gdf.id.isin(tiles_in_waters)]
+
     if ELEVATION_THD:
         logger.info("Control altitude...")
         dem = rio.open(DEM)
@@ -298,10 +310,16 @@ if __name__ == "__main__":
         tiles_4326_all_gdf = tiles_4326_all_gdf[tiles_4326_all_gdf.elevation < ELEVATION_THD]
 
     # Save tile shapefile
-    logger.info("Export tiles to GeoJSON (EPSG:4326)...") 
-    tiles_4326_all_gdf.to_file(tile_filepath, driver='GeoJSON')
-    written_files.append(tile_filepath)  
-    logger.success(f"{DONE_MSG} A file was written: {tile_filepath}")
+    if tiles_4326_all_gdf.empty:
+        logger.warning('No tile generated for the designated area.')
+        tile_filepath = os.path.join(OUTPUT_DIR, 'area_without_tiles.gpkg')
+        labels_gdf.to_file(tile_filepath)
+        written_files.append(tile_filepath)  
+    else:
+        logger.info("Export tiles to GeoJSON (EPSG:4326)...") 
+        tiles_4326_all_gdf.to_file(tile_filepath, driver='GeoJSON')
+        written_files.append(tile_filepath)  
+        logger.success(f"{DONE_MSG} A file was written: {tile_filepath}")
 
     print()
     logger.info("The following files were written. Let's check them out!")

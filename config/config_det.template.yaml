@@ -4,7 +4,7 @@ prepare_aoi.py:
   canton: CANTON
   year: SWISSIMAGE_YEAR
   srs: EPSG:2056
-  canton_shp: ./{canton}/<CANTON_SHPFILE>
+  canton_shp: {canton}/<CANTONAL_BORDERS>            # MN95_CAD_TPR_LAD_MO_VD.shp or limiti_cantone_2012_MN95.shp
   img_footprint_shp: swissimage_footprints/swissimage_footprint_SWISSIMAGE_YEAR.shp 
 
 # Produce tile geometries based on the AoI extent and zoom level
@@ -13,6 +13,7 @@ prepare_data.py:
     shapefile: data/AoI/CANTON/aoi_SWISSIMAGE_YEAR_CANTON.gpkg
   output_folder: output/det/CANTON/SWISSIMAGE_YEAR
   zoom_level: 16 
+  waters: data/layers/{canton}/<WATER_POLYGONS>            # lakes_VD.gpkg or MU_Acque_TI.shp
   dem: data/DEM/switzerland_dem_EPSG2056.tif
   elevation_threshold: 1000
 

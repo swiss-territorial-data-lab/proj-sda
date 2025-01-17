@@ -244,7 +244,7 @@ if __name__ == "__main__":
         logger.info(f"Remove part of the detections intersecting exclusion areas.")
         bd = len(detections_gdf)
         detections_gdf = detections_gdf.overlay(exclu_gdf, how='difference', keep_geom_type=False)
-        logger.info(f'f"{len(detections_gdf) - bd} detections were removed.')
+        logger.info(f'{bd - len(detections_gdf)} detections were removed.')
 
         del exclu_gdf, detections_score_gdf
 

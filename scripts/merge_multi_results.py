@@ -163,10 +163,6 @@ if __name__ == "__main__":
     groupped_detections_gdf = completed_detections_gdf.groupby('group_id', as_index=False).agg('first')
     del detections_gdf, intersecting_detections_gdf, completed_detections_gdf
 
-    filepath = os.path.join(OUTPUT_DIR, 'groupped_detections.gpkg')
-    groupped_detections_gdf.drop(columns=['wkb_geom']).to_file(filepath, crs='EPSG:2056', driver='GPKG', index=False)
-    written_files.append(filepath)
-
     logger.success(f'{DONE_MSG} Once groupped, there are {len(groupped_detections_gdf)} detections.')
     logger.success(f'The covered area is {round(groupped_detections_gdf.unary_union.area/1000000)} km2.')
 

@@ -4,15 +4,16 @@ prepare_aoi.py:
   canton: {canton}
   year: {year}
   srs: EPSG:2056
-  canton_shp: ./{canton}/<CANTON_SHPFILE>
+  canton_shp: {canton}/<CANTONAL_BORDERS>           # MN95_CAD_TPR_LAD_MO_VD.shp or limiti_cantone_2012_MN95.shp
   img_footprint_shp: swissimage_footprints/swissimage_footprint_{year}.shp
 
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   datasets:
-    shapefile: data/AoI/{canton}/<AOI_SHPFILE>             
+    shapefile: data/AoI/{canton}/aoi_{year}_{canton}.gpkg
   output_folder: output/det/{canton}/single_year
-  zoom_level: 16 
+  zoom_level: 16
+  waters: data/layers/{canton}/<WATER_POLYGONS>            # lakes_VD.gpkg or MU_Acque_TI.shp
   dem: data/DEM/switzerland_dem_EPSG2056.tif
   elevation_threshold: 1000
 
@@ -42,7 +43,7 @@ generate_tilesets.py:
     license:
       name: unknown
       url: unknown
-    categories_file: data/category_ids.json
+    categories_file: ../../../../data/category_ids.json
 
 # Object detection with the optimised trained model
 make_detections.py:
@@ -54,7 +55,7 @@ make_detections.py:
     oth: COCO_oth.json
   detectron2_config_file: ../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../../models/{model_name} # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../../../models/{model_file} # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: True
