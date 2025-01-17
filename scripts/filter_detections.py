@@ -242,7 +242,9 @@ if __name__ == "__main__":
         
         exclu_gdf = exclu_gdf.dissolve()
         logger.info(f"Remove part of the detections intersecting exclusion areas.")
+        bd = len(detections_gdf)
         detections_gdf = detections_gdf.overlay(exclu_gdf, how='difference', keep_geom_type=False)
+        logger.info(f'f"{len(detections_gdf) - bd} detections were removed.')
 
         del exclu_gdf, detections_score_gdf
 
@@ -277,7 +279,7 @@ if __name__ == "__main__":
     check_gdf_len(all_detections_infos_gdf)
     all_detections_infos_gdf['valid_area'] = all_detections_infos_gdf.area
     tsjoin = len(all_detections_infos_gdf)
-    detections_infos_gdf = all_detections_infos_gdf[all_detections_infos_gdf.valid_area > AREA_THD]
+    detections_infos_gdf = all_detections_infos_gdf[all_detections_infos_gdf.valid_area > AREA_THD].copy()
     ta = len(detections_infos_gdf)
     logger.info(f"{tsjoin - ta} detections were removed by area filtering (area threshold = {AREA_THD} m2)")
 
@@ -285,15 +287,11 @@ if __name__ == "__main__":
     detections_infos_gdf['compactness'] = round(4*np.pi*detections_infos_gdf.area / (detections_infos_gdf.length**2))  # Polsby–Popper test
     condition = (detections_infos_gdf.area_ratio > AREA_RATIO_THD) | (detections_infos_gdf.compactness > COMPACTNESS_THD)
     detections_infos_gdf = detections_infos_gdf[condition]
-    expelled_dets_gdf = detections_infos_gdf[~condition]
     ar = len(detections_infos_gdf)
     logger.info(f"{ta - ar} detections were removed by area ratio and compactness filtering")
     logger.info(f"(area ratio threshold = {AREA_RATIO_THD} & compactness threshold = {COMPACTNESS_THD})")
     check_gdf_len(detections_infos_gdf)
-
-    filepath = os.path.join(os.path.dirname(DETECTIONS), 'filtered_out_dets.gpkg')
-    expelled_dets_gdf.to_file(filepath)
-    written_files.append(filepath)
+    del all_detections_infos_gdf
 
     # Compute the nearest distance between detections and sda
     if SDA:

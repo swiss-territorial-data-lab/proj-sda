@@ -43,7 +43,8 @@ if __name__ == "__main__":
     IOU_THD = cfg['iou_threshold']
     AREA_THD = cfg['area_threshold'] if 'area_threshold' in cfg.keys() else None
     ASSESS = cfg['assess']['enable']
-    METHOD = cfg['assess']['metrics_method']
+    if ASSESS:
+        METHOD = cfg['assess']['metrics_method']
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')

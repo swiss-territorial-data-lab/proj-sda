@@ -21,14 +21,14 @@ generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
     nb_tiles_max: 500
-  working_directory: .
+  working_directory: output/det/CANTON/SWISSIMAGE_YEAR
+  output_folder: .
   datasets:
-    aoi_tiles: output/det/CANTON/SWISSIMAGE_YEAR/tiles.geojson
+    aoi_tiles: tiles.geojson
     image_source:
       type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
       year: SWISSIMAGE_YEAR                 # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
       location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
-  output_folder: output/det/CANTON/SWISSIMAGE_YEAR
   tile_size: 256      # per side, in pixels
   overwrite: False
   n_jobs: 10
@@ -42,19 +42,19 @@ generate_tilesets.py:
     license:
       name: unknown
       url: unknown
-    categories_file: data/category_ids.json
+    categories_file: ../../../../data/category_ids.json
     
 # Object detection with the optimised trained model
 make_detections.py:
   working_directory: output/det/CANTON/SWISSIMAGE_YEAR
   output_folder: ../modelMODEL/SWISSIMAGE_YEAR
   log_subfolder: logs
-  sample_tagged_img_subfolder: sample_tagged_images
+  sample_tagged_img_subfolder: ../modelMODEL/SWISSIMAGE_YEAR/sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
     oth: COCO_oth.json
   detectron2_config_file: ../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../../models/model_MODEL.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../../../models/model_MODEL.pth # trained model minimising the validation loss curve
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: True
@@ -64,10 +64,10 @@ make_detections.py:
 
 # Assess the final results
 merge_detections.py:
-  working_directory: output/det/CANTON/modelMODEL/SWISSIMAGE_YEAR
-  output_dir: .
+  working_directory: output/det/CANTON/SWISSIMAGE_YEAR    # Must be the same dir as the OD for the automatic detection of  split_aoi_tils.geojson.
+  output_dir: ../modelMODEL/SWISSIMAGE_YEAR
   detections:
-    oth: oth_detections_at_0dot05_threshold.gpkg
+    oth: ../modelMODEL/SWISSIMAGE_YEAR/oth_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
   iou_threshold: 0.1
   score_threshold: 0.05
@@ -77,9 +77,9 @@ merge_detections.py:
 
 # Merge years in one file or database
 merge_years.py:
-  canton: <CANTON>
+  canton: CANTON
   working_directory: output/det/{canton}/modelMODEL
-  years: [YEAR1, YEAR2, YEAR3]          # choose year
+  years: [YEAR1, YEAR2, YEAR3]          # choose years
   layer: merged_detections_at_0dot05_threshold.gpkg 
   overwrite: True
   file: concatenate   # supported values: 1. layers, 2. concatenate
@@ -87,15 +87,15 @@ merge_years.py:
 # Merge results from various models
 merge_multi_results.py:
   working_directory: output/det/CANTON
-  output_dir: merged_results
-  glob_det_path: /**/yearly_dets_{canton}.gpkg
+  output_directory: merged_results
+  glob_det_path: "**/yearly_dets_CANTON.gpkg"
   categories: category_ids.json
   threshold: 0.1
   assess: 
     enable: False
 
 # Merge results across years
-merge_across_year.py:
+merge_across_years.py:
   working_directory: output/det/CANTON
   output_directory: merged_results
   detections: merged_results/merged_detections.gpkg
@@ -106,7 +106,7 @@ merge_across_year.py:
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_directory: data
-  detections: ../output/det/CANTON/merged_detections_across_years.gpkg
+  detections: ../output/det/CANTON/merged_results/merged_detections_across_years.gpkg
   canton: CANTON
   infos:
     layers_directory: layers/{canton}/

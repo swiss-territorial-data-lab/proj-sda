@@ -125,6 +125,9 @@ if __name__ == "__main__":
 
     logger.info('Read data...')
     detections_list = glob(GLOB_DET_PATH, recursive=True)
+    if len(detections_list) == 0:
+        logger.critical(f'No detections found for path {GLOB_DET_PATH}.')
+        sys.exit(1)
 
     nbr_dets_list = []
     detections_gdf = gpd.GeoDataFrame()

@@ -11,7 +11,7 @@ prepare_aoi.py:
 prepare_data.py:  
   datasets:
     shapefile: data/AoI/{canton}/<AOI_SHPFILE>             
-  output_folder: output/det/{canton}/
+  output_folder: output/det/{canton}/single_year
   zoom_level: 16 
   dem: data/DEM/switzerland_dem_EPSG2056.tif
   elevation_threshold: 1000
@@ -21,14 +21,14 @@ generate_tilesets.py:
   debug_mode: 
     enable: False  # sample of tiles
     nb_tiles_max: 2000
-  working_directory: .
+  working_directory: output/det/{canton}/single_year
+  output_folder: .
   datasets:
-    aoi_tiles: output/det/{canton}/tiles.geojson
+    aoi_tiles: tiles.geojson
     image_source:
       type: XYZ                             # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
-      year: <YEAR>                  # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
+      year: {year}                  # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
       location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
-  output_folder: output/det/{canton}/
   tile_size: 256      # per side, in pixels
   overwrite: True
   n_jobs: 10
@@ -47,14 +47,14 @@ generate_tilesets.py:
 # Object detection with the optimised trained model
 make_detections.py:
   working_directory: output/det/{canton}/single_year
-  output_folder: {model}
+  output_folder: {model_dir}
   log_subfolder: logs
-  sample_tagged_img_subfolder: {model}/sample_tagged_images
+  sample_tagged_img_subfolder: {model_dir}/sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
     oth: COCO_oth.json
-  detectron2_config_file: ../../../config/detectron2_config.yaml # path relative to the working_folder
+  detectron2_config_file: ../../../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ../../../models/{model}.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../../../models/{model_name} # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: True
@@ -65,36 +65,27 @@ make_detections.py:
 # Merge detections across tiles
 merge_detections.py:
   working_directory: output/det/{canton}/single_year
-  output_dir: .
+  output_dir: {model_dir}
   detections:
-    oth: oth_detections_at_0dot05_threshold.gpkg
+    oth: {model_dir}/oth_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
   iou_threshold: 0.1
   score_threshold: 0.05
   assess: 
     enable: False
 
-# Merge years in one file or database
-merge_years.py:
-  canton: <CANTON>
-  working_directory: output/det/{canton}/single_year  # canton remplaced in script
-  years: [YEAR1, YEAR2, YEAR3]          # choose year
-  layer: merged_detections_at_0dot05_threshold.gpkg 
-  overwrite: True
-  file: concatenate   # supported values: 1. layers, 2. concatenate
-
 # Merge results from various models
 merge_multi_results.py:
   working_directory: output/det/{canton}/single_year
-  output_dir: merged_results
-  glob_det_path: /**/yearly_dets_{canton}.gpkg
+  output_directory: merged_results
+  glob_det_path: "**/merged_detections_at_0dot05_threshold.gpkg"
   categories: category_ids.json
   threshold: 0.1
   assess: 
     enable: False
 
 # Merge results across years
-merge_across_year.py:
+merge_across_years.py:
   working_directory: output/det/{canton}/single_year
   output_directory: merged_results
   detections: merged_results/merged_detections.gpkg
@@ -105,7 +96,7 @@ merge_across_year.py:
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_directory: data
-  detections: ../output/det/{canton}/single_year{model}/merged_detections_at_0dot05_threshold.gpkg
+  detections: ../output/det/{canton}/single_year/merged_results/merged_detections_across_years.gpkg
   canton: {canton}
   infos:
     layers_directory: layers/{canton}/

@@ -120,6 +120,9 @@ if __name__ == "__main__":
         categories_info_df, _ = get_categories(CATEGORIES)
 
     else:
-        method, labels_gdf, categories_info_df = (None, None, None)
+        METHOD, labels_gdf, categories_info_df = (None, None, None)
 
     written_files = main(detections_gdf, ASSESS, METHOD, labels_gdf, categories_info_df, OUTPUT_DIR)
+
+    # Stop chronometer  
+    logger.info(f"Nothing left to be done: exiting. Elapsed time: {(time.time()-tic):.2f} seconds")
