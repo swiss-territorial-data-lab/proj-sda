@@ -87,7 +87,7 @@ make_detections.py:
     enabled: True
     epsilon: 2.0        # cf. https://rdp.readthedocs.io/en/latest/
   score_lower_threshold: 0.05
-  remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained. Use with multi-class.
+  remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained. Not recommended for use with a single class.
 
 # Evaluate the detection quality for the different datasets by calculating metrics
 assess_detections.py:
@@ -117,7 +117,7 @@ result_analysis.py:
 
 # Assess the final results
 merge_detections.py:
-  working_directory: ./output/trne/
+  working_directory: ./output/OD/trne/zoom16/run96/
   labels: labels.geojson
   detections:
     trn: trn_detections_at_0dot05_threshold.gpkg
