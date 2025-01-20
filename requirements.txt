@@ -372,7 +372,7 @@ snuggs==1.4.7
     # via
     #   rasterio
     #   stdl-object-detector
-stdl-object-detector @ git+https://github.com/swiss-territorial-data-lab/object-detector.git@v2.3.2
+stdl-object-detector @ git+https://github.com/swiss-territorial-data-lab/object-detector.git@v.2.3.3
     # via -r requirements.in
 supermercado==0.2.0
     # via stdl-object-detector
