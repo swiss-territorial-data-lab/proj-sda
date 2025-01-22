@@ -64,7 +64,7 @@ if __name__ == "__main__":
     for dataset, dets_file in DETECTION_FILES.items():
         detections_ds_gdf = gpd.read_file(dets_file)    
         detections_ds_gdf[f'dataset'] = dataset
-        detections_gdf = pd.concat([detections_gdf, detections_ds_gdf], axis=0).reset_index(drop=True)
+        detections_gdf = pd.concat([detections_gdf, detections_ds_gdf], axis=0, ignore_index=True)
     detections_gdf = detections_gdf.to_crs(2056)
     detections_gdf['area'] = detections_gdf.area 
     detections_gdf['det_id'] = detections_gdf.index
