@@ -52,7 +52,7 @@ if __name__ == "__main__":
     if OVERWRITE:
         try:
             os.remove(feature)
-            logger.warning(f'File {feature} exists and will be overwrite.')
+            logger.warning(f'File {feature} exists and will be overwritten.')
         except OSError:
             pass
 
