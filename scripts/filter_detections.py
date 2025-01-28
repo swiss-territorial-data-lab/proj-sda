@@ -151,7 +151,6 @@ if __name__ == "__main__":
     total = len(detections_gdf)
     logger.info(f"{total} detections")
 
-    logger.info(f'Area of interest: {AOI}')
     aoi_gdf = gpd.read_file(AOI)
     aoi_gdf = aoi_gdf.to_crs(2056)
 
@@ -208,6 +207,12 @@ if __name__ == "__main__":
     infos_dict['slope_>18%'] = slope_gdf
     del slope_gdf
 
+    logger.info('Control AOI...')
+    detections_in_canton_gdf = gpd.overlay(detections_gdf, aoi_gdf, keep_geom_type=True)
+    detections_gdf = detections_in_canton_gdf[detections_gdf.columns].copy()
+    dic = len(detections_gdf)
+    logger.info(f"{total - dic} detections were removed based on the cantonal boundaries.")
+
     logger.info('Control altitude...')
     # Discard polygons detected at/below 0 m and above the threshold elevation and above a given slope
     dem = rasterio.open(DEM)
@@ -221,7 +226,7 @@ if __name__ == "__main__":
     check_gdf_len(detections_gdf)
     detections_gdf = detections_gdf[(detections_gdf.elevation != 0) & (detections_gdf.elevation < ELEVATION_THD)]
     tdem = len(detections_gdf)
-    logger.info(f"{total - tdem} detections were removed by elevation threshold: {ELEVATION_THD} m")
+    logger.info(f"{dic - tdem} detections were removed by elevation threshold: {ELEVATION_THD} m")
 
     # Filter dataframe by score value
     check_gdf_len(detections_gdf)

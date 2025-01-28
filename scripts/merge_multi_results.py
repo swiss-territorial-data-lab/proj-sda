@@ -155,7 +155,9 @@ if __name__ == "__main__":
 
     logger.info('Count number of dets in each group...')
     groups_df = intersecting_detections_gdf['group_id'].value_counts().reset_index().rename(columns={'count': 'count_dets'})
-    groups_df['presence'] = groups_df['count_dets']/len(detections_list)
+    groups_df['presence'] = [
+        min(count_dets/len(detections_list), 1) for count_dets in groups_df['count_dets']
+    ]     # Where two dets in the same model have IoU>0.5, presence could be higher than 1 and we want to avoid that.
 
     # Bring group info back to the detections
     completed_detections_gdf = pd.merge(intersecting_detections_gdf, groups_df, how='left', left_on='group_id', right_on='group_id')
