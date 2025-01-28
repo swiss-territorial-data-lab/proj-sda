@@ -60,7 +60,8 @@ def group_detections(detections_gdf, IoU_threshold, ignore_year=False):
 
     logger.info('Mark detections representing the same object as a group...')
     groups = graphs.make_groups(overlap_detections_gdf, 'wkb_geom_left', 'wkb_geom_right')
-    overlap_detections_gdf = overlap_detections_gdf.apply(lambda x: graphs.assign_groups(x, groups, 'wkb_geom_left'), axis=1)
+    group_index = {node: i for i, group in enumerate(groups) for node in group}
+    overlap_detections_gdf = overlap_detections_gdf.apply(lambda x: graphs.assign_groups(x, group_index, 'wkb_geom_left'), axis=1)
     intersecting_detections_gdf = pd.concat([
         overlap_detections_gdf.drop_duplicates(subset=['merged_id_left', 'group_id']).rename(columns={'merged_id_left':'merged_id'}),
         overlap_detections_gdf.drop_duplicates(subset=['merged_id_right', 'group_id']).rename(columns={'merged_id_right':'merged_id'})
@@ -143,6 +144,8 @@ if __name__ == "__main__":
     logger.info(f"{DONE_MSG} {sum(nbr_dets_list)/len(nbr_dets_list):.2f} features were found in average for each model.")
     
     detections_gdf['merged_id'] = detections_gdf.index
+    detections_gdf = detections_gdf[detections_gdf.area < 300000].reset_index(drop=True)
+    logger.info(f"{detections_gdf.merged_id.max() - detections_gdf.index.max()} detections are not processed because of their individual area over 300'000 m2.")
     encoded_geoms = detections_gdf.geometry.to_wkb()
     detections_gdf['wkb_geom'] = encoded_geoms.apply(lambda x: md5(x))
     
@@ -173,7 +176,8 @@ if __name__ == "__main__":
 
     logger.info('Remove detections based on score...')
     condition_to_keep = (multi_presence_dets_gdf.merged_score > THRESHOLD) \
-        & ((multi_presence_dets_gdf.merged_score > 0.2) | (multi_presence_dets_gdf.area < 100000))
+        & ((multi_presence_dets_gdf.merged_score > 0.5) | (multi_presence_dets_gdf.area < 100000))\
+        & (multi_presence_dets_gdf.area < 275000)
     filtered_groupped_dets_gdf = multi_presence_dets_gdf[condition_to_keep]
     removed_dets_gdf = pd.concat([removed_dets_gdf, multi_presence_dets_gdf[~condition_to_keep]], ignore_index=True)
 
@@ -225,6 +229,10 @@ if __name__ == "__main__":
             final_groupped_dets_gdf.loc[final_groupped_dets_gdf.merged_id==detection.merged_id_top, 'merged_score'] = min(det_score + 0.1, 1)
 
     excessive_columns = ['wkb_geom', 'merged_id_bottom', 'merged_id_top']
+    filepath = os.path.join(OUTPUT_DIR, 'groupped_detections.gpkg')
+    final_groupped_dets_gdf.drop(columns=excessive_columns).to_file(filepath, crs='EPSG:2056', driver='GPKG', index=False)
+    written_files.append(filepath)
+
     filepath = os.path.join(OUTPUT_DIR, 'removed_detections.gpkg')
     removed_dets_gdf.drop(columns=excessive_columns).to_file(filepath, crs='EPSG:2056', driver='GPKG', index=False)
     written_files.append(filepath)

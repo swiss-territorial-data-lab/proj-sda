@@ -10,7 +10,7 @@ logger = format_logger(logger)
 
 
 
-def assign_groups(row, groups, column):
+def assign_groups(row, group_index, column):
     """Assign a group number to GT and detection of a geodataframe
 
     Args:
@@ -19,8 +19,6 @@ def assign_groups(row, groups, column):
     Returns:
         row (row): row with a new 'group_id' column
     """
-
-    group_index = {node: i for i, group in enumerate(groups) for node in group}
 
     try:
         row['group_id'] = group_index[getattr(row, column)]
