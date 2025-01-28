@@ -56,11 +56,7 @@ def check_gdf_len(gdf):
         gdf (GeoDataFrame): detection polygons
     """
 
-    try:
-        assert len(gdf) > 0
-    except AssertionError:
-        logger.error("No detections left in the dataframe. Exit script.")
-        sys.exit(1)
+    assert len(gdf) > 0, "No detections left in the dataframe. Exit script."
 
 
 def none_if_undefined(cfg, key):
@@ -114,7 +110,6 @@ if __name__ == "__main__":
     AREA_THD = cfg['area_threshold']
     AREA_RATIO_THD = cfg['area_ratio_threshold']
     COMPACTNESS_THD = cfg['compactness_threshold']
-    ELEVATION_THD = cfg['elevation_threshold']
 
     ASSESS = cfg['assess']['enable']
     if ASSESS:
@@ -130,9 +125,18 @@ if __name__ == "__main__":
     if CANTON == 'vaud':
         AOI = 'AoI/vaud/MN95_CAD_TPR_LAD_MO_VD.shp'
         EXCLUSION = ['waters']
+        ELEVATION_THD = 4500
     elif CANTON == 'ticino':
         AOI = 'AoI/ticino/limiti_cantone_2012_MN95.shp'
         EXCLUSION = ['building_areas', 'forests', 'zone_non_compatible_LPN', 'waters']
+        ELEVATION_THD = 900
+    else:
+        logger.critical(f'Unknown canton: {CANTON}')
+        sys.exit(1)
+    logger.info(f'Using cantonal parameters:')
+    logger.info(f'    - area of interest: {AOI}')
+    logger.info(f'    - exclusion area: {EXCLUSION}')
+    logger.info(f'    - elevation threshold: {ELEVATION_THD}')
 
     written_files = [] 
 
@@ -284,7 +288,7 @@ if __name__ == "__main__":
     logger.info(f"{tsjoin - ta} detections were removed by area filtering (area threshold = {AREA_THD} m2)")
 
     detections_infos_gdf['area_ratio'] = round(detections_infos_gdf.valid_area / detections_infos_gdf.original_area, 2)
-    detections_infos_gdf['compactness'] = round(4*np.pi*detections_infos_gdf.area / (detections_infos_gdf.length**2))  # Polsby–Popper test
+    detections_infos_gdf['compactness'] = round(4*np.pi*detections_infos_gdf.area / (detections_infos_gdf.length**2), 2)  # Polsby–Popper test
     condition = (detections_infos_gdf.area_ratio > AREA_RATIO_THD) | (detections_infos_gdf.compactness > COMPACTNESS_THD)
     detections_infos_gdf = detections_infos_gdf[condition]
     ar = len(detections_infos_gdf)

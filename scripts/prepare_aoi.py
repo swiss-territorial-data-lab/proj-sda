@@ -81,8 +81,16 @@ if __name__ == "__main__":
     CANTON = cfg['canton']
     YEAR = cfg['year']
     SRS = cfg['srs']
-    CANTON_SHP = cfg['canton_shp'].replace('{canton}', CANTON)
     IMG_FOOTPRINT_SHP = cfg['img_footprint_shp'].replace('{year}', str(YEAR))
+    if CANTON == 'vaud':
+        CANTON_SHP = 'vaud/MN95_CAD_TPR_LAD_MO_VD.shp'
+    elif CANTON == 'ticino':
+        CANTON_SHP = 'ticino/limiti_cantone_2012_MN95.shp'
+    else:
+        logger.critical(f'Unknown canton: {CANTON}')
+        sys.exit(1)
+    logger.info(f'Using cantonal parameters:')
+    logger.info(f'    - cantonal boundaries: {CANTON_SHP}')
 
     main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_SHP)
 

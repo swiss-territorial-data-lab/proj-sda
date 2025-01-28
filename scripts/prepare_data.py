@@ -136,6 +136,7 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
+    CANTON = cfg['canton']
     OUTPUT_DIR = cfg['output_folder']
     SHPFILE = cfg['datasets']['shapefile']
     FP_SHPFILE = cfg['datasets']['fp_shapefile'] if 'fp_shapefile' in cfg['datasets'].keys() else None
@@ -154,8 +155,19 @@ if __name__ == "__main__":
         EPT_SHPFILE = None
         EPT = None
     CATEGORY = cfg['datasets']['category'] if 'category' in cfg['datasets'].keys() else False
-    WATERS = cfg['waters'] if 'waters' in cfg.keys() else None
-    ELEVATION_THD = cfg['elevation_threshold'] if 'elevation_threshold' in cfg.keys() else None
+    if CANTON == 'vaud':
+        WATERS = 'data/layers/vaud/lakes_VD.gpkg'
+        ELEVATION_THD = None
+    elif CANTON == 'ticino':
+        WATERS = 'data/layers/ticino/MU_Acque_TI.shp'
+        ELEVATION_THD = 900
+    else:
+        logger.critical(f'Unknown canton: {CANTON}')
+        sys.exit(1)
+    logger.info(f'Using cantonal parameters:')
+    logger.info(f'    - water bodies: {WATERS}')
+    logger.info(f'    - elevation threshold: {ELEVATION_THD}')
+    
     ZOOM_LEVEL = cfg['zoom_level']
 
     # Create an output directory in case it doesn't exist
