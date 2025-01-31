@@ -5,7 +5,8 @@ import numpy as np
 import pandas as pd
 
 from loguru import logger
-from functions.misc import format_logger
+from functions.misc import format_logger, get_categories
+from functions.constants import DONE_MSG
 
 logger = format_logger(logger)
 
@@ -233,19 +234,39 @@ def intersection_over_union(polygon1_shape, polygon2_shape):
     return polygon_intersection / polygon_union
 
 
-def perform_assessment(dets_gdf, labels_gdf, categories_df, method, output_dir, 
-                       iou_threshold=0.1, score_threshold=0.05, area_threshold=None, score='score', additional_columns=[],
+def perform_assessment(dets_gdf, labels_path, categories_path, method, output_dir, 
+                       iou_threshold=0.1, score_threshold=0.05, area_threshold=None, score='score', additional_columns=[], drop_year=False,
                        tagged_results_filename='tagged_detections', reliability_diagram_filename='relability_diagram', 
                        by_class=False):
+        
+        logger.info("Loading labels as a GeoPandas DataFrame...")
+        labels_gdf = gpd.read_file(labels_path)
+        labels_gdf = labels_gdf.to_crs(2056)
+        if 'year' in labels_gdf.keys():  
+            labels_gdf['year'] = labels_gdf.year.astype(int)       
+            labels_gdf = labels_gdf.rename(columns={"year": "year_label"})
+        logger.success(f"{DONE_MSG} {len(labels_gdf)} features were found.")
+
+        # get classe ids
+        categories_info_df, id_classes = get_categories(categories_path)
+
+        # append class ids to labels
+        labels_gdf['CATEGORY'] = labels_gdf.CATEGORY.astype(str)
+        labels_w_id_gdf = labels_gdf.merge(categories_info_df, on='CATEGORY', how='left')
+
+        if drop_year:
+            labels_w_id_gdf.drop(columns='year_label', inplace=True)
+            dets_gdf.drop(columns='year_det', inplace=True)
+
         logger.info('Tag detections and get metrics...')
 
-        id_classes = range(len(categories_df))
+        id_classes = range(len(categories_info_df))
         written_files = []
         metrics_dict_by_cl = []
         metrics_cl_df_dict = {}
 
         tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = get_fractional_sets(
-            dets_gdf, labels_gdf, iou_threshold, area_threshold)
+            dets_gdf, labels_w_id_gdf, iou_threshold, area_threshold)
 
         tp_gdf['tag'] = 'TP'
         fp_gdf['tag'] = 'FP'
@@ -262,7 +283,7 @@ def perform_assessment(dets_gdf, labels_gdf, categories_df, method, output_dir,
 
         logger.info(f'TP = {len(tp_gdf)}, FP = {len(fp_gdf)}, FN = {len(fn_gdf)}')
         tagged_dets_gdf['det_category'] = [
-            categories_df.loc[categories_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
+            categories_info_df.loc[categories_info_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
             if not np.isnan(det_class) else None
             for det_class in tagged_dets_gdf.det_class.to_numpy()
         ] 
@@ -297,7 +318,7 @@ def perform_assessment(dets_gdf, labels_gdf, categories_df, method, output_dir,
             metrics_by_cl_df = pd.concat([metrics_by_cl_df, dataset_df], ignore_index=True)
 
             metrics_by_cl_df['category'] = [
-                categories_df.loc[categories_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
+                categories_info_df.loc[categories_info_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
                 for det_class in metrics_by_cl_df['class'].to_numpy()
             ] 
 

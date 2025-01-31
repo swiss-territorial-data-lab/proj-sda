@@ -11,7 +11,7 @@ import pandas as pd
 sys.path.insert(0, '.')
 import functions.metrics as metrics
 import functions.misc as misc
-from functions.constants import DONE_MSG, OVERWRITE
+from functions.constants import DONE_MSG, KEEP_DATASET_SPLIT, OVERWRITE
 
 from loguru import logger
 logger = misc.format_logger(logger)
@@ -81,7 +81,8 @@ if __name__ == "__main__":
     logger.success(f"{DONE_MSG} {len(detections_gdf)} features were found.")
 
     # get classe ids
-    categories_info_df, id_classes = misc.get_categories(os.path.join('category_ids.json'))
+    CATEGORIES = os.path.join('category_ids.json')
+    categories_info_df, _ = misc.get_categories(CATEGORIES)
 
     # Merge features
     logger.info(f"Merge adjacent polygons overlapping tiles with a buffer of {DISTANCE} m...")
@@ -103,13 +104,13 @@ if __name__ == "__main__":
         detections_within_tiles_gdf = detections_by_year_gdf[detections_by_year_gdf.det_id.isin(remove_det_list)].drop_duplicates(subset=['det_id'], ignore_index=True)
 
         # Merge polygons within the thd distance
-        detections_merge_gdf = detections_overlap_tiles_gdf.buffer(DISTANCE, resolution=2).geometry.unary_union
+        detections_merge_gdf = detections_overlap_tiles_gdf.buffer(DISTANCE, resolution=2).unary_union
         detections_merge_gdf = gpd.GeoDataFrame(geometry=[detections_merge_gdf], crs=detections_gdf.crs)  
         if detections_merge_gdf.isnull().values.any():
             detections_merge_gdf = gpd.GeoDataFrame()
         else:
             detections_merge_gdf = detections_merge_gdf.explode(ignore_index=True)
-            detections_merge_gdf.geometry = detections_merge_gdf.geometry.buffer(-DISTANCE, resolution=2)
+            detections_merge_gdf.geometry = detections_merge_gdf.buffer(-DISTANCE, resolution=2)
 
         detections_within_tiles_gdf = detections_within_tiles_gdf.drop(['score', 'dataset', 'det_class', 'year_det', 'area'], axis=1)
         
@@ -164,21 +165,9 @@ if __name__ == "__main__":
     logger.success(f'The covered area is {round(detections_merge_gdf.unary_union.area/1000000, 2)} km2.')
 
     if ASSESS:
-        logger.info("Loading labels as a GeoPandas DataFrame...")
-        labels_gdf = gpd.read_file(LABELS)
-        labels_gdf = labels_gdf.to_crs(2056)
-        if 'year' in labels_gdf.keys():  
-            labels_gdf['year'] = labels_gdf.year.astype(int)       
-            labels_gdf = labels_gdf.rename(columns={"year": "year_label"})
-        logger.success(f"{DONE_MSG} {len(labels_gdf)} features were found.")
-
-        # append class ids to labels
-        labels_gdf['CATEGORY'] = labels_gdf.CATEGORY.astype(str)
-        labels_w_id_gdf = labels_gdf.merge(categories_info_df, on='CATEGORY', how='left')
-
         written_files.extend(
             metrics.perform_assessment(
-                detections_merge_gdf, labels_w_id_gdf, categories_info_df, METHOD, OUTPUT_DIR, IOU_THD, SCORE_THD, AREA_THD,
+                detections_merge_gdf, LABELS, CATEGORIES, METHOD, OUTPUT_DIR, IOU_THD, SCORE_THD, AREA_THD,
                 additional_columns=['year_label', 'year_det'], reliability_diagram_filename='reliability_diagram_merged_detections', by_class=True
             )
         )

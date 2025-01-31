@@ -261,24 +261,9 @@ if __name__ == "__main__":
     logger.success(f"{len(removed_dets_gdf)} features were removed.")
 
     if ASSESS:
-        logger.info("Loading labels as a GeoPandas DataFrame...")
-        labels_gdf = gpd.read_file(LABELS)
-        labels_gdf = labels_gdf.to_crs(2056)
-        if 'year' in labels_gdf.keys():  
-            labels_gdf['year'] = labels_gdf.year.astype(int)       
-            labels_gdf = labels_gdf.rename(columns={"year": "year_label"})
-        logger.success(f"{DONE_MSG} {len(labels_gdf)} features were found.")
-
-        # get classe ids
-        categories_info_df, id_classes = misc.get_categories(CATEGORIES)
-
-        # append class ids to labels
-        labels_gdf['CATEGORY'] = labels_gdf.CATEGORY.astype(str)
-        labels_w_id_gdf = labels_gdf.merge(categories_info_df, on='CATEGORY', how='left')
-
         written_files.extend(
             metrics.perform_assessment(
-                merged_detections_gdf, labels_w_id_gdf, categories_info_df, METHOD, OUTPUT_DIR,
+                merged_detections_gdf, LABELS, CATEGORIES, METHOD, OUTPUT_DIR,
                 score='merged_score', additional_columns=['year_label', 'year_det', 'score'], 
                 tagged_results_filename='tagged_merged_results', reliability_diagram_filename='reliability_diagram_merged_results'
             )
