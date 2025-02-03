@@ -5,6 +5,8 @@ from shapely.validation import make_valid
 
 import json
 import pandas as pd
+from geopandas import sjoin
+from shapely.affinity import scale
 
 def check_validity(poly_gdf, correct=False):
     '''
@@ -41,6 +43,46 @@ def check_validity(poly_gdf, correct=False):
             sys.exit(1)
 
     return poly_gdf
+
+
+def clip_labels(labels_gdf, tiles_gdf, fact=0.99):
+    """
+    Clips the labels in the `labels_gdf` GeoDataFrame to the tiles in the `tiles_gdf` GeoDataFrame.
+    
+    Parameters:
+        labels_gdf (geopandas.GeoDataFrame): The GeoDataFrame containing the labels to be clipped.
+        tiles_gdf (geopandas.GeoDataFrame): The GeoDataFrame containing the tiles to clip the labels to.
+        fact (float, optional): The scaling factor to apply to the tiles when clipping the labels. Defaults to 0.99.
+    
+    Returns:
+        geopandas.GeoDataFrame: The clipped labels GeoDataFrame.
+        
+    Raises:
+        AssertionError: If the CRS of `labels_gdf` is not equal to the CRS of `tiles_gdf`.
+    """
+
+    tiles_gdf['tile_geometry'] = tiles_gdf['geometry']
+        
+    assert(labels_gdf.crs == tiles_gdf.crs)
+    
+    labels_tiles_sjoined_gdf = sjoin(labels_gdf, tiles_gdf, how='inner', predicate='intersects')
+    
+    def clip_row(row, fact=fact):
+        
+        old_geo = row.geometry
+        scaled_tile_geo = scale(row.tile_geometry, xfact=fact, yfact=fact)
+        new_geo = old_geo.intersection(scaled_tile_geo)
+        row['geometry'] = new_geo
+
+        return row
+
+    clipped_labels_gdf = labels_tiles_sjoined_gdf.apply(lambda row: clip_row(row, fact), axis=1)
+    clipped_labels_gdf.crs = labels_gdf.crs
+
+    clipped_labels_gdf.drop(columns=['tile_geometry', 'index_right'], inplace=True)
+    clipped_labels_gdf.rename(columns={'id': 'tile_id'}, inplace=True)
+
+    return clipped_labels_gdf
 
 
 def convert_crs(gdf, epsg=2056):

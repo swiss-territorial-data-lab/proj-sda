@@ -16,13 +16,13 @@ sys.path.insert(0, '.')
 import functions.graphs as graphs
 import functions.metrics as metrics
 import functions.misc as misc
-from functions.constants import DONE_MSG, OVERWRITE
+from functions.constants import DONE_MSG, KEEP_DATASETS_SPLIT, OVERWRITE
 
 from loguru import logger
 logger = misc.format_logger(logger)
 
 
-def group_detections(detections_gdf, IoU_threshold, ignore_year=False):
+def group_detections(detections_gdf, IoU_threshold, ignore_year=False, assess=False):
     """
     Mark detections representing the same object as a group.
 
@@ -38,8 +38,11 @@ def group_detections(detections_gdf, IoU_threshold, ignore_year=False):
     IoU_threshold : float
         The minimum intersection over union required for two detections to
         be considered as overlapping.
-    ignore_year : bool
+    ignore_year : bool, default False
         If True, ignore the year condition when computing the IoU.
+    assess: bool, default False
+        If True, the trn, val and tst dataset might be kept separate if
+        indicated so by the corresponding global parameter.
 
     Returns
     -------
@@ -49,7 +52,7 @@ def group_detections(detections_gdf, IoU_threshold, ignore_year=False):
         assigns a unique group_id to each group of overlapping detections.
     """
     
-    overlap_detections_gdf = self_intersect(detections_gdf, ignore_year)
+    overlap_detections_gdf = self_intersect(detections_gdf, ignore_year, assess)
     geom1 = overlap_detections_gdf.geom_left.tolist()
     geom2 = overlap_detections_gdf.geom_right.tolist()
     iou = []
@@ -72,7 +75,7 @@ def group_detections(detections_gdf, IoU_threshold, ignore_year=False):
     return new_dets_gdf
 
 
-def self_intersect(gdf, ignore_year=False):
+def self_intersect(gdf, ignore_year=False, assess=False):
     _gdf = gdf.copy()
     _gdf['geom'] = _gdf.geometry
 
@@ -81,7 +84,9 @@ def self_intersect(gdf, ignore_year=False):
         (overlap_detections_gdf.merged_id_left>=overlap_detections_gdf.merged_id_right) # We keep self-intersection, so that alone dets don't have a presence of 0.
         # & (overlap_detections_gdf.det_category_left==overlap_detections_gdf.det_category_right)
         & (True if ignore_year else overlap_detections_gdf.year_det_left==overlap_detections_gdf.year_det_right)
-    ].copy()
+    ]
+    if KEEP_DATASETS_SPLIT & assess:
+        overlap_detections_gdf = overlap_detections_gdf[overlap_detections_gdf.dataset_left == overlap_detections_gdf.dataset_right]
 
     return overlap_detections_gdf
 
@@ -113,6 +118,8 @@ if __name__ == "__main__":
         METHOD = cfg['assess']['metrics_method']
         LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
         CATEGORIES = cfg['categories']
+        if KEEP_DATASETS_SPLIT:
+            logger.warning('The split between trn, tst and val will be preserved.')
 
     written_files = []
     os.chdir(WORKING_DIR)
@@ -151,7 +158,7 @@ if __name__ == "__main__":
     
     logger.info('Intersect detections...')
     # Condsider a det to be the same object if more than 50% the same surface
-    intersecting_detections_gdf = group_detections(detections_gdf, 0.5)
+    intersecting_detections_gdf = group_detections(detections_gdf, 0.5, assess=ASSESS)
 
     logger.info('Count number of dets in each group...')
     groups_df = intersecting_detections_gdf['group_id'].value_counts().reset_index().rename(columns={'count': 'count_dets'})
@@ -161,9 +168,10 @@ if __name__ == "__main__":
 
     # Bring group info back to the detections
     completed_detections_gdf = pd.merge(intersecting_detections_gdf, groups_df, how='left', left_on='group_id', right_on='group_id')
-    completed_detections_gdf.loc[completed_detections_gdf['group_id'].isna(), 'presence'] = 0     # Currently, no det is removed before groupping
+    completed_detections_gdf.loc[completed_detections_gdf['group_id'].isna(), 'presence'] = 0       # Should not happen if all dets passed to groupping
     completed_detections_gdf['merged_score'] = completed_detections_gdf['score'] * completed_detections_gdf['presence']
 
+    # Only keep best det in group
     completed_detections_gdf.sort_values('score', inplace=True, ascending=False)
     groupped_detections_gdf = completed_detections_gdf.groupby('group_id', as_index=False).agg('first')
     del detections_gdf, intersecting_detections_gdf, completed_detections_gdf
@@ -184,7 +192,9 @@ if __name__ == "__main__":
     removed_dets_gdf = pd.concat([removed_dets_gdf, multi_presence_dets_gdf[~condition_to_keep]], ignore_index=True)
 
     logger.info('Remove detections inside other detections...')
-    overlap_detections_gdf = self_intersect(filtered_groupped_dets_gdf[['geometry', 'merged_id', 'year_det', 'det_category']])
+    overlap_detections_gdf = self_intersect(filtered_groupped_dets_gdf[
+        ['geometry', 'merged_id', 'year_det', 'det_category'] + ['dataset'] if KEEP_DATASETS_SPLIT & ASSESS else []
+    ], assess=ASSESS)
     overlap_detections_gdf = overlap_detections_gdf[overlap_detections_gdf.merged_id_left!=overlap_detections_gdf.merged_id_right]  # Remove self-intersection
     intersected_geoms = overlap_detections_gdf.geom_left.intersection(overlap_detections_gdf.geom_right)
     # Test if left geom is into right geom
@@ -244,7 +254,7 @@ if __name__ == "__main__":
     logger.info('Merge overlapping components of the same year...')
     dets_to_merge_gdf = final_groupped_dets_gdf.drop(columns='group_id')
     dets_to_merge_gdf.loc[:, 'geometry'] = dets_to_merge_gdf.buffer(5)
-    intersecting_detections_gdf = group_detections(dets_to_merge_gdf, 0.01)
+    intersecting_detections_gdf = group_detections(dets_to_merge_gdf, 0.01, assess=ASSESS)
     intersecting_detections_gdf.drop(columns=['second_IoU'], inplace=True)
     intersecting_detections_gdf.sort_values('merged_score', ascending=False, inplace=True)
     merged_detections_gdf = intersecting_detections_gdf.dissolve('group_id', aggfunc='first', as_index=False)
@@ -265,7 +275,8 @@ if __name__ == "__main__":
             metrics.perform_assessment(
                 merged_detections_gdf, LABELS, CATEGORIES, METHOD, OUTPUT_DIR,
                 score='merged_score', additional_columns=['year_label', 'year_det', 'score'], 
-                tagged_results_filename='tagged_merged_results', reliability_diagram_filename='reliability_diagram_merged_results'
+                tagged_results_filename='tagged_merged_results', reliability_diagram_filename='reliability_diagram_merged_results', 
+                global_metrics_filename='global_metrics_merged_rslts'
             )
         )
 

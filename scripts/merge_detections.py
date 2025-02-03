@@ -11,7 +11,7 @@ import pandas as pd
 sys.path.insert(0, '.')
 import functions.metrics as metrics
 import functions.misc as misc
-from functions.constants import DONE_MSG, KEEP_DATASET_SPLIT, OVERWRITE
+from functions.constants import DONE_MSG, KEEP_DATASETS_SPLIT, OVERWRITE
 
 from loguru import logger
 logger = misc.format_logger(logger)
@@ -45,6 +45,8 @@ if __name__ == "__main__":
     ASSESS = cfg['assess']['enable']
     if ASSESS:
         METHOD = cfg['assess']['metrics_method']
+        if KEEP_DATASETS_SPLIT:
+            logger.warning('The split between trn, tst and val will be preserved.')
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')
@@ -52,8 +54,14 @@ if __name__ == "__main__":
 
     written_files = [] 
 
-    last_written_file = os.path.join(OUTPUT_DIR, f'merged_detections_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
-    last_metric_file = os.path.join(OUTPUT_DIR, 'reliability_diagram_merged_detections_single_class.jpeg')
+    last_written_file = os.path.join(
+        OUTPUT_DIR, 
+        f'{"dst_" if KEEP_DATASETS_SPLIT & ASSESS else ""}merged_detections_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot')
+    )
+    last_metric_file = os.path.join(
+        OUTPUT_DIR, 
+        f'{"dst_" if KEEP_DATASETS_SPLIT & ASSESS else ""}reliability_diagram_merged_detections_single_class.jpeg'
+    )
     if os.path.exists(last_written_file) and (not ASSESS or os.path.exists(last_metric_file)) and not OVERWRITE:           
         logger.success(f"{DONE_MSG} All files already exist in folder {OUTPUT_DIR}. Exiting.")
         sys.exit(0)
@@ -104,8 +112,13 @@ if __name__ == "__main__":
         detections_within_tiles_gdf = detections_by_year_gdf[detections_by_year_gdf.det_id.isin(remove_det_list)].drop_duplicates(subset=['det_id'], ignore_index=True)
 
         # Merge polygons within the thd distance
-        detections_merge_gdf = detections_overlap_tiles_gdf.buffer(DISTANCE, resolution=2).unary_union
-        detections_merge_gdf = gpd.GeoDataFrame(geometry=[detections_merge_gdf], crs=detections_gdf.crs)  
+        if KEEP_DATASETS_SPLIT & ASSESS:
+            detections_overlap_tiles_gdf.loc[:, 'geometry'] = detections_overlap_tiles_gdf.buffer(DISTANCE*0.99, resolution=2)
+            detections_merge_gdf = detections_overlap_tiles_gdf[['det_id', 'dataset', 'geometry']].dissolve(by=['dataset'], as_index=False)
+        else:
+            detections_overlap_tiles_gdf.loc[:, 'geometry'] = detections_overlap_tiles_gdf.buffer(DISTANCE, resolution=2)
+            detections_merge_gdf = detections_overlap_tiles_gdf[['det_id', 'geometry']].dissolve(as_index=False)
+        detections_merge_gdf = gpd.GeoDataFrame(geometry=[geom for geom in detections_merge_gdf.geometry], crs=detections_gdf.crs)
         if detections_merge_gdf.isnull().values.any():
             detections_merge_gdf = gpd.GeoDataFrame()
         else:
@@ -168,14 +181,15 @@ if __name__ == "__main__":
         written_files.extend(
             metrics.perform_assessment(
                 detections_merge_gdf, LABELS, CATEGORIES, METHOD, OUTPUT_DIR, IOU_THD, SCORE_THD, AREA_THD,
-                additional_columns=['year_label', 'year_det'], reliability_diagram_filename='reliability_diagram_merged_detections', by_class=True
+                additional_columns=['year_label', 'year_det'], reliability_diagram_filename='reliability_diagram_merged_dets', 
+                global_metrics_filename='global_metrics_merged_dets', by_class=True
             )
         )
 
     # Save processed results
     detections_merge_gdf = detections_merge_gdf.to_crs(2056)
-    detections_merge_gdf[['geometry', 'score', 'det_class', 'det_category', 'year_det']]\
-        .to_file(last_written_file, driver='GPKG', index=False)
+    final_columns = ['geometry', 'score', 'det_class', 'det_category', 'year_det'] + ['dataset'] if KEEP_DATASETS_SPLIT & ASSESS else []
+    detections_merge_gdf[final_columns] .to_file(last_written_file, driver='GPKG', index=False)
     written_files.append(last_written_file)       
 
     print()

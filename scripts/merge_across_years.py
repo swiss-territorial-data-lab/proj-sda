@@ -13,7 +13,7 @@ from hashlib import md5
 sys.path.insert(0, '.')
 from functions.constants import DONE_MSG, OVERWRITE
 from functions.metrics import perform_assessment
-from functions.misc import format_logger, get_categories
+from functions.misc import format_logger
 from merge_multi_results import group_detections
 
 logger = format_logger(logger)
@@ -34,7 +34,7 @@ def main(all_years_dets_gdf, assess=False, method=None, labels_path=None, catego
     logger.info('Merge overlapping components while ignoring the year...')
     dets_to_merge_gdf = all_years_dets_gdf.drop(columns='group_id')
     dets_to_merge_gdf.loc[:, 'geometry'] = dets_to_merge_gdf.buffer(5)
-    intersecting_detections_gdf = group_detections(dets_to_merge_gdf, 0.5, ignore_year=True)
+    intersecting_detections_gdf = group_detections(dets_to_merge_gdf, 0.5, ignore_year=True, assess=ASSESS)
     intersecting_detections_gdf.sort_values('merged_score', ascending=False, inplace=True)
     intersecting_detections_gdf.drop(columns='wkb_geom', inplace=True)
 
@@ -62,7 +62,8 @@ def main(all_years_dets_gdf, assess=False, method=None, labels_path=None, catego
             perform_assessment(
                 merged_dets_across_years_gdf, labels_path, categories_path, method, output_dir,
                 score='merged_score', additional_columns=['score', 'first_year', 'last_year', 'count_years'], drop_year=True,
-                tagged_results_filename='tagged_merged_results_across_years', reliability_diagram_filename='reliability_diagram_merged_results_across_years'
+                tagged_results_filename='tagged_merged_results_across_years', reliability_diagram_filename='reliability_diagram_merged_results_across_years',
+                global_metrics_filename='global_metrics_merged_rslts_across_years'
             )
         )
 
