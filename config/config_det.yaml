@@ -4,18 +4,16 @@ prepare_aoi.py:
   canton: {canton}
   year: {year}
   srs: EPSG:2056
-  canton_shp: {canton}/<CANTONAL_BORDERS>           # MN95_CAD_TPR_LAD_MO_VD.shp or limiti_cantone_2012_MN95.shp
   img_footprint_shp: swissimage_footprints/swissimage_footprint_{year}.shp
 
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
+  canton: {canton}
   datasets:
     shapefile: data/AoI/{canton}/aoi_{year}_{canton}.gpkg
   output_folder: output/det/{canton}/single_year
   zoom_level: 16
-  waters: data/layers/{canton}/<WATER_POLYGONS>            # lakes_VD.gpkg or MU_Acque_TI.shp
   dem: data/DEM/switzerland_dem_EPSG2056.tif
-  elevation_threshold: 1000
 
 # Fetch of tiles (online server) and split into 3 datasets: train, test, validation
 generate_tilesets.py:
@@ -112,7 +110,7 @@ filter_detections.py:
       polluted_sites: Siti_inquinati.shp
       sda: Censimento_SAC_2023.shp
       slope: terrain_pente_TC_SA.gpkg
-      waters: MU_Acque_TI.shp
+      waters: MU_Acque_TI_dissolved.gpkg
       zone_compatible_LPN: Zona_SAC_compatibile_con_i_disposti_LPN.gpkg
       zone_compatible_LPN_extensive: Zona_SAC_compatibile_con_i_disposti_LPN_previa_gestione_estensiva.gpkg
       zone_non_compatible_LPN: Zona_SAC_non_compatibile_con_i_disposti_LPN.gpkg
@@ -126,7 +124,6 @@ filter_detections.py:
       waters: lakes_VD.gpkg
   attribute_names: layers/attribute_names.xlsx
   dem: DEM/switzerland_dem_EPSG2056.tif
-  elevation_threshold: 900.0 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
   area_threshold: 100.0 # m2, area threshold under which polygons are discarded
   area_ratio_threshold: 0.25 # ratio between the original and the final valid area under which polygons are discarded

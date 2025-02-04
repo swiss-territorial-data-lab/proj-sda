@@ -5,7 +5,6 @@ echo 'Run batch process to perfrom inference over several SWISSIMAGE years with 
 
 canton=CANTON                     # provide canton name in lowercase
 for year in YEAR1 YEAR2 YEAR3     # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)
-# !! Shapefile with cantonal boundaries must be indicated in config template manually !!
 
 do
     echo '-----------'
@@ -16,18 +15,18 @@ do
     sed -i "s/CANTON/$canton/g" config/batch_process/config_det_${year}_${canton}.yaml
     echo ' '
     echo 'prepare_aoi.py'
-    # python ./scripts/prepare_aoi.py config/batch_process/config_det_${year}_${canton}.yaml
+    python ./scripts/prepare_aoi.py config/batch_process/config_det_${year}_${canton}.yaml
     echo ' '
     file=data/AoI/$canton/aoi_${year}_${canton}.gpkg
     if [ -e $file ]; then
         echo ' '
         echo 'prepare_data.py'
-        # python ./scripts/prepare_data.py config/batch_process/config_det_${year}_${canton}.yaml
+        python ./scripts/prepare_data.py config/batch_process/config_det_${year}_${canton}.yaml
         tile_file=output/det/${canton}/${year}/tiles.geojson
-        if [ -e $file ]; then
+        if [ -e $tile_file ]; then
             echo ' '
             echo 'generate_tilesets.py'
-            # stdl-objdet generate_tilesets config/batch_process/config_det_${year}_${canton}.yaml
+            stdl-objdet generate_tilesets config/batch_process/config_det_${year}_${canton}.yaml
             echo ' '
             for dl_model in 68 72 75 92 102
             do
@@ -35,7 +34,7 @@ do
                 sed 's/#MODEL#/$dl_model/g' config/batch_process/config_det_${year}_${canton}.yaml > config/batch_process/config_det_${year}_${canton}_${dl_model}.yaml
                 sed -i "s/MODEL/$dl_model/g" config/batch_process/config_det_${year}_${canton}_${dl_model}.yaml
                 echo 'make_detections.py'
-                # stdl-objdet make_detections config/batch_process/config_det_${year}_${canton}_${dl_model}.yaml
+                stdl-objdet make_detections config/batch_process/config_det_${year}_${canton}_${dl_model}.yaml
                 echo ' '
                 echo 'merge_detections.py'
                 python ./scripts/merge_detections.py config/batch_process/config_det_${year}_${canton}_${dl_model}.yaml
@@ -49,6 +48,7 @@ do
 done
 
 for dl_model in 68 72 75 92 102
+
 do
     echo 'merge_year.py'
     python ./scripts/merge_years.py config/batch_process/config_det_${year}_${canton}_${dl_model}.yaml

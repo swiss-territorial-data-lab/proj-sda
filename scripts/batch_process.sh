@@ -8,7 +8,6 @@ SECOND=0
 canton=CANTON                     # provide canton name
 dl_model=68
 for year in YEAR1 YEAR2 YEAR3     # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)  
-# !! Shapefile with cantonal boundaries must be indicated in config template manually !!
 
 do
     echo '-----------'

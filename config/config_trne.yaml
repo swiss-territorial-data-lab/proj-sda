@@ -101,10 +101,11 @@ assess_detections.py:
       trn: run68/trn_detections_at_0dot05_threshold.gpkg
       val: run68/val_detections_at_0dot05_threshold.gpkg
       tst: run68/tst_detections_at_0dot05_threshold.gpkg
-  output_folder: .
+  output_folder: run68
   iou_threshold: 0.1
   area_threshold: 50       # area under which the polygons are discarded from assessment
   metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
+  confidence_threshold: 0.05
 
 # Plots (optional)
 result_analysis.py:
