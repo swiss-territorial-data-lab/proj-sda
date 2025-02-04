@@ -6,10 +6,9 @@ import yaml
 from glob import glob
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
+from shapely.errors import GEOSException
 
-import json
 from hashlib import md5
 
 sys.path.insert(0, '.')
@@ -176,8 +175,12 @@ if __name__ == "__main__":
     groupped_detections_gdf = completed_detections_gdf.groupby('group_id', as_index=False).agg('first')
     del detections_gdf, intersecting_detections_gdf, completed_detections_gdf
 
+    groupped_detections_gdf = misc.check_validity(groupped_detections_gdf, correct=True)
     logger.success(f'{DONE_MSG} Once groupped, there are {len(groupped_detections_gdf)} detections.')
-    logger.success(f'The covered area is {round(groupped_detections_gdf.unary_union.area/1000000)} km2.')
+    try:
+        logger.success(f'The covered area is {round(groupped_detections_gdf.unary_union.area/1000000)} km2.')
+    except GEOSException:
+        logger.warning('No global area could be calculated. This is probably because of a geometry error.') 
 
     logger.info('Remove detections based on presence...')
     condition_to_keep = groupped_detections_gdf.presence > 0.2
@@ -193,7 +196,7 @@ if __name__ == "__main__":
 
     logger.info('Remove detections inside other detections...')
     overlap_detections_gdf = self_intersect(filtered_groupped_dets_gdf[
-        ['geometry', 'merged_id', 'year_det', 'det_category'] + ['dataset'] if KEEP_DATASETS_SPLIT & ASSESS else []
+        ['geometry', 'merged_id', 'year_det', 'det_category'] + (['dataset'] if KEEP_DATASETS_SPLIT & ASSESS else [])
     ], assess=ASSESS)
     overlap_detections_gdf = overlap_detections_gdf[overlap_detections_gdf.merged_id_left!=overlap_detections_gdf.merged_id_right]  # Remove self-intersection
     intersected_geoms = overlap_detections_gdf.geom_left.intersection(overlap_detections_gdf.geom_right)
@@ -240,6 +243,8 @@ if __name__ == "__main__":
             det_score = final_groupped_dets_gdf.loc[final_groupped_dets_gdf.merged_id==detection.merged_id_top, 'merged_score'].iloc[0]
             final_groupped_dets_gdf.loc[final_groupped_dets_gdf.merged_id==detection.merged_id_top, 'merged_score'] = min(det_score + 0.1, 1)
 
+    final_groupped_dets_gdf = misc.check_validity(final_groupped_dets_gdf, correct=True)
+
     excessive_columns = ['wkb_geom', 'merged_id_bottom', 'merged_id_top']
     filepath = os.path.join(OUTPUT_DIR, 'groupped_detections.gpkg')
     final_groupped_dets_gdf.drop(columns=excessive_columns).to_file(filepath, crs='EPSG:2056', driver='GPKG', index=False)
@@ -267,7 +272,10 @@ if __name__ == "__main__":
 
     logger.success(f"{len(final_groupped_dets_gdf)} features were kept.")
     logger.success(f"Once dissolved, {len(merged_detections_gdf)} features are left")
-    logger.success(f'The covered area is {round(merged_detections_gdf.unary_union.area/1000000, 2)} km2.')
+    try:
+        logger.success(f'The covered area is {round(merged_detections_gdf.unary_union.area/1000000, 2)} km2.')
+    except GEOSException:
+        logger.warning('The global area could not be calculated. This probably because of a geometry error.')
     logger.success(f"{len(removed_dets_gdf)} features were removed.")
 
     if ASSESS:

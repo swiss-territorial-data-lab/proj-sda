@@ -159,7 +159,7 @@ if __name__ == "__main__":
         WATERS = 'data/layers/vaud/lakes_VD.gpkg'
         ELEVATION_THD = None
     elif CANTON == 'ticino':
-        WATERS = 'data/layers/ticino/MU_Acque_TI.shp'
+        WATERS = 'data/layers/ticino/MU_Acque_TI_dissolved.gpkg'
         ELEVATION_THD = 900
     else:
         logger.critical(f'Unknown canton: {CANTON}')

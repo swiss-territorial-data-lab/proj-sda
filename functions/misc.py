@@ -21,12 +21,8 @@ def check_validity(poly_gdf, correct=False):
 
     invalid_condition = ~poly_gdf.is_valid
 
-    try:
-        assert(poly_gdf[invalid_condition].shape[0]==0), \
-            f"{poly_gdf[invalid_condition].shape[0]} geometries are invalid on" + \
-                    f" {poly_gdf.shape[0]} detections."
-    except Exception as e:
-        logger.warning(e)
+    if poly_gdf[invalid_condition].shape[0]!=0:
+        logger.warning(f"{poly_gdf[invalid_condition].shape[0]} geometries are invalid on {poly_gdf.shape[0]} detections.")
         if correct:
             logger.info("Correction of the invalid geometries with the shapely function 'make_valid'...")
             

@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
     # Save processed results
     detections_merge_gdf = detections_merge_gdf.to_crs(2056)
-    final_columns = ['geometry', 'score', 'det_class', 'det_category', 'year_det'] + ['dataset'] if KEEP_DATASETS_SPLIT & ASSESS else []
+    final_columns = ['geometry', 'score', 'det_class', 'det_category', 'year_det'] + (['dataset'] if KEEP_DATASETS_SPLIT & ASSESS else [])
     detections_merge_gdf[final_columns] .to_file(last_written_file, driver='GPKG', index=False)
     written_files.append(last_written_file)       
 

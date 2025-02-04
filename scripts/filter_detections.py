@@ -226,7 +226,7 @@ if __name__ == "__main__":
     check_gdf_len(detections_gdf)
     detections_gdf = detections_gdf[(detections_gdf.elevation != 0) & (detections_gdf.elevation < ELEVATION_THD)]
     tdem = len(detections_gdf)
-    logger.info(f"{dic - tdem} detections were removed by elevation threshold: {ELEVATION_THD} m")
+    logger.info(f"{dic - tdem} detections were removed by elevation threshold: elevation < {ELEVATION_THD} m and elevation != 0 m.")
 
     # Filter dataframe by score value
     check_gdf_len(detections_gdf)
