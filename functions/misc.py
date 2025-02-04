@@ -45,7 +45,7 @@ def clip_labels(labels_gdf, tiles_gdf, fact=0.99):
     """
     Clips the labels in the `labels_gdf` GeoDataFrame to the tiles in the `tiles_gdf` GeoDataFrame.
     
-    Parameters:
+    Args:
         labels_gdf (geopandas.GeoDataFrame): The GeoDataFrame containing the labels to be clipped.
         tiles_gdf (geopandas.GeoDataFrame): The GeoDataFrame containing the tiles to clip the labels to.
         fact (float, optional): The scaling factor to apply to the tiles when clipping the labels. Defaults to 0.99.
@@ -62,6 +62,9 @@ def clip_labels(labels_gdf, tiles_gdf, fact=0.99):
     assert(labels_gdf.crs == tiles_gdf.crs)
     
     labels_tiles_sjoined_gdf = sjoin(labels_gdf, tiles_gdf, how='inner', predicate='intersects')
+
+    if 'year_label' in labels_gdf.keys():
+        labels_tiles_sjoined_gdf = labels_tiles_sjoined_gdf[labels_tiles_sjoined_gdf.year_label == labels_tiles_sjoined_gdf.year_tile]
     
     def clip_row(row, fact=fact):
         

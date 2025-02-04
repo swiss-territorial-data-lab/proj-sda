@@ -15,7 +15,7 @@ sys.path.insert(0, '.')
 import functions.graphs as graphs
 import functions.metrics as metrics
 import functions.misc as misc
-from functions.constants import DONE_MSG, KEEP_DATASETS_SPLIT, OVERWRITE
+from functions.constants import DONE_MSG, KEEP_DATASET_SPLIT, OVERWRITE
 
 from loguru import logger
 logger = misc.format_logger(logger)
@@ -84,7 +84,7 @@ def self_intersect(gdf, ignore_year=False, assess=False):
         # & (overlap_detections_gdf.det_category_left==overlap_detections_gdf.det_category_right)
         & (True if ignore_year else overlap_detections_gdf.year_det_left==overlap_detections_gdf.year_det_right)
     ]
-    if KEEP_DATASETS_SPLIT & assess:
+    if KEEP_DATASET_SPLIT & assess:
         overlap_detections_gdf = overlap_detections_gdf[overlap_detections_gdf.dataset_left == overlap_detections_gdf.dataset_right]
 
     return overlap_detections_gdf
@@ -117,7 +117,7 @@ if __name__ == "__main__":
         METHOD = cfg['assess']['metrics_method']
         LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
         CATEGORIES = cfg['categories']
-        if KEEP_DATASETS_SPLIT:
+        if KEEP_DATASET_SPLIT:
             logger.warning('The split between trn, tst and val will be preserved.')
 
     written_files = []
@@ -196,7 +196,7 @@ if __name__ == "__main__":
 
     logger.info('Remove detections inside other detections...')
     overlap_detections_gdf = self_intersect(filtered_groupped_dets_gdf[
-        ['geometry', 'merged_id', 'year_det', 'det_category'] + (['dataset'] if KEEP_DATASETS_SPLIT & ASSESS else [])
+        ['geometry', 'merged_id', 'year_det', 'det_category'] + (['dataset'] if KEEP_DATASET_SPLIT & ASSESS else [])
     ], assess=ASSESS)
     overlap_detections_gdf = overlap_detections_gdf[overlap_detections_gdf.merged_id_left!=overlap_detections_gdf.merged_id_right]  # Remove self-intersection
     intersected_geoms = overlap_detections_gdf.geom_left.intersection(overlap_detections_gdf.geom_right)

@@ -7,7 +7,7 @@ import pandas as pd
 
 from loguru import logger
 from functions.misc import clip_labels, format_logger, get_categories
-from functions.constants import DONE_MSG, KEEP_DATASETS_SPLIT
+from functions.constants import DONE_MSG, KEEP_DATASET_SPLIT
 
 logger = format_logger(logger)
 
@@ -71,19 +71,19 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
     left_join = gpd.sjoin(_dets_gdf, _labels_gdf, how='left', predicate='intersects', lsuffix='left', rsuffix='right')
 
     # Test that something is detected
-    candidates_tp_gdf = candidates_tp_temp_gdf = left_join[left_join.label_id.notnull()].copy()
+    candidates_tp_gdf = left_join[left_join.label_id.notnull()].copy()
 
     # Keep only matching years
     if 'year_label' in candidates_tp_gdf.keys():
-        candidates_tp_temp_gdf = candidates_tp_temp_gdf[candidates_tp_temp_gdf.year_label.astype(int) == candidates_tp_temp_gdf.year_det.astype(int)]
+        candidates_tp_gdf = candidates_tp_gdf[candidates_tp_gdf.year_label.astype(int) == candidates_tp_gdf.year_det.astype(int)]
 
     # IoU computation between labels and detections
-    geom1 = candidates_tp_temp_gdf['geometry'].to_numpy().tolist()
-    geom2 = candidates_tp_temp_gdf['label_geom'].to_numpy().tolist()    
-    candidates_tp_temp_gdf.loc[:, ['IOU']] = [intersection_over_union(i, ii) for (i, ii) in zip(geom1, geom2)]
+    geom1 = candidates_tp_gdf['geometry'].to_numpy().tolist()
+    geom2 = candidates_tp_gdf['label_geom'].to_numpy().tolist()    
+    candidates_tp_gdf.loc[:, ['IOU']] = [intersection_over_union(i, ii) for (i, ii) in zip(geom1, geom2)]
 
     # Filter detections based on IoU value
-    best_matches_gdf = candidates_tp_temp_gdf.groupby(['det_id'], group_keys=False).apply(lambda g:g[g.IOU==g.IOU.max()])
+    best_matches_gdf = candidates_tp_gdf.groupby(['det_id'], group_keys=False).apply(lambda g:g[g.IOU==g.IOU.max()])
     best_matches_gdf.drop_duplicates(subset=['det_id'], inplace=True)
 
     # Detection, resp labels, with IOU lower than threshold value are considered as FP, resp FN, and saved as such
@@ -239,7 +239,30 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
                        iou_threshold=0.1, score_threshold=0.05, area_threshold=None, score='score', additional_columns=[], drop_year=False,
                        tagged_results_filename='tagged_detections', reliability_diagram_filename='relability_diagram', global_metrics_filename = 'global_metrics',
                        by_class=False):
-        
+        """
+        Perform an assessment of the detection results based on the intersection over union (IOU) with the labels.
+
+        Args:
+            dets_gdf (GeoDataFrame): GeoDataFrame with the detections
+            labels_path (str): path to the GeoJSON file with the labels
+            categories_path (str): path to the CSV file with the categories
+            method (str): method to calculate the precision, recall and f1, either 'macro-average' or 'micro-average'
+            output_dir (str): output directory where the results will be saved
+            iou_threshold (float, optional): IOU threshold for a detection to be considered a true positive. Defaults to 0.1.
+            score_threshold (float, optional): min score for a detection to be considered. Defaults to 0.05.
+            area_threshold (float, optional): min area for a polygon to be considered. Defaults to None.
+            score (str, optional): column name for the detection score. Defaults to 'score'.
+            additional_columns (list, optional): additional columns to write in the output file. Defaults to [].
+            drop_year (bool, optional): whether to drop the year column from the labels and detections. Defaults to False.
+            tagged_results_filename (str, optional): filename for the tagged results. Defaults to 'tagged_detections'.
+            reliability_diagram_filename (str, optional): filename for the reliability diagram. Defaults to 'relability_diagram'.
+            global_metrics_filename (str, optional): filename for the global metrics. Defaults to 'global_metrics'.
+            by_class (bool, optional): whether to calculate the metrics by class. Defaults to False.
+
+        Returns:
+            list: list of written files
+        """
+
         logger.info("Loading labels as a GeoPandas DataFrame...")
         labels_gdf = gpd.read_file(labels_path)
         labels_gdf = labels_gdf.to_crs(2056)
@@ -261,12 +284,13 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
 
         dets_gdf_dict = {}
         clipped_labels_gdf_dict = {}
-        if KEEP_DATASETS_SPLIT:
+        if KEEP_DATASET_SPLIT:
             split_tiles_gdf = gpd.read_file(os.path.join(os.path.dirname(labels_path), 'split_aoi_tiles.geojson'))
-            tiles_gdf = split_tiles_gdf.dissolve(['dataset'], as_index=False)
-            tiles_gdf = tiles_gdf.to_crs(labels_w_id_gdf.crs)
+            split_tiles_gdf = split_tiles_gdf.to_crs(2056)
+            tiles_gdf = split_tiles_gdf.dissolve(['dataset'] + ([] if drop_year else ['year_tile']), as_index=False)
 
-            clipped_labels_gdf = clip_labels(labels_w_id_gdf, tiles_gdf, fact=0.999)
+            clipped_labels_gdf = clip_labels(labels_w_id_gdf, tiles_gdf, fact=0.99999)
+            clipped_labels_gdf.to_file(os.path.join(output_dir, 'clipped_labels.gpkg'))
 
             try:
                 datasets_list = dets_gdf.dataset.unique()
@@ -276,6 +300,8 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
             for dataset in datasets_list:
                 dets_gdf_dict[dataset] = dets_gdf[dets_gdf.dataset == dataset].copy()
                 clipped_labels_gdf_dict[dataset] = clipped_labels_gdf[clipped_labels_gdf.dataset==dataset]
+
+            del split_tiles_gdf, tiles_gdf
         
         else:
             datasets_list = ['all dets']
@@ -289,16 +315,14 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
         id_classes = range(len(categories_info_df))
         written_files = []
         output_dir_by_dst = {}
-        metrics_dict_by_cl = {}
+        metrics_dict_by_cl = {dataset: [] for dataset in datasets_list}
         global_metrics_dict = {}
-        for dataset in datasets_list:
-            metrics_dict_by_cl[dataset] = []
-            output_dir_by_dst[dataset] = os.path.join(output_dir, dataset)
-            os.makedirs(output_dir_by_dst[dataset], exist_ok=True)
-            global_metrics_dict[dataset] = {}
         metrics_cl_df_dict = {}
 
         for dataset in datasets_list:
+            output_dir_by_dst[dataset] = os.path.join(output_dir, dataset)
+            os.makedirs(output_dir_by_dst[dataset], exist_ok=True)
+
             tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = get_fractional_sets(
                 dets_gdf_dict[dataset], clipped_labels_gdf_dict[dataset], iou_threshold, area_threshold)
 
