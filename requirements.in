@@ -1,4 +1,4 @@
-stdl-object-detector @ git+https://github.com/swiss-territorial-data-lab/object-detector.git@v2.3.3
+stdl-object-detector @ git+https://github.com/swiss-territorial-data-lab/object-detector.git@v.2.3.3
 openpyxl
 rio-hist
 scikit-image
