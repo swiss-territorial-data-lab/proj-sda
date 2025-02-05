@@ -160,8 +160,8 @@ merge_across_years.py:
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_directory: data
-  detections: ../output/trne/merged_results/merged_detections_ticino.gpkg
-  canton: ticino
+  detections: ../output/trne/merged_results/vaud/merged_detections_across_years_vaud.gpkg
+  canton: vaud
   infos:
     layers_directory: layers/{canton}/    # {canton} is replaced in-script with the right name
     ticino:
@@ -189,7 +189,7 @@ filter_detections.py:
       waters: lakes_VD.gpkg
   attribute_names: layers/attribute_names.xlsx
   dem: DEM/switzerland_dem_EPSG2056.tif
-  labels: ../output/trne/filtered_ground_truth_{canton}.gpkg
+  labels: ../output/trne/filtered_ground_truth_vaud.gpkg
   categories: ../output/trne/category_ids.json
   elevation_threshold: 900.0 # m, altitude threshold
   score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2

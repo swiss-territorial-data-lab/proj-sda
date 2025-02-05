@@ -333,7 +333,7 @@ if __name__ == "__main__":
         written_files.extend(
             metrics.perform_assessment(
                 detections_infos_gdf, LABELS, CATEGORIES, METHOD, os.path.dirname(DETECTIONS),
-                score=SCORE, additional_columns=['valid_area', 'area_ratio', 'compactness', 'year_label', 'year_det'],
+                score=SCORE, drop_year=True, additional_columns=['valid_area', 'area_ratio', 'compactness'],
                 tagged_results_filename='tagged_final_dets', reliability_diagram_filename='final_reliability_diagram'
             )
         )
