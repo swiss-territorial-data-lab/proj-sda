@@ -78,7 +78,7 @@ The project `proj-sda` (in combination with the `object-detector`) is organised 
 │   ├── FP
 │   ├── ground_truth                                                             
 │   ├── layers                                      # available on request 
-│   └── categories_ids.json                         # class dictionnary     
+│   └── categories_ids.json                         # class dictionary     
 ├── functions                                       # folder containing the function scripts           
 ├── images                                          # readme images                                 
 ├── models                                          # folder containing the trained models
@@ -105,7 +105,7 @@ Below, the description of input data used for this project.
     - canton: shapefile of the cantonal borders used to define the AoI. The limits of Canton of Ticino and Canton of Vaud are provided under data/AoI.
 - ground truth: labels vectorised by the domain experts. <br>
 **Disclaimer:** the ground truth dataset is unofficial and has been produced specifically for the purposes of this project.
-- layers: list of vector layers provided by the domain experts to spatially intersect with the results to either exclud detections or to add intersection information in the final attribute table. The data is available on the cantonal geoportals ([Ticino](https://www4.ti.ch/dt/sg/sai/ugeo/temi/geoportale-ticino/geoportale/geodati) and [Vaud](https://www.geo.vd.ch/)) or are available on request.
+- layers: list of vector layers provided by the domain experts to spatially intersect with the results to either exclude detections or to add intersection information in the final attribute table. The data is available on the cantonal geoportals ([Ticino](https://www4.ti.ch/dt/sg/sai/ugeo/temi/geoportale-ticino/geoportale/geodati) and [Vaud](https://www.geo.vd.ch/)) or are available on request.
 - category_ids.json: categories attributed to the detections.
 - models: the trained models used to produce the results presented in the documentation are available on request.
 
@@ -123,7 +123,7 @@ The `proj-sda` repository contains scripts to prepare and post-process the data 
 3. `results_analysis.py`: plot some parameters of the detections to help understand the results (optional).
 4. `merge_detections.py`: merge adjacent detections cut by tiles into a single detection and attribute the class based on the largest area.
 5. `merge_years.py`: merge all the detection layers obtained during inference by year.
-6. `merge_multi_results.py`: merge the results from different models into one dataset of selecte detections.
+6. `merge_multi_results.py`: merge the results from different models into one dataset of selected detections.
 7. `merge_across_years`: dissolve overlapping detections of different years.
 6. `filter_detections.py`: filter detections by overlap with other vector layers. The overlapping portion of the detection can be removed or a new attribute is created to indicate the overlapping ratio with the layer of interest. Other information such as score, elevation, or slope are also displayed.
 7. `get_dem.sh`: download the DEM of Switzerland.
@@ -225,13 +225,16 @@ $ scripts/batch_process_multi_models.sh
 
 Additional scripts can be used to process images. Their use is optional.
 
-1. `clip.py`: clip a vecor layer with another one.
+1. `clip.py`: clip a vector layer with another one.
 2. `gt_analysis.py`: plot GT characteristics.
 3. `match_colour.py`: normalise the colour histogram to the one of a reference image. 
 4. `mosaic.py`: mosaic images. 
-5. `rgb_to_greyscale.py`: convert RGB images to greyscale images using the method developed by [Farella et al. 2022](https://doi.org/10.3390/jimaging8100269), for which the code is available [here](https://github.com/3DOM-FBK/Hyper_U_Net). 
-6. `rgb_to_greyscale.sh`: convert RGB images to greyscale images. 
+5. `rgb_to_greyscale.py`: convert RGB images to greyscale images with rasterio. 
+6. `rgb_to_greyscale.sh`: convert RGB images to greyscale images with GDAL. 
 7. `tiff2geotiff.py`: convert tiff to geotiff files.
+
+This project uses a multi-year dataset comprising greyscale and RGB images. The method developed by [Farella et al. 2022](https://doi.org/10.3390/jimaging8100269), for which the code is available [here](https://github.com/3DOM-FBK/Hyper_U_Net), was also tested for the colourisation of the historical greyscale images
+
 
 ## Disclaimer
 
