@@ -29,7 +29,7 @@ generate_tilesets.py:
       year: SWISSIMAGE_YEAR                 # supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
       location: https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage-product/default/{year}/3857/{z}/{x}/{y}.jpeg
   tile_size: 256      # per side, in pixels
-  overwrite: True
+  overwrite: False
   n_jobs: 10
   seed: 2
   COCO_metadata:

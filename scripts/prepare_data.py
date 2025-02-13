@@ -7,6 +7,7 @@ import time
 import argparse
 import yaml
 import re
+from tqdm import tqdm
 
 import geopandas as gpd
 import morecantile
@@ -56,12 +57,12 @@ def aoi_tiling(gdf, tms='WebMercatorQuad'):
     tms = morecantile.tms.get(tms)    # epsg:3857
 
     tiles_all = [] 
-    for boundary in gdf.itertuples():
+    for boundary in tqdm(gdf.itertuples(), desc='Tiling AOI parts', total=len(gdf)):
         coords = (boundary.minx, boundary.miny, boundary.maxx, boundary.maxy)      
         tiles = gpd.GeoDataFrame.from_features([tms.feature(x, projected=False) for x in tms.tiles(*coords, zooms=[ZOOM_LEVEL])]) 
         tiles.set_crs(epsg=4326, inplace=True)
         tiles_all.append(tiles)
-    tiles_all_gdf = gpd.GeoDataFrame(pd.concat(tiles_all, ignore_index=True))
+    tiles_all_gdf = gpd.GeoDataFrame(pd.concat(tiles_all, ignore_index=True)).drop_duplicates(subset=['title'], keep='first')
 
     return tiles_all_gdf
 
@@ -237,7 +238,12 @@ if __name__ == "__main__":
     logger.info("- Get the label boundaries")  
     boundaries_df = labels_4326_gdf.bounds
     logger.info("- Tiling of the AoI")  
-    tiles_4326_aoi_gdf = aoi_tiling(boundaries_df)
+    PRE_EXISTING_TILING = f'data/layers/{CANTON}/tiles_z{ZOOM_LEVEL}_w_dets.geojson'
+    if os.path.exists(PRE_EXISTING_TILING):
+        logger.info(f'Using existing tiling: {PRE_EXISTING_TILING}')
+        tiles_4326_aoi_gdf = gpd.read_file(PRE_EXISTING_TILING)
+    else:
+        tiles_4326_aoi_gdf = aoi_tiling(boundaries_df)
     tiles_4326_labels_gdf = gpd.sjoin(tiles_4326_aoi_gdf, labels_4326_gdf, how='inner', predicate='intersects')
 
     # Tiling of the AoI from which empty tiles will be selected
