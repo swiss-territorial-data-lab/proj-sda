@@ -64,7 +64,7 @@ if __name__ == "__main__":
     for dataset, dets_file in DETECTION_FILES.items():
         detections_ds_gdf = gpd.read_file(dets_file)    
         detections_ds_gdf[f'dataset'] = dataset
-        detections_gdf = pd.concat([detections_gdf, detections_ds_gdf], axis=0)
+        detections_gdf = pd.concat([detections_gdf, detections_ds_gdf], axis=0, ignore_index=True)
     detections_gdf = detections_gdf.to_crs(2056)
     detections_gdf['area'] = detections_gdf.area 
     detections_gdf['det_id'] = detections_gdf.index
@@ -93,7 +93,6 @@ if __name__ == "__main__":
     for year in detections_gdf.year_det.unique():
         detections_gdf = detections_gdf.copy()
         detections_by_year_gdf = detections_gdf[detections_gdf['year_det']==year]
-
         detections_buffer_gdf = detections_by_year_gdf.copy()
         detections_buffer_gdf['geometry'] = detections_by_year_gdf.geometry.buffer(DISTANCE, resolution=2)
 
@@ -210,7 +209,11 @@ if __name__ == "__main__":
         feature = os.path.join(f'tagged_merged_detections_at_{SCORE_THD}_threshold.gpkg'.replace('0.', '0dot'))
         tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
         tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category'}, errors='raise')
-        tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'label_class', 'label_category', 'year_label', 'det_class', 'det_category', 'year_det']]\
+        if 'year_label' in tagged_dets_gdf.keys() and 'year_det' in tagged_dets_gdf.keys():
+            tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'label_class', 'label_category', 'year_label', 'det_class', 'det_category', 'year_det']]\
+                .to_file(feature, driver='GPKG', index=False)
+        else:
+            tagged_dets_gdf[['geometry', 'det_id', 'score', 'tag', 'label_class', 'label_category', 'det_class', 'det_category']]\
             .to_file(feature, driver='GPKG', index=False)
         written_files.append(feature)
 
