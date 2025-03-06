@@ -91,6 +91,15 @@ merge_across_years.py:
   categories: category_ids.json
   assess: 
     enable: False
+
+# Remove artifacts due to tile boders
+remove_artifacts.py:
+  working_directory: output/det/{canton}
+  detections: merged_results/merged_detections_across_years.gpkg
+  tiles: {year}/tiles.geojson
+  close_area_min: 132500
+  close_area_max: 200000
+  iou_threshold: 0.75
   
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
