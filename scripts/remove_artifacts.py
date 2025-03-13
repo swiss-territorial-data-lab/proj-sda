@@ -54,8 +54,9 @@ if __name__ == "__main__":
 
     detections_gdf = gpd.read_file(DETECTIONS)
     ID = 'merged_id' if 'merged_id' in detections_gdf.columns else 'det_id'
-    detections_gdf['area'] = detections_gdf.area
-    logger.info(f"{len(detections_gdf)} detections")
+    detections_gdf['area'] = round(detections_gdf.area)
+    nbr_dets = len(detections_gdf)
+    logger.info(f"{nbr_dets} detections")
 
     tiles_gdf = gpd.read_file(TILES)
     tiles_gdf.to_crs(detections_gdf.crs, inplace=True)
@@ -64,48 +65,54 @@ if __name__ == "__main__":
     logger.info('Filter non-artifact data...')
     logger.info(f'The detections with an area between {CLOSE_AREA_MIN} and {CLOSE_AREA_MAX} m2 are considered.')
 
-    condition = (detections_gdf.area > CLOSE_AREA_MIN) & (detections_gdf.area < CLOSE_AREA_MAX)
+    condition = (detections_gdf.area > CLOSE_AREA_MIN) & (detections_gdf.area < CLOSE_AREA_MAX) & (detections_gdf.count_years <=2)
     pot_artifact_dets_gdf = detections_gdf[condition].copy()
     non_artifact_dets_gdf = detections_gdf[~condition].copy()
     del detections_gdf
 
     tiles_gdf['tile_geom'] = tiles_gdf.geometry
-    intersecting_dets_tiles_gdf = gpd.sjoin(pot_artifact_dets_gdf, tiles_gdf[['id', 'geometry', 'tile_geom']])
+    intersecting_dets_tiles_gdf = gpd.sjoin(pot_artifact_dets_gdf, tiles_gdf[['id', 'geometry', 'tile_geom']], how='left')
+    assert not intersecting_dets_tiles_gdf.id.isna().any(), "Some detections were not joined with any tile."
 
     logger.info('Remove artifacts...')
     iou = []
     for (i, ii) in zip(intersecting_dets_tiles_gdf.geometry, intersecting_dets_tiles_gdf.tile_geom):
         iou.append(metrics.intersection_over_union(i, ii))
     intersecting_dets_tiles_gdf['IoU'] = iou
+    sorted_intersecting_dets_tiles_gdf = intersecting_dets_tiles_gdf.sort_values('IoU', ascending=False).drop_duplicates([ID], ignore_index=True).round({'IoU': 2})
 
-    sorted_intersecting_dets_tiles_gdf = intersecting_dets_tiles_gdf.sort_values('IoU', ascending=False).drop_duplicates([ID, 'id'], ignore_index=True)
+    assert sorted_intersecting_dets_tiles_gdf.IoU.max() <= 1, \
+        f"Incoherent IoU over 1 for {sorted_intersecting_dets_tiles_gdf[sorted_intersecting_dets_tiles_gdf.IoU>1].shape[0]} detections."
+
     condition = sorted_intersecting_dets_tiles_gdf['IoU'] >= IOU_THRESHOLD
     artifacts_gdf = sorted_intersecting_dets_tiles_gdf[condition].drop(columns='tile_geom')
     non_artifact_dets_gdf = pd.concat([
-        non_artifact_dets_gdf, sorted_intersecting_dets_tiles_gdf.loc[~condition, non_artifact_dets_gdf.columns.tolist() + ['IoU']]
+        non_artifact_dets_gdf, sorted_intersecting_dets_tiles_gdf.loc[~condition, non_artifact_dets_gdf.columns]
     ], ignore_index=True)
+    assert nbr_dets == len(artifacts_gdf) + len(non_artifact_dets_gdf), "Tiles went missing when identifying square artifacts."
     del pot_artifact_dets_gdf, intersecting_dets_tiles_gdf, sorted_intersecting_dets_tiles_gdf
 
     logger.success(f"{DONE_MSG} {len(artifacts_gdf)} detections were removed as artifacts.")
-    logger.info(f"Try to recreate sharp angles on detections...")
-    condition = non_artifact_dets_gdf.area > MIN_ARTIFACT_AREA
-    pot_artifact_dets_gdf = non_artifact_dets_gdf[condition].copy()
+    if False:
+        logger.info(f"Try to recreate sharp angles on detections...")
+        condition = non_artifact_dets_gdf.area > MIN_ARTIFACT_AREA
+        pot_artifact_dets_gdf = non_artifact_dets_gdf[condition].copy()
 
-    intersecting_dets_tiles_gdf = gpd.sjoin(pot_artifact_dets_gdf, tiles_gdf[['id', 'geometry', 'tile_geom']])
-    duplicated_ids = intersecting_dets_tiles_gdf.loc[intersecting_dets_tiles_gdf.duplicated(ID), ID].unique()
-    intersecting_dets_tiles_gdf = intersecting_dets_tiles_gdf[~intersecting_dets_tiles_gdf[ID].isin(duplicated_ids)]
+        intersecting_dets_tiles_gdf = gpd.sjoin(pot_artifact_dets_gdf, tiles_gdf[['id', 'geometry', 'tile_geom']])
+        duplicated_ids = intersecting_dets_tiles_gdf.loc[intersecting_dets_tiles_gdf.duplicated(ID), ID].unique()
+        intersecting_dets_tiles_gdf = intersecting_dets_tiles_gdf[~intersecting_dets_tiles_gdf[ID].isin(duplicated_ids)]
 
-    intersecting_dets_tiles_gdf.loc[:, 'geometry'] = intersecting_dets_tiles_gdf.buffer(20)
-    intersecting_dets_tiles_gdf.loc[:, 'geometry'] = [det.geometry.intersection(det.tile_geom) for det in intersecting_dets_tiles_gdf.itertuples()]
-    sharp_dets_gdf = intersecting_dets_tiles_gdf[non_artifact_dets_gdf.columns].reset_index(drop=True)
+        intersecting_dets_tiles_gdf.loc[:, 'geometry'] = intersecting_dets_tiles_gdf.buffer(20)
+        intersecting_dets_tiles_gdf.loc[:, 'geometry'] = [det.geometry.intersection(det.tile_geom) for det in intersecting_dets_tiles_gdf.itertuples()]
+        sharp_dets_gdf = intersecting_dets_tiles_gdf[non_artifact_dets_gdf.columns].reset_index(drop=True)
 
-    filepath = os.path.join(OUTPUT_DIR, 'test_angles.gpkg')
-    sharp_dets_gdf.to_file(filepath)
-    written_files.append(filepath)
+        filepath = os.path.join(OUTPUT_DIR, 'test_angles.gpkg')
+        sharp_dets_gdf.to_file(filepath)
+        written_files.append(filepath)
 
     logger.info("Export results...")
 
-    filepath = os.path.join(OUTPUT_DIR, f'artifacts_A-{CLOSE_AREA_MIN}-{CLOSE_AREA_MAX}.gpkg')
+    filepath = os.path.join(OUTPUT_DIR, f'artifacts_A-{CLOSE_AREA_MIN}-{CLOSE_AREA_MAX}_IoU-{IOU_THRESHOLD}.gpkg')
     artifacts_gdf.to_file(filepath, index=False)
     written_files.append(filepath)
 

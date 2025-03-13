@@ -334,7 +334,7 @@ if __name__ == "__main__":
         fig, ax = plt.subplots(1, 1)
         ax = full_dets_per_year.plot(x='year', y='valid_area', kind='scatter', rot=0, grid=True)
         written_files.append(format_scatterplot(
-            fig, CANTON, 'Median area per det for each year', 'Median area per detection', output_dir=OUTPUT_DIR
+            fig, CANTON, 'Median area per det for each year', 'Median area per detection [m2]', output_dir=OUTPUT_DIR
         ))
 
         # Boxplot of the merged score per yeaer

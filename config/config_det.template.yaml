@@ -101,11 +101,20 @@ merge_across_years.py:
   categories: category_ids.json
   assess: 
     enable: False
+
+# Remove artifacts due to tile boders
+remove_artifacts.py:
+  working_directory: output/det/CANTON
+  detections: merged_results/merged_detections_across_years.gpkg
+  tiles: SWISSIMAGE_YEAR/tiles.geojson
+  close_area_min: 87500
+  close_area_max: 270000
+  iou_threshold: 0.5
   
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_directory: data
-  detections: ../output/det/CANTON/merged_results/merged_detections_across_years.gpkg
+  detections: ../output/det/CANTON/merged_results/actual_dets_across_years.gpkg
   canton: CANTON
   infos:
     layers_directory: layers/{canton}/

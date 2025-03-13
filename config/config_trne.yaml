@@ -133,7 +133,7 @@ merge_detections.py:
     enable: True
     metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
 
-
+# Merge results from various models
 merge_multi_results.py:
   working_directory: output/trne
   output_directory: merged_results
@@ -145,7 +145,7 @@ merge_multi_results.py:
     enable: True
     metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
 
-  
+# Merge results across years
 merge_across_years.py:
   working_directory: output/trne
   output_directory: merged_results
@@ -155,6 +155,15 @@ merge_across_years.py:
   assess: 
     enable: True
     metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
+
+# Remove artifacts due to tile boders
+remove_artifacts.py:
+  working_directory: output/trne
+  detections: merged_results/merged_detections_across_years.gpkg
+  tiles: tiles.geojson
+  close_area_min: 87500
+  close_area_max: 270000
+  iou_threshold: 0.5
 
 
 # Filtering and merging detection polygons to improve final results

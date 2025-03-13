@@ -104,7 +104,7 @@ remove_artifacts.py:
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_directory: data
-  detections: ../output/det/{canton}/single_year/merged_results/merged_detections_across_years.gpkg
+  detections: ../output/det/{canton}/single_year/merged_results/actual_dets_across_years.gpkg
   canton: {canton}
   infos:
     layers_directory: layers/{canton}/

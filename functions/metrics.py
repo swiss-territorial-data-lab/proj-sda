@@ -290,7 +290,6 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
             tiles_gdf = split_tiles_gdf.dissolve(['dataset'] + ([] if drop_year else ['year_tile']), as_index=False)
 
             clipped_labels_gdf = clip_labels(labels_w_id_gdf, tiles_gdf, fact=0.99999)
-            clipped_labels_gdf.to_file(os.path.join(output_dir, 'clipped_labels.gpkg'))
 
             try:
                 datasets_list = dets_gdf.dataset.unique()
