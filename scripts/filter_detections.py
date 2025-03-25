@@ -89,6 +89,9 @@ if __name__ == "__main__":
     CANTON_PARAMS = cfg['infos'][CANTON]
     LAYERS_DIR = cfg['infos']['layers_directory'].replace('{canton}', CANTON)
 
+    AOI = CANTON_PARAMS['aoi']
+    EXCLUSION = CANTON_PARAMS['exclusion_list']
+    ELEVATION_THD = CANTON_PARAMS['elevation']
     AGRI_AREA = none_if_undefined(CANTON_PARAMS, 'agri_area') 
     BUILDINGS = none_if_undefined(CANTON_PARAMS, 'buildings') 
     BUILD_AREAS = none_if_undefined(CANTON_PARAMS, 'building_areas') 
@@ -119,24 +122,6 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')
-
-    logger.info(f'Canton: {CANTON}')
-
-    if CANTON == 'vaud':
-        AOI = 'AoI/vaud/MN95_CAD_TPR_LAD_MO_VD.shp'
-        EXCLUSION = ['waters']
-        ELEVATION_THD = 4500
-    elif CANTON == 'ticino':
-        AOI = 'AoI/ticino/limiti_cantone_2012_MN95.shp'
-        EXCLUSION = ['building_areas', 'forests', 'zone_non_compatible_LPN', 'waters']
-        ELEVATION_THD = 900
-    else:
-        logger.critical(f'Unknown canton: {CANTON}')
-        sys.exit(1)
-    logger.info(f'Using cantonal parameters:')
-    logger.info(f'    - area of interest: {AOI}')
-    logger.info(f'    - exclusion area: {EXCLUSION}')
-    logger.info(f'    - elevation threshold: {ELEVATION_THD}')
 
     written_files = [] 
 

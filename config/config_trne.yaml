@@ -105,7 +105,7 @@ assess_detections.py:
   iou_threshold: 0.1
   area_threshold: 50       # area under which the polygons are discarded from assessment
   metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
-  confidence_threshold: 0.05
+  # confidence_threshold: 0.05
 
 # Plots (optional)
 result_analysis.py:
@@ -136,8 +136,8 @@ merge_detections.py:
 # Merge results from various models
 merge_multi_results.py:
   working_directory: output/trne
-  output_directory: merged_results
-  glob_det_path: run*/dst_merged_detections_at_0dot05_threshold.gpkg
+  output_directory: run68
+  glob_det_path: run68/dst_merged_detections_at_0dot05_threshold.gpkg
   labels: labels.geojson
   categories: category_ids.json
   threshold: 0.1
@@ -148,8 +148,8 @@ merge_multi_results.py:
 # Merge results across years
 merge_across_years.py:
   working_directory: output/trne
-  output_directory: merged_results
-  detections: merged_results/merged_detections.gpkg
+  output_directory: run68
+  detections: run68/merged_detections.gpkg
   labels: labels.geojson
   categories: category_ids.json
   assess: 
