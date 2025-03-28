@@ -137,32 +137,35 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
-    CANTON = cfg['canton']
+    DATASET_KEYS = cfg['datasets'].keys()
+    CANTON = cfg['canton'] if 'canton' in cfg.keys() else None
+    CATEGORY = cfg['datasets']['category'] if 'category' in DATASET_KEYS else False
     OUTPUT_DIR = cfg['output_folder']
     SHPFILE = cfg['datasets']['shapefile']
-    FP_SHPFILE = cfg['datasets']['fp_shapefile'] if 'fp_shapefile' in cfg['datasets'].keys() else None
-    EPT_YEAR = cfg['datasets']['empty_tiles_year'] if 'empty_tiles_year' in cfg['datasets'].keys() else None
+    FP_SHPFILE = cfg['datasets']['fp_shapefile'] if 'fp_shapefile' in DATASET_KEYS else None
+    EPT_YEAR = cfg['datasets']['empty_tiles_year'] if 'empty_tiles_year' in DATASET_KEYS else None
     DEM = cfg['dem'] if 'dem' in cfg.keys() else None
-    if 'empty_tiles_aoi' in cfg['datasets'].keys() and 'empty_tiles_shp' in cfg['datasets'].keys():
+
+    EPT_SHPFILE = None
+    EPT = None
+    if 'empty_tiles_aoi' in DATASET_KEYS and 'empty_tiles_shp' in DATASET_KEYS:
         logger.error("Choose between supplying an AoI shapefile ('empty_tiles_aoi') in which empty tiles will be selected, or a shapefile with selected empty tiles ('empty_tiles_shp')")
         sys.exit(1)    
-    elif 'empty_tiles_aoi' in cfg['datasets'].keys():
+    elif 'empty_tiles_aoi' in DATASET_KEYS:
         EPT_SHPFILE = cfg['datasets']['empty_tiles_aoi']
         EPT = 'aoi'
-    elif 'empty_tiles_shp' in cfg['datasets'].keys():
+    elif 'empty_tiles_shp' in DATASET_KEYS:
         EPT_SHPFILE = cfg['datasets']['empty_tiles_shp'] 
         EPT = 'shp'
-    else:
-        EPT_SHPFILE = None
-        EPT = None
-    CATEGORY = cfg['datasets']['category'] if 'category' in cfg['datasets'].keys() else False
+
+    WATERS = None
+    ELEVATION_THD = None
     if CANTON == 'vaud':
         WATERS = 'data/layers/vaud/lakes_VD.gpkg'
-        ELEVATION_THD = None
     elif CANTON == 'ticino':
         WATERS = 'data/layers/ticino/MU_Acque_TI_dissolved.gpkg'
-        ELEVATION_THD = 900
-    else:
+        ELEVATION_THD = 1000
+    elif CANTON:
         logger.critical(f'Unknown canton: {CANTON}')
         sys.exit(1)
     logger.info(f'Using cantonal parameters:')

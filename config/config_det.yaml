@@ -94,9 +94,9 @@ merge_across_years.py:
 
 # Remove artifacts due to tile boders
 remove_artifacts.py:
-  working_directory: output/det/{canton}
+  working_directory: output/det/{canton}/single_year
   detections: merged_results/merged_detections_across_years.gpkg
-  tiles: {year}/tiles.geojson
+  tiles: tiles.geojson
   close_area_min: 132500
   close_area_max: 200000
   iou_threshold: 0.75
@@ -104,11 +104,14 @@ remove_artifacts.py:
 # Filtering and merging detection polygons to improve final results
 filter_detections.py:
   working_directory: data
-  detections: ../output/det/{canton}/single_year/merged_results/merged_detections_across_years.gpkg
+  detections: ../output/det/{canton}/single_year/merged_results/actual_dets_across_years.gpkg
   canton: {canton}
   infos:
     layers_directory: layers/{canton}/
     ticino:
+      elevation: 900
+      exclusion_list: ['building_areas', 'forests', 'zone_non_compatible_LPN', 'waters']
+      aoi: AoI/ticino/limiti_cantone_2012_MN95.shp
       agri_area: Idoneità_Agricola.shp
       building_areas: Zones_batir_Ind.shp
       climatic_areas: zones_climatiques_compatibles_sda_tc.gpkg
@@ -124,6 +127,9 @@ filter_detections.py:
       zone_compatible_LPN_extensive: Zona_SAC_compatibile_con_i_disposti_LPN_previa_gestione_estensiva.gpkg
       zone_non_compatible_LPN: Zona_SAC_non_compatibile_con_i_disposti_LPN.gpkg
     vaud: 
+      elevation: 4500
+      exclusion_list: ['waters']
+      aoi: AoI/vaud/MN95_CAD_TPR_LAD_MO_VD.shp
       buildings: Batiments_en_surface_MO.gpkg
       building_areas: affectation_zone_a_batir.gpkg
       climatic_areas: zones_climatiques_compatibles_sda_VD.gpkg

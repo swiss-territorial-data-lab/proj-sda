@@ -5,7 +5,7 @@ echo 'Run batch process to perform inference over several SWISSIMAGE years'
 mkdir -p config/batch_process
 
 SECOND=0
-canton=CANTON                     # provide canton name
+canton=CANTON                     # provide canton name in lower case
 dl_model=68
 for year in YEAR1 YEAR2 YEAR3     # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)  
 
@@ -49,6 +49,8 @@ python scripts/merge_multi_results.py config/batch_process/config_det_${year}_${
 echo ' '
 echo 'merge_across_years.py'
 python scripts/merge_across_years.py config/batch_process/config_det_${year}_${canton}.yaml
+echo 'remove_artifacts.py'
+python ./scripts/remove_artifacts.py config/batch_process/config_det_${year}_${canton}.yaml
 echo 'filter_detections.py'
 python ./scripts/filter_detections.py config/batch_process/config_det_${year}_${canton}.yaml
 
