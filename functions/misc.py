@@ -8,6 +8,9 @@ import pandas as pd
 from geopandas import sjoin
 from shapely.affinity import scale
 
+from functions.constants import THRESHOLD_PER_MODEL
+        
+
 def check_validity(poly_gdf, correct=False):
     '''
     Test if all the geometry of a dataset are valid. When it is not the case, correct the geometries with a buffer of 0 m
@@ -121,6 +124,21 @@ def ensure_dir_exists(dirpath):
     
     return dirpath
 
+
+def find_right_threshold(path, second_path=None):
+    for key, value in THRESHOLD_PER_MODEL.items():
+        if str(key) in path:
+            return value
+        
+    if second_path:
+        for key, value in THRESHOLD_PER_MODEL.items():
+            if str(key) in second_path:
+                return value
+
+    logger.error('No indication of the model used found in the path.')
+    logger.error('The best score threshold could not be determined.')
+    sys.exit(1)
+        
 
 def format_logger(logger):
     """Format the logger from loguru

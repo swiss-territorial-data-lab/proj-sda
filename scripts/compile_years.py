@@ -3,13 +3,13 @@ import os
 import sys
 import time
 import yaml
+from tqdm import tqdm
 
 import geopandas as gpd
 import pandas as pd
 
 sys.path.insert(0, '.')
 import functions.misc as misc
-import merge_across_years
 from functions.constants import DONE_MSG
 
 from loguru import logger
@@ -47,6 +47,11 @@ if __name__ == "__main__":
     written_files = [] 
     detections_final_gdf = gpd.GeoDataFrame()
 
+    if '*' in LAYER:
+        LAYER = LAYER.replace(
+            '*', str(misc.find_right_threshold(WORKING_DIR)).replace('.', 'dot')
+        )
+
     LAYER_END = LAYER.split('_')[-2:]
     feature = f'yearly_dets_{LAYER_END[0]}_{LAYER_END[1]}'
 
@@ -57,7 +62,7 @@ if __name__ == "__main__":
         except OSError:
             pass
 
-    for year in YEARS: 
+    for year in tqdm(YEARS, desc="Compile years"): 
         path = str(year) + '/' + LAYER
         if os.path.exists(path): 
             detections_gdf = gpd.read_file(path)
@@ -71,10 +76,11 @@ if __name__ == "__main__":
             pass
     
     if FILE=='concatenate':
+        logger.info('Export results...')
         detections_final_gdf.to_file(feature, driver='GPKG')
         written_files.append(feature)
 
-    logger.info("The following files were written. Let's check them out!")
+    logger.info(f"{DONE_MSG} The following files were written. Let's check them out!")
     for written_file in written_files:
         logger.info(written_file)
 

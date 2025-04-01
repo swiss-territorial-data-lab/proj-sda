@@ -130,6 +130,7 @@ merge_detections.py:
   score_threshold: 0.05
   assess: 
     enable: True
+    no_class: False
     metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
 
 # Merge results from various models

@@ -2,3 +2,4 @@ DONE_MSG = "...done."
 SCATTER_PLOT_MODE = 'markers+lines'
 OVERWRITE = True
 KEEP_DATASET_SPLIT = True
+THRESHOLD_PER_MODEL = {68: 0.5, 72: 0.4, 75: 0.2, 92: 0.25, 102: 0.35}
