@@ -41,8 +41,8 @@ do
         echo ' '
     fi
 done
-echo 'merge_year.py'
-python scripts/merge_years.py config/batch_process/config_det_${year}_${canton}.yaml
+echo 'compile_years.py'
+python scripts/compile_years.py config/batch_process/config_det_${year}_${canton}.yaml
 echo ' '
 echo 'merge_multi_results.py'   # Not useful, but rename the results to allow the use the same template than for several model
 python scripts/merge_multi_results.py config/batch_process/config_det_${year}_${canton}.yaml

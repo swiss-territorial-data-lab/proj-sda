@@ -50,8 +50,8 @@ done
 for dl_model in 68 72 75 92 102
 
 do
-    echo 'merge_year.py'
-    python ./scripts/merge_years.py config/batch_process/config_det_${year}_${canton}_${dl_model}.yaml
+    echo 'compile_years.py'
+    python ./scripts/compile_years.py config/batch_process/config_det_${year}_${canton}_${dl_model}.yaml
 done
 
 echo 'merge_multi_results.py'

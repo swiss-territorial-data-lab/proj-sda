@@ -155,7 +155,7 @@ if __name__ == "__main__":
         detections_merge_gdf['det_class'] = det_class_all
         detections_merge_gdf['score'] = det_score_all
 
-        complete_merge_dets_gdf = pd.merge(detections_merge_gdf, detections_join_gdf[['index_merge', 'year_det'] + [] if 'dataset' in detections_merge_gdf.columns else ['dataset']], on='index_merge')
+        complete_merge_dets_gdf = pd.merge(detections_merge_gdf, detections_join_gdf[['index_merge', 'year_det'] + ([] if 'dataset' in detections_merge_gdf.columns else ['dataset'])], on='index_merge')
         detections_all_years_gdf = pd.concat([detections_all_years_gdf, complete_merge_dets_gdf, detections_within_tiles_gdf], ignore_index=True)
 
         del complete_merge_dets_gdf, detections_merge_gdf, detections_by_year_gdf, detections_within_tiles_gdf, detections_join_gdf
@@ -176,7 +176,8 @@ if __name__ == "__main__":
     logger.info(f"{td - sc} detections were removed by score filtering (score threshold = {SCORE_THD})")
 
     logger.success(f"{DONE_MSG} {len(detections_all_years_gdf)} features were kept.")
-    logger.success(f'The covered area is {round(detections_all_years_gdf.unary_union.area/1000000, 2)} km2.')
+    if len(detections_all_years_gdf) > 0:
+        logger.success(f'The covered area is {round(detections_all_years_gdf.unary_union.area/1000000, 2)} km2.')
 
     if ASSESS:
         written_files.extend(

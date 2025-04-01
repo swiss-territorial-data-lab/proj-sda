@@ -11,15 +11,20 @@ import pandas as pd
 from hashlib import md5
 
 sys.path.insert(0, '.')
-from functions.constants import DONE_MSG, OVERWRITE
+from functions.constants import DONE_MSG, KEEP_DATASET_SPLIT, OVERWRITE
 from functions.metrics import perform_assessment
 from functions.misc import format_logger
 from merge_multi_results import group_detections
 
 logger = format_logger(logger)
 
-def main(all_years_dets_gdf, assess=False, method=None, labels_path=None, categories_path=None, output_dir='output'):
+def main(all_years_dets_gdf, assess=False, no_class=True, method=None, labels_path=None, categories_path=None, output_dir='output'):
     written_files = []
+
+    if KEEP_DATASET_SPLIT and assess:
+        split_tiles_gdf = gpd.read_file(os.path.join(os.path.dirname(labels_path), 'split_aoi_tiles.geojson'))
+        split_tiles_gdf = split_tiles_gdf.to_crs(2056)
+        tiles_gdf = split_tiles_gdf.dissolve(['dataset'], as_index=False)
 
     last_written_file = os.path.join(output_dir, 'merged_detections_across_years.gpkg')
     last_metric_file = os.path.join(output_dir, 'reliability_merged_across_years_single_class.jpeg')
@@ -45,6 +50,7 @@ def main(all_years_dets_gdf, assess=False, method=None, labels_path=None, catego
 
     for df in  [min_year_df, max_year_df, count_year_df]:
         merged_dets_across_years_gdf = pd.merge(merged_dets_across_years_gdf, df, on='group_id', how='left')
+    # bonus if present several years
     # merged_dets_across_years_gdf.loc[:, 'merged_score'] = merged_dets_across_years_gdf.apply(
     #     lambda x: min(1, x['merged_score'] + 0.1 * (x['count_years']-1)), axis=1
     # )
@@ -58,12 +64,14 @@ def main(all_years_dets_gdf, assess=False, method=None, labels_path=None, catego
     logger.success(f"{DONE_MSG} {len(merged_dets_across_years_gdf)} features were left after merging across years.")
 
     if assess:
+        if KEEP_DATASET_SPLIT:
+            merged_dets_across_years_gdf = gpd.overlay(merged_dets_across_years_gdf, tiles_gdf, keep_geom_type=True)
         written_files.extend(
             perform_assessment(
                 merged_dets_across_years_gdf, labels_path, categories_path, method, output_dir,
-                score='merged_score', additional_columns=['score', 'first_year', 'last_year', 'count_years'], drop_year=True,
-                tagged_results_filename='tagged_merged_results_across_years', reliability_diagram_filename='reliability_diagram_merged_results_across_years',
-                global_metrics_filename='global_metrics_merged_rslts_across_years'
+                score='merged_score', additional_columns=['score', 'first_year', 'last_year', 'count_years'], drop_year=True, no_class=no_class,
+                tagged_results_filename='tagged_merged_results_across_all_years', reliability_diagram_filename='reliability_diagram_merged_results_across_all_years',
+                global_metrics_filename='global_metrics_merged_rslts_across_all_years'
             )
         )
 
@@ -100,12 +108,13 @@ if __name__ == "__main__":
     ASSESS = cfg['assess']['enable']
     if ASSESS:
         METHOD = cfg['assess']['metrics_method']
+        NO_CLASS = cfg['assess']['no_class']
         LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
         CATEGORIES = cfg['categories']
     else:
-        METHOD, LABELS, CATEGORIES = (None, None, None)
+        METHOD, NO_CLASS, LABELS, CATEGORIES = (None, False, None, None)
 
-    written_files = main(detections_gdf, ASSESS, METHOD, LABELS, CATEGORIES, OUTPUT_DIR)
+    written_files = main(detections_gdf, ASSESS, NO_CLASS, METHOD, LABELS, CATEGORIES, OUTPUT_DIR)
 
     # Stop chronometer  
     logger.info(f"Nothing left to be done: exiting. Elapsed time: {(time.time()-tic):.2f} seconds")

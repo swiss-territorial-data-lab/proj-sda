@@ -122,7 +122,7 @@ The `proj-sda` repository contains scripts to prepare and post-process the data 
 2. `prepare_data.py`: format labels and produce tiles to be processed in the OD.
 3. `results_analysis.py`: plot some parameters of the detections to help understand the results (optional).
 4. `merge_detections.py`: merge adjacent detections cut by tiles into a single detection and attribute the class based on the largest area.
-5. `merge_years.py`: merge all the detection layers obtained during inference by year.
+5. `compile_years.py`: merge all the detection layers obtained during inference by year.
 6. `merge_multi_results.py`: merge the results from different models into one dataset of selected detections.
 7. `merge_across_years`: dissolve overlapping detections of different years.
 6. `filter_detections.py`: filter detections by overlap with other vector layers. The overlapping portion of the detection can be removed or a new attribute is created to indicate the overlapping ratio with the layer of interest. Other information such as score, elevation, or slope are also displayed.

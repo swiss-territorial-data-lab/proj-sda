@@ -116,8 +116,7 @@ result_analysis.py:
   class_dict: {'Activité non agricole': 'Non-agricultural activity', # Provide a customed legend
                 'Mouvement de terrain': 'Land movement'}
 
-
-# Assess the final results
+# Merge detections across tiles
 merge_detections.py:
   working_directory: output/trne
   output_dir: run68
@@ -143,68 +142,5 @@ merge_multi_results.py:
   threshold: 0.1
   assess: 
     enable: True
-    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
-
-# Merge results across years
-merge_across_years.py:
-  working_directory: output/trne
-  output_directory: run68
-  detections: run68/merged_detections.gpkg
-  labels: labels.geojson
-  categories: category_ids.json
-  assess: 
-    enable: True
-    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
-
-# Remove artifacts due to tile boders
-remove_artifacts.py:
-  working_directory: output/trne
-  detections: merged_results/merged_detections_across_years.gpkg
-  tiles: tiles.geojson
-  close_area_min: 87500
-  close_area_max: 270000
-  iou_threshold: 0.5
-
-
-# Filtering and merging detection polygons to improve final results
-filter_detections.py:
-  working_directory: data
-  detections: ../output/trne/merged_results/vaud/merged_detections_across_years_vaud.gpkg
-  canton: vaud
-  infos:
-    layers_directory: layers/{canton}/    # {canton} is replaced in-script with the right name
-    ticino:
-      agri_area: Idoneità_Agricola.shp
-      building_areas: Zones_batir_Ind.shp
-      climatic_areas: zones_climatiques_compatibles_sda_tc.gpkg
-      compatible_SDA: Compatibilita_LPN-SAC_20241010.gpkg
-      forests: Fôrets.shp
-      large_rivers: Grandi_corsi.shp
-      protected_underground_water: Protezione_acque_sott.shp
-      polluted_sites: Siti_inquinati.shp
-      sda: Censimento_SAC_2023.shp
-      slope: terrain_pente_TC_SA.gpkg
-      waters: MU_Acque_TI.shp
-      zone_compatible_LPN: Zona_SAC_compatibile_con_i_disposti_LPN.gpkg
-      zone_compatible_LPN_extensive: Zona_SAC_compatibile_con_i_disposti_LPN_previa_gestione_estensiva.gpkg
-      zone_non_compatible_LPN: Zona_SAC_non_compatibile_con_i_disposti_LPN.gpkg
-    vaud: 
-      buildings: Batiments_en_surface_MO.gpkg
-      building_areas: affectation_zone_a_batir.gpkg
-      climatic_areas: zones_climatiques_compatibles_sda_VD.gpkg
-      polluted_sites: Sites_pollues_VD2022.gpkg
-      sda: SDA_v5_2.gpkg
-      slope: terrain_pente_VD.gpkg
-      waters: lakes_VD.gpkg
-  attribute_names: layers/attribute_names.xlsx
-  dem: DEM/switzerland_dem_EPSG2056.tif
-  labels: ../output/trne/filtered_ground_truth_vaud.gpkg
-  categories: ../output/trne/category_ids.json
-  elevation_threshold: 900.0 # m, altitude threshold
-  score_threshold: 0.05 # detection score (from 0 to 1) provided by detectron2
-  area_threshold: 100.0 # m2, area threshold under which polygons are discarded
-  area_ratio_threshold: 0.25 # ratio between the original and the final valid area under which polygons are discarded
-  compactness_threshold: 0.2
-  assess: 
-    enable: True
+    no_class: False
     metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average

@@ -12,6 +12,15 @@ from functions.constants import DONE_MSG, KEEP_DATASET_SPLIT
 logger = format_logger(logger)
 
 
+def geometric_precision(geometry_detections, geometry_labels):
+
+    return geometry_detections.intersection(geometry_labels).area / geometry_detections.area
+
+def geometric_recall(geometry_detections, geometry_labels):
+
+    return geometry_detections.intersection(geometry_labels).area / geometry_labels.area
+
+
 def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold=None):
     """
     Find the intersecting detections and labels.
@@ -87,7 +96,7 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
     best_matches_gdf.drop_duplicates(subset=['det_id'], inplace=True)
 
     # Detection, resp labels, with IOU lower than threshold value are considered as FP, resp FN, and saved as such
-    col_subset = ['det_id', 'year_det'] if 'year_det' in best_matches_gdf.keys() else ['det_id']
+    col_subset = ['label_id', 'year_det'] if 'year_det' in best_matches_gdf.keys() else ['label_id']
     actual_matches_gdf = best_matches_gdf[best_matches_gdf['IOU'] >= iou_threshold].copy()
     actual_matches_gdf = actual_matches_gdf.sort_values(by=['IOU'], ascending=False).drop_duplicates(subset=col_subset)
     actual_matches_gdf['IOU'] = actual_matches_gdf.IOU.round(3)
@@ -238,7 +247,7 @@ def intersection_over_union(polygon1_shape, polygon2_shape):
 def perform_assessment(dets_gdf, labels_path, categories_path, method, output_dir, 
                        iou_threshold=0.1, score_threshold=0.05, area_threshold=None, score='score', additional_columns=[], drop_year=False,
                        tagged_results_filename='tagged_detections', reliability_diagram_filename='relability_diagram', global_metrics_filename = 'global_metrics',
-                       by_class=False):
+                       by_class=False, no_class=False):
         """
         Perform an assessment of the detection results based on the intersection over union (IOU) with the labels.
 
@@ -258,6 +267,7 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
             reliability_diagram_filename (str, optional): filename for the reliability diagram. Defaults to 'relability_diagram'.
             global_metrics_filename (str, optional): filename for the global metrics. Defaults to 'global_metrics'.
             by_class (bool, optional): whether to calculate the metrics by class. Defaults to False.
+            no_class (bool, optional): whether to calculate the metrics between labels and detections while ignoring the class. Defaults to False.
 
         Returns:
             list: list of written files
@@ -281,6 +291,11 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
         if drop_year:
             labels_w_id_gdf.drop(columns='year_label', inplace=True)
             dets_gdf.drop(columns='year_det', inplace=True)
+
+        if no_class:
+            labels_w_id_gdf['label_class'] = 1  # label classes start at 1
+            dets_gdf['det_class'] = 0           # det classes start at 0
+            labels_w_id_gdf['CATEGORY'] = 'human activity'        
 
         dets_gdf_dict = {}
         clipped_labels_gdf_dict = {}
@@ -318,12 +333,29 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
         global_metrics_dict = {}
         metrics_cl_df_dict = {}
 
+        logger.info(f'Detection score threshold = {score_threshold}')
         for dataset in datasets_list:
             output_dir_by_dst[dataset] = os.path.join(output_dir, dataset)
             os.makedirs(output_dir_by_dst[dataset], exist_ok=True)
 
-            tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = get_fractional_sets(
-                dets_gdf_dict[dataset], clipped_labels_gdf_dict[dataset], iou_threshold, area_threshold)
+            logger.info(f'Dataset = {dataset}: ')
+            global_metrics_dict[dataset] = {'dataset': dataset}
+
+            # Geometric assessment
+            if len(categories_info_df) == 1 or no_class:
+                unary_dets = dets_gdf_dict[dataset].unary_union
+                unary_labels = clipped_labels_gdf_dict[dataset].unary_union
+
+                iou = intersection_over_union(unary_dets, unary_labels)
+                geom_precision = geometric_precision(unary_dets, unary_labels)
+                geom_recall = geometric_recall(unary_dets, unary_labels)
+                area_error = (unary_dets.area - unary_labels.area)/unary_labels.area
+
+                logger.info(f'        IoU = {iou:.3f}, geometric precision = {geom_precision:.3f}, geometric recall = {geom_recall:.3f}, area_error = {area_error:.3f}')
+                global_metrics_dict[dataset].update({'IoU': iou, 'geom_precision': geom_precision, 'geom_recall': geom_recall, 'area_error': area_error})
+
+            # Numeric assessment
+            tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, small_poly_gdf = get_fractional_sets(dets_gdf_dict[dataset], clipped_labels_gdf_dict[dataset], iou_threshold, area_threshold)
 
             tp_gdf['tag'] = 'TP'
             tp_gdf['dataset'] = dataset
@@ -337,22 +369,25 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
             small_poly_gdf['dataset'] = dataset
 
             tp_k, fp_k, fn_k, p_k, r_k, f1_k, accuracy, precision, recall, f1 = get_metrics(tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf, id_classes, method=method)
-            global_metrics_dict[dataset] = {'dataset': dataset, 'accuracy': accuracy, 'precision': precision, 'recall': recall, 'f1': f1}
-            logger.info(f'Detection score threshold = {score_threshold}')
-            logger.info(f'accuracy = {accuracy:.3f}')
-            logger.info(f'Method = {method} & dataset = {dataset}: precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
+
+            # Print and tag results
+            global_metrics_dict[dataset].update({'dataset': dataset, 'accuracy': accuracy, 'precision': precision, 'recall': recall, 'f1': f1})
+            logger.info(f'        TP = {len(tp_gdf)}, FP = {len(fp_gdf)}, FN = {len(fn_gdf)}')
+            logger.info(f'        accuracy = {accuracy:.3f}')
+            logger.info(f'        Method = {method}: precision = {precision:.3f}, recall = {recall:.3f}, f1 = {f1:.3f}')
 
             tagged_dets_gdf = pd.concat([tp_gdf, fp_gdf, fn_gdf, mismatched_class_gdf], ignore_index=True)
-
-            logger.info(f'TP = {len(tp_gdf)}, FP = {len(fp_gdf)}, FN = {len(fn_gdf)}')
-            tagged_dets_gdf['det_category'] = [
-                categories_info_df.loc[categories_info_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
-                if not np.isnan(det_class) else None
-                for det_class in tagged_dets_gdf.det_class.to_numpy()
-            ] 
+            if no_class:
+                tagged_dets_gdf['det_category'] = 'human activity'
+            else:
+                tagged_dets_gdf['det_category'] = [
+                    categories_info_df.loc[categories_info_df.label_class==det_class+1, 'CATEGORY'].iloc[0] 
+                    if not np.isnan(det_class) else None
+                    for det_class in tagged_dets_gdf.det_class.to_numpy()
+                ] 
 
             # Save tagged processed results 
-            feature = os.path.join(output_dir_by_dst[dataset], f'{tagged_results_filename}_at_{score_threshold}_threshold.gpkg'.replace('0.', '0dot'))
+            feature = os.path.join(output_dir_by_dst[dataset], f'{tagged_results_filename}_at_{str(score_threshold).replace(".", "dot")}_threshold{"_single_class" if no_class else ""}.gpkg'.replace('0.', '0dot'))
             tagged_dets_gdf = tagged_dets_gdf.to_crs(2056)
             tagged_dets_gdf = tagged_dets_gdf.rename(columns={'CATEGORY': 'label_category'}, errors='raise')
             tagged_dets_gdf[
@@ -383,7 +418,7 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
                     for det_class in metrics_by_cl_df['class'].to_numpy()
                 ] 
 
-                file_to_write = os.path.join(output_dir_by_dst[dataset], 'metrics_by_class.csv')
+                file_to_write = os.path.join(output_dir_by_dst[dataset], f'metrics_by_class_at_{str(score_threshold).replace(".", "dot")}_threshold{"_single_class" if no_class else ""}.csv')
                 metrics_by_cl_df[
                     ['class', 'category', 'dataset', 'TP_k', 'FP_k', 'FN_k', 'precision_k', 'recall_k', 'f1_k']
                 ].sort_values(by=['class']).to_csv(file_to_write, index=False)
@@ -395,9 +430,10 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
                 [score, 'det_class', 'det_category', 'label_class', 'label_category', 'tag']
             ]
 
-            file_to_write = os.path.join(output_dir_by_dst[dataset], reliability_diagram_filename + '.jpeg')
-            reliability_diagram(tmp_dets_gdf, score, file_to_write)
-            written_files.append(file_to_write)
+            if not no_class:
+                file_to_write = os.path.join(output_dir_by_dst[dataset], reliability_diagram_filename + '.jpeg')
+                reliability_diagram(tmp_dets_gdf, score, file_to_write)
+                written_files.append(file_to_write)
 
             # Get bin accuracy
             tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'det_category'] = 'human activity'
@@ -411,7 +447,7 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
         global_metrics_df = pd.DataFrame()
         for dataset in datasets_list:
             global_metrics_df = pd.concat([global_metrics_df, pd.DataFrame(global_metrics_dict[dataset], index=[0])], ignore_index=True)
-        file_to_write = os.path.join(output_dir, global_metrics_filename + '.csv')
+        file_to_write = os.path.join(output_dir, global_metrics_filename + f'_{str(score_threshold).replace(".", "dot")}_trshd{"_single_class" if no_class else ""}.csv')
         global_metrics_df.to_csv(file_to_write, index=False)
         written_files.append(file_to_write)
 

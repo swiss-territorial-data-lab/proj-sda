@@ -87,7 +87,7 @@ merge_years.py:
 merge_multi_results.py:
   working_directory: output/det/CANTON
   output_directory: merged_results
-  glob_det_path: "**/yearly_dets_CANTON.gpkg"
+  glob_det_path: "**/yearly_dets_0dot05_threshold.gpkg"
   categories: category_ids.json
   threshold: 0.1
   assess: 

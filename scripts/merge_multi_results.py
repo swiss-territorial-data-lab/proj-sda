@@ -84,7 +84,7 @@ def self_intersect(gdf, ignore_year=False, assess=False):
         # & (overlap_detections_gdf.det_category_left==overlap_detections_gdf.det_category_right)
         & (True if ignore_year else overlap_detections_gdf.year_det_left==overlap_detections_gdf.year_det_right)
     ]
-    if KEEP_DATASET_SPLIT & assess:
+    if KEEP_DATASET_SPLIT & assess & ('dataset_left' in overlap_detections_gdf.columns):
         overlap_detections_gdf = overlap_detections_gdf[overlap_detections_gdf.dataset_left == overlap_detections_gdf.dataset_right]
 
     return overlap_detections_gdf
@@ -114,6 +114,7 @@ if __name__ == "__main__":
     THRESHOLD = cfg['threshold']
     ASSESS = cfg['assess']['enable']
     if ASSESS:
+        NO_CLASS = cfg['assess']['no_class']
         METHOD = cfg['assess']['metrics_method']
         LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
         CATEGORIES = cfg['categories']
@@ -143,7 +144,7 @@ if __name__ == "__main__":
         model_name = os.path.dirname(file)
         tmp_gdf = gpd.read_file(file)
         tmp_gdf['model'] = os.path.dirname(file)    
-        detections_gdf = pd.concat([detections_gdf, tmp_gdf], ignore_index=True)      # If prblm with Multipoly, use spatial index
+        detections_gdf = pd.concat([detections_gdf, tmp_gdf], ignore_index=True)      # If problem with Multipoly, use spatial index
 
         nbr_dets_list.append(len(tmp_gdf))
 
@@ -266,7 +267,7 @@ if __name__ == "__main__":
     merged_detections_gdf.loc[:, 'geometry'] = merged_detections_gdf.buffer(-5)
     merged_detections_gdf.set_crs(2056, inplace=True)
 
-    filepath = os.path.join(OUTPUT_DIR, 'merged_detections.gpkg')
+    filepath = os.path.join(OUTPUT_DIR, 'merged_detections_across_models.gpkg')
     merged_detections_gdf.drop(columns=excessive_columns).to_file(filepath, crs='EPSG:2056', index=False)
     written_files.append(filepath)
 
@@ -282,7 +283,7 @@ if __name__ == "__main__":
         written_files.extend(
             metrics.perform_assessment(
                 merged_detections_gdf, LABELS, CATEGORIES, METHOD, OUTPUT_DIR,
-                score='merged_score', additional_columns=['year_label', 'year_det', 'score'], 
+                score='merged_score', additional_columns=['year_label', 'year_det', 'score'], no_class=NO_CLASS,
                 tagged_results_filename='tagged_merged_results', reliability_diagram_filename='reliability_diagram_merged_results', 
                 global_metrics_filename='global_metrics_merged_rslts'
             )

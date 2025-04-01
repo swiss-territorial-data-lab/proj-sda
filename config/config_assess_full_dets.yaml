@@ -1,0 +1,24 @@
+# Merge results from various models
+merge_multi_results.py:
+  working_directory: output/det/both/0dot05
+  output_directory: merged_results
+  glob_det_path: "**/yearly_dets_*.gpkg"
+  labels: labels.geojson
+  categories: category_ids.json
+  threshold: 0.1
+  assess: 
+    enable: True
+    no_class: True
+    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
+
+# Merge results across years
+merge_across_years.py:
+  working_directory: output
+  output_directory: det/both/0pt05/model68/
+  detections: det/both/0pt05/model68/merged_detections_across_models.gpkg
+  labels: trne/labels_across_years.geojson
+  categories: trne/category_ids.json
+  assess: 
+    enable: True
+    no_class: True
+    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average

@@ -87,7 +87,7 @@ merge_multi_results.py:
 merge_across_years.py:
   working_directory: output/det/{canton}/single_year
   output_directory: merged_results
-  detections: merged_results/merged_detections.gpkg
+  detections: merged_results/merged_detections_across_models.gpkg
   categories: category_ids.json
   assess: 
     enable: False

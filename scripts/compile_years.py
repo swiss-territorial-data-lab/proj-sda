@@ -47,7 +47,8 @@ if __name__ == "__main__":
     written_files = [] 
     detections_final_gdf = gpd.GeoDataFrame()
 
-    feature = f'yearly_dets_{CANTON}.gpkg'
+    LAYER_END = LAYER.split('_')[-2:]
+    feature = f'yearly_dets_{LAYER_END[0]}_{LAYER_END[1]}'
 
     if OVERWRITE:
         try:
@@ -62,6 +63,7 @@ if __name__ == "__main__":
             detections_gdf = gpd.read_file(path)
             if FILE=='layers':
                 detections_gdf.to_file(feature, layer=str(str(year) + '_' + LAYER), driver='GPKG')
+                written_files.append(feature)
             elif FILE=='concatenate':
                 detections_final_gdf = pd.concat([detections_final_gdf, detections_gdf], ignore_index=True)
         else:
@@ -70,6 +72,7 @@ if __name__ == "__main__":
     
     if FILE=='concatenate':
         detections_final_gdf.to_file(feature, driver='GPKG')
+        written_files.append(feature)
 
     logger.info("The following files were written. Let's check them out!")
     for written_file in written_files:

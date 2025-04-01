@@ -312,9 +312,9 @@ if __name__ == "__main__":
         full_dets_per_year.loc[full_dets_per_year['covered area [km2]'].isna(), 'covered area [km2]'] = 0
         
         # Barplot of the total surface
-        plt.rcParams["figure.figsize"] = (len(all_years)*0.3, 5)
+        plt.rcParams["figure.figsize"] = (len(all_years)*0.15, 5)
         fig, ax = plt.subplots(1, 1)
-        ax = full_dets_per_year.plot(x='year', y='covered area [km2]', kind='bar', rot=0, log=False, width=0.5, grid=True)
+        ax = full_dets_per_year.plot(x='year', y='covered area [km2]', kind='bar', rot=0, log=False, width=0.75, grid=True)
 
         labels = full_dets_per_year.year[::5].astype(int)
         plot_path = os.path.join(OUTPUT_DIR, f'surface_per_year_{CANTON}.jpg')
@@ -334,7 +334,7 @@ if __name__ == "__main__":
         fig, ax = plt.subplots(1, 1)
         ax = full_dets_per_year.plot(x='year', y='valid_area', kind='scatter', rot=0, grid=True)
         written_files.append(format_scatterplot(
-            fig, CANTON, 'Median area per det for each year', 'Median area per detection [m2]', output_dir=OUTPUT_DIR
+            fig, CANTON, 'Median area per det for each year', 'Median area per detection', output_dir=OUTPUT_DIR
         ))
 
         # Boxplot of the merged score per yeaer
@@ -369,9 +369,9 @@ if __name__ == "__main__":
 
         logger.info('Plot the number of dets per year...')
         all_count_per_year_df = count_values(detections_gdf, 'year_det', 'number of detections')
-        plt.rcParams["figure.figsize"] = (len(all_years)*0.3, 5)
+        plt.rcParams["figure.figsize"] = (len(all_years)*0.15, 5)
         fig, ax = plt.subplots(1, 1)
-        ax = all_count_per_year_df.plot(x='steps', y='number of detections', kind='bar', rot=0, log=False, width=0.5, grid=True)
+        ax = all_count_per_year_df.plot(x='steps', y='number of detections', kind='bar', rot=0, log=False, width=0.75, grid=True)
 
         labels = all_count_per_year_df.steps[::5].astype(int)
         plot_path = os.path.join(OUTPUT_DIR, f'detections_per_year_{CANTON}.jpg')
@@ -379,7 +379,7 @@ if __name__ == "__main__":
 
         logger.info('Plot the amount of dets present in multiple years...')
         all_count_per_year_df = count_values(detections_gdf, 'count_years', 'number of detections')
-        plt.rcParams["figure.figsize"] = (len(all_years)*0.3, 5)
+        plt.rcParams["figure.figsize"] = (len(all_years)*0.1, 5)
         fig, ax = plt.subplots(1, 1)
         ax = all_count_per_year_df.plot(x='steps', y='number of detections', kind='bar', rot=0, log=True, width=0.5, grid=True)
 
@@ -396,7 +396,7 @@ if __name__ == "__main__":
         detections_gdf['rounded_elevation'] = [25*round(elev/25) for elev in detections_gdf.elevation]
         all_count_per_elevation_df = count_values(detections_gdf, 'rounded_elevation', 'number of detections', step=25)
 
-        plt.rcParams["figure.figsize"] = (len(all_years)*0.3, 5)
+        plt.rcParams["figure.figsize"] = (len(all_years)*0.15, 5)
         fig, ax = plt.subplots(1, 1)
         ax = all_count_per_elevation_df.plot(x='steps', y='number of detections', kind='bar', rot=0, log=False, width=0.5, grid=True)
 
@@ -404,7 +404,7 @@ if __name__ == "__main__":
         plot_path = os.path.join(OUTPUT_DIR, f'detections_per_elevation_{CANTON}.jpg')
         format_barplot(
             all_count_per_elevation_df, ax, fig, labels, 'Number of detections per elevation rounded to 25 m', plot_path,
-            xlabel='Elevation', rotation=0
+            xlabel='Elevation', rotation=45
         )
         written_files.append(plot_path)
         del all_count_per_elevation_df
