@@ -111,6 +111,7 @@ if __name__ == "__main__":
     OUTPUT_DIR = cfg['output_directory']
 
     GLOB_DET_PATH = cfg['glob_det_path']
+    SCORE_TYPE = cfg['score_type']
     THRESHOLD = cfg['threshold']
     ASSESS = cfg['assess']['enable']
     if ASSESS:
@@ -136,10 +137,18 @@ if __name__ == "__main__":
     if len(detections_list) == 0:
         logger.critical(f'No detections found for path {GLOB_DET_PATH}.')
         sys.exit(1)
+    if SCORE_TYPE == 'conservative':
+        filtered_detections_list = [file for file in detections_list if '0dot05' in file]
+    elif SCORE_TYPE == 'optimal':
+        filtered_detections_list = [file for file in detections_list if '0dot05' not in file]
+    else:
+        logger.error(f'Unknown score type: {SCORE_TYPE}')
+        logger.error(f'Keeping all found paths.')
+    del detections_list
 
     nbr_dets_list = []
     detections_gdf = gpd.GeoDataFrame()
-    for file in detections_list:
+    for file in filtered_detections_list:
         logger.info(f"Reading {file}")
         model_name = os.path.dirname(file)
         tmp_gdf = gpd.read_file(file)
@@ -163,7 +172,7 @@ if __name__ == "__main__":
     logger.info('Count number of dets in each group...')
     groups_df = intersecting_detections_gdf['group_id'].value_counts().reset_index().rename(columns={'count': 'count_dets'})
     groups_df['presence'] = [
-        min(count_dets/len(detections_list), 1) for count_dets in groups_df['count_dets']
+        min(count_dets/len(filtered_detections_list), 1) for count_dets in groups_df['count_dets']
     ]     # Where two dets in the same model have IoU>0.5, presence could be higher than 1 and we want to avoid that.
 
     # Bring group info back to the detections
@@ -197,7 +206,9 @@ if __name__ == "__main__":
 
     logger.info('Remove detections inside other detections...')
     overlap_detections_gdf = self_intersect(filtered_groupped_dets_gdf[
-        ['geometry', 'merged_id', 'year_det', 'det_category'] + (['dataset'] if KEEP_DATASET_SPLIT & ASSESS else [])
+        ['geometry', 'merged_id', 'year_det', 'det_category'] + (
+            ['dataset'] if KEEP_DATASET_SPLIT & ASSESS & ('dataset' in filtered_groupped_dets_gdf.columns) else []
+        )
     ], assess=ASSESS)
     overlap_detections_gdf = overlap_detections_gdf[overlap_detections_gdf.merged_id_left!=overlap_detections_gdf.merged_id_right]  # Remove self-intersection
     intersected_geoms = overlap_detections_gdf.geom_left.intersection(overlap_detections_gdf.geom_right)
@@ -230,6 +241,7 @@ if __name__ == "__main__":
 
     # Remove dets under another det
     filtered_groupped_dets_gdf = pd.merge(filtered_groupped_dets_gdf, intersecting_dets_gdf, how='left', left_on='merged_id', right_on='merged_id_bottom')
+    filtered_groupped_dets_gdf.set_crs(2056, inplace=True)
     condition = (filtered_groupped_dets_gdf.second_IoU<0.9) | filtered_groupped_dets_gdf.second_IoU.isna()
     final_groupped_dets_gdf = filtered_groupped_dets_gdf[condition]
     removed_dets_gdf = pd.concat([removed_dets_gdf, filtered_groupped_dets_gdf[~condition]], ignore_index=True)
@@ -248,11 +260,11 @@ if __name__ == "__main__":
 
     excessive_columns = ['wkb_geom', 'merged_id_bottom', 'merged_id_top']
     filepath = os.path.join(OUTPUT_DIR, 'groupped_detections.gpkg')
-    final_groupped_dets_gdf.drop(columns=excessive_columns).to_file(filepath, crs='EPSG:2056', driver='GPKG', index=False)
+    final_groupped_dets_gdf.drop(columns=excessive_columns).to_file(filepath, driver='GPKG', index=False)
     written_files.append(filepath)
 
     filepath = os.path.join(OUTPUT_DIR, 'removed_detections.gpkg')
-    removed_dets_gdf.drop(columns=excessive_columns).to_file(filepath, crs='EPSG:2056', driver='GPKG', index=False)
+    removed_dets_gdf.drop(columns=excessive_columns).to_file(filepath, driver='GPKG', index=False)
     written_files.append(filepath)
 
     del overlap_detections_gdf, intersecting_dets_gdf, filtered_groupped_dets_gdf
@@ -268,7 +280,7 @@ if __name__ == "__main__":
     merged_detections_gdf.set_crs(2056, inplace=True)
 
     filepath = os.path.join(OUTPUT_DIR, 'merged_detections_across_models.gpkg')
-    merged_detections_gdf.drop(columns=excessive_columns).to_file(filepath, crs='EPSG:2056', index=False)
+    merged_detections_gdf.drop(columns=excessive_columns).to_file(filepath, index=False)
     written_files.append(filepath)
 
     logger.success(f"{len(final_groupped_dets_gdf)} features were kept.")

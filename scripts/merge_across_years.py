@@ -58,7 +58,7 @@ def main(all_years_dets_gdf, assess=False, no_class=True, method=None, labels_pa
     merged_dets_across_years_gdf.loc[:, 'geometry'] = merged_dets_across_years_gdf.buffer(-5)
     merged_dets_across_years_gdf.set_crs(2056, inplace=True)
 
-    merged_dets_across_years_gdf.to_file(last_written_file, crs='EPSG:2056', index=False)
+    merged_dets_across_years_gdf.to_file(last_written_file, index=False)
     written_files.append(last_written_file)
 
     logger.success(f"{DONE_MSG} {len(merged_dets_across_years_gdf)} features were left after merging across years.")

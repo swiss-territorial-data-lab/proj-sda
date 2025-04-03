@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from loguru import logger
-from functions.misc import clip_labels, format_logger, get_categories
+from functions.misc import clip_objects, format_logger, get_categories
 from functions.constants import DONE_MSG, KEEP_DATASET_SPLIT
 
 logger = format_logger(logger)
@@ -304,18 +304,21 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
             split_tiles_gdf = split_tiles_gdf.to_crs(2056)
             tiles_gdf = split_tiles_gdf.dissolve(['dataset'] + ([] if drop_year else ['year_tile']), as_index=False)
 
-            clipped_labels_gdf = clip_labels(labels_w_id_gdf, tiles_gdf, fact=0.99999)
+            clipped_labels_gdf = clip_objects(labels_w_id_gdf, tiles_gdf, fact=0.99999)
 
-            try:
-                datasets_list = dets_gdf.dataset.unique()
-            except AttributeError:
-                logger.error('No column for the dataset information in the detections. Please control the file.')
-                sys.exit(1)
+            if 'dataset' in dets_gdf.columns:
+                clipped_detections_gdf = dets_gdf.copy()
+            else:
+                logger.warning('No column for the dataset information in the detections. Detections will be clipped to tiles.')
+                clipped_detections_gdf = clip_objects(dets_gdf, tiles_gdf, fact=0.99999)
+            
+            datasets_list = clipped_detections_gdf.dataset.unique()
+
             for dataset in datasets_list:
-                dets_gdf_dict[dataset] = dets_gdf[dets_gdf.dataset == dataset].copy()
+                dets_gdf_dict[dataset] = clipped_detections_gdf[clipped_detections_gdf.dataset == dataset].copy()
                 clipped_labels_gdf_dict[dataset] = clipped_labels_gdf[clipped_labels_gdf.dataset==dataset]
 
-            del split_tiles_gdf, tiles_gdf
+            del split_tiles_gdf, tiles_gdf, clipped_detections_gdf
         
         else:
             datasets_list = ['all dets']

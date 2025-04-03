@@ -39,11 +39,12 @@ if __name__ == "__main__":
     LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
     DETECTION_FILES = cfg['detections']
     DISTANCE = cfg['distance']
-    SCORE_THD = cfg['score_threshold']
+    SCORE_THD = cfg['score_threshold'] if 'score_threshold' in cfg.keys() else None
     IOU_THD = cfg['iou_threshold']
     AREA_THD = cfg['area_threshold'] if 'area_threshold' in cfg.keys() else None
     ASSESS = cfg['assess']['enable']
     if ASSESS:
+        NO_CLASS = cfg['assess']['no_class']
         METHOD = cfg['assess']['metrics_method']
         if KEEP_DATASET_SPLIT:
             logger.warning('The split between trn, tst and val will be preserved.')
@@ -51,6 +52,8 @@ if __name__ == "__main__":
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    if not SCORE_THD:
+        SCORE_THD = misc.find_right_threshold(WORKING_DIR, OUTPUT_DIR)
 
     written_files = [] 
 
@@ -130,7 +133,7 @@ if __name__ == "__main__":
         # Spatially join merged detection with raw ones to retrieve relevant information (score, area,...)
         detections_merge_gdf['index_merge'] = detections_merge_gdf.index
         detections_join_gdf = gpd.sjoin(detections_merge_gdf, detections_by_year_gdf, how='inner', predicate='intersects')
-        if KEEP_DATASET_SPLIT:
+        if KEEP_DATASET_SPLIT and ASSESS:
             detections_join_gdf = detections_join_gdf[detections_join_gdf.dataset_left == detections_join_gdf.dataset_right]
             detections_join_gdf.rename(columns={'dataset_left': 'dataset'}, inplace=True)
 
@@ -184,7 +187,8 @@ if __name__ == "__main__":
             metrics.perform_assessment(
                 detections_all_years_gdf, LABELS, CATEGORIES, METHOD, OUTPUT_DIR, IOU_THD, SCORE_THD, AREA_THD,
                 additional_columns=['year_label', 'year_det'], tagged_results_filename='tagged_detections_merged_dets',
-                reliability_diagram_filename='reliability_diagram_merged_dets', global_metrics_filename='global_metrics_merged_dets', by_class=True
+                reliability_diagram_filename='reliability_diagram_merged_dets', global_metrics_filename='global_metrics_merged_dets', 
+                by_class=True, no_class=NO_CLASS,
             )
         )
 

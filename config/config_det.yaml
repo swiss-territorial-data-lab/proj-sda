@@ -78,6 +78,7 @@ merge_multi_results.py:
   working_directory: output/det/{canton}/single_year
   output_directory: merged_results
   glob_det_path: "**/merged_detections_at_0dot05_threshold.gpkg"
+  score_type: optimal   #  supported values: 1. conservative (= 0.05), 2. optimal (best for the model f1-score as defined in constants)
   categories: category_ids.json
   threshold: 0.1
   assess: 

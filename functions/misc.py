@@ -44,30 +44,33 @@ def check_validity(poly_gdf, correct=False):
     return poly_gdf
 
 
-def clip_labels(labels_gdf, tiles_gdf, fact=0.99):
+def clip_objects(objects_gdf, tiles_gdf, fact=0.99):
     """
-    Clips the labels in the `labels_gdf` GeoDataFrame to the tiles in the `tiles_gdf` GeoDataFrame.
+    Clips the objects in the `objects_gdf` GeoDataFrame to the tiles in the `tiles_gdf` GeoDataFrame.
     
     Args:
-        labels_gdf (geopandas.GeoDataFrame): The GeoDataFrame containing the labels to be clipped.
-        tiles_gdf (geopandas.GeoDataFrame): The GeoDataFrame containing the tiles to clip the labels to.
-        fact (float, optional): The scaling factor to apply to the tiles when clipping the labels. Defaults to 0.99.
+        objects_gdf (geopandas.GeoDataFrame): The GeoDataFrame containing the objects to be clipped.
+        tiles_gdf (geopandas.GeoDataFrame): The GeoDataFrame containing the tiles to clip the objects to.
+        fact (float, optional): The scaling factor to apply to the tiles when clipping the objects. Defaults to 0.99.
     
     Returns:
-        geopandas.GeoDataFrame: The clipped labels GeoDataFrame.
+        geopandas.GeoDataFrame: The clipped objects GeoDataFrame.
         
     Raises:
-        AssertionError: If the CRS of `labels_gdf` is not equal to the CRS of `tiles_gdf`.
+        AssertionError: If the CRS of `objects_gdf` is not equal to the CRS of `tiles_gdf`.
     """
 
     tiles_gdf['tile_geometry'] = tiles_gdf['geometry']
         
-    assert(labels_gdf.crs == tiles_gdf.crs)
+    assert(objects_gdf.crs == tiles_gdf.crs)
     
-    labels_tiles_sjoined_gdf = sjoin(labels_gdf, tiles_gdf, how='inner', predicate='intersects')
+    objects_tiles_sjoined_gdf = sjoin(objects_gdf, tiles_gdf, how='inner', predicate='intersects')
 
-    if 'year_label' in labels_gdf.keys():
-        labels_tiles_sjoined_gdf = labels_tiles_sjoined_gdf[labels_tiles_sjoined_gdf.year_label == labels_tiles_sjoined_gdf.year_tile]
+    if 'year_label' in objects_gdf.keys():
+        objects_tiles_sjoined_gdf = objects_tiles_sjoined_gdf[objects_tiles_sjoined_gdf.year_label == objects_tiles_sjoined_gdf.year_tile]
+
+    if 'year_det' in objects_gdf.keys():
+        objects_tiles_sjoined_gdf = objects_tiles_sjoined_gdf[objects_tiles_sjoined_gdf.year_det == objects_tiles_sjoined_gdf.year_tile]
     
     def clip_row(row, fact=fact):
         
@@ -78,13 +81,13 @@ def clip_labels(labels_gdf, tiles_gdf, fact=0.99):
 
         return row
 
-    clipped_labels_gdf = labels_tiles_sjoined_gdf.apply(lambda row: clip_row(row, fact), axis=1)
-    clipped_labels_gdf.crs = labels_gdf.crs
+    clipped_objects_gdf = objects_tiles_sjoined_gdf.apply(lambda row: clip_row(row, fact), axis=1)
+    clipped_objects_gdf.crs = objects_gdf.crs
 
-    clipped_labels_gdf.drop(columns=['tile_geometry', 'index_right'], inplace=True)
-    clipped_labels_gdf.rename(columns={'id': 'tile_id'}, inplace=True)
+    clipped_objects_gdf.drop(columns=['tile_geometry', 'index_right'], inplace=True)
+    clipped_objects_gdf.rename(columns={'id': 'tile_id'}, inplace=True)
 
-    return clipped_labels_gdf
+    return clipped_objects_gdf
 
 
 def convert_crs(gdf, epsg=2056):
@@ -127,12 +130,12 @@ def ensure_dir_exists(dirpath):
 
 def find_right_threshold(path, second_path=None):
     for key, value in THRESHOLD_PER_MODEL.items():
-        if str(key) in path:
+        if 'model' + str(key) in path or 'run' + str(key) in path:
             return value
         
     if second_path:
         for key, value in THRESHOLD_PER_MODEL.items():
-            if str(key) in second_path:
+            if 'model' + str(key) in second_path or 'run' + str(key) in second_path:
                 return value
 
     logger.error('No indication of the model used found in the path.')
