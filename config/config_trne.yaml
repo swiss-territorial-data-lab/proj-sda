@@ -136,8 +136,8 @@ merge_detections.py:
 # Merge results from various models
 merge_multi_results.py:
   working_directory: output/trne
-  output_directory: run68
-  glob_det_path: run68/dst_merged_detections_at_0dot05_threshold.gpkg
+  output_directory: best_threshold
+  glob_det_path: "**/dst_merged_detections_at_*_threshold.gpkg"
   labels: labels.geojson
   categories: category_ids.json
   score_type: optimal   #  supported values: 1. conservative (= 0.05), 2. optimal (best for the model f1-score as defined in constants)
@@ -145,4 +145,16 @@ merge_multi_results.py:
   assess: 
     enable: True
     no_class: False
+    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
+
+# Merge results across years
+merge_across_years.py:
+  working_directory: output/trne
+  output_directory: best_threshold/
+  detections: best_threshold/merged_detections_across_models.gpkg
+  labels: labels_across_years.geojson
+  categories: category_ids.json
+  assess: 
+    enable: True
+    no_class: True
     metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
