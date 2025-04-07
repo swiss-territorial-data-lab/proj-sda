@@ -7,6 +7,7 @@ merge_multi_results.py:
   categories: ../../trne/category_ids.json
   score_type: optimal
   threshold: 0.1
+  number_models: 5
   assess: 
     enable: True
     no_class: True
@@ -15,7 +16,7 @@ merge_multi_results.py:
 # Merge results across years
 merge_across_years.py:
   working_directory: C:/Users/gwena/Documents/STDL/2_En_cours/sda/outputs
-  output_directory: det/both/best_threshold/
+  output_directory: det/both/best_threshold
   detections: det/both/best_threshold/merged_detections_across_models.gpkg
   labels: trne/labels_across_years.geojson
   categories: trne/category_ids.json

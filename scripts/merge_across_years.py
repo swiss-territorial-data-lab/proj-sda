@@ -21,11 +21,6 @@ logger = format_logger(logger)
 def main(all_years_dets_gdf, assess=False, no_class=True, method=None, labels_path=None, categories_path=None, output_dir='output'):
     written_files = []
 
-    if KEEP_DATASET_SPLIT and assess:
-        split_tiles_gdf = gpd.read_file(os.path.join(os.path.dirname(labels_path), 'split_aoi_tiles.geojson'))
-        split_tiles_gdf = split_tiles_gdf.to_crs(2056)
-        tiles_gdf = split_tiles_gdf.dissolve(['dataset'], as_index=False)
-
     last_written_file = os.path.join(output_dir, 'merged_detections_across_years.gpkg')
     last_metric_file = os.path.join(output_dir, 'reliability_merged_across_years_single_class.jpeg')
     if os.path.exists(last_written_file) and (not assess or os.path.exists(last_metric_file)) and not OVERWRITE:           
@@ -64,8 +59,6 @@ def main(all_years_dets_gdf, assess=False, no_class=True, method=None, labels_pa
     logger.success(f"{DONE_MSG} {len(merged_dets_across_years_gdf)} features were left after merging across years.")
 
     if assess:
-        if KEEP_DATASET_SPLIT:
-            merged_dets_across_years_gdf = gpd.overlay(merged_dets_across_years_gdf, tiles_gdf, keep_geom_type=True)
         written_files.extend(
             perform_assessment(
                 merged_dets_across_years_gdf, labels_path, categories_path, method, output_dir,

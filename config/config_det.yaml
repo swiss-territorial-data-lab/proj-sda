@@ -148,6 +148,6 @@ filter_detections.py:
     enable: False
 
 result_analysis.py:
-  working_directory: output/det/vaud/merged_results
+  working_directory: output/det/vaud/best_threshold
   output_directory: graphs
   detections: dets_merged_score-0dot05_A-100_A_ratio-0dot25_C-0dot2_elev-4500.gpkg

@@ -113,6 +113,7 @@ if __name__ == "__main__":
     GLOB_DET_PATH = cfg['glob_det_path']
     SCORE_TYPE = cfg['score_type']
     THRESHOLD = cfg['threshold']
+    NUMBER_MODELS = cfg['number_models'] if 'number_models' in cfg.keys() else None
     ASSESS = cfg['assess']['enable']
     if ASSESS:
         NO_CLASS = cfg['assess']['no_class']
@@ -171,8 +172,9 @@ if __name__ == "__main__":
 
     logger.info('Count number of dets in each group...')
     groups_df = intersecting_detections_gdf['group_id'].value_counts().reset_index().rename(columns={'count': 'count_dets'})
+    number_models = NUMBER_MODELS if NUMBER_MODELS else len(filtered_detections_list)
     groups_df['presence'] = [
-        min(count_dets/len(filtered_detections_list), 1) for count_dets in groups_df['count_dets']
+        min(count_dets/number_models, 1) for count_dets in groups_df['count_dets']
     ]     # Where two dets in the same model have IoU>0.5, presence could be higher than 1 and we want to avoid that.
 
     # Bring group info back to the detections
@@ -295,7 +297,7 @@ if __name__ == "__main__":
         written_files.extend(
             metrics.perform_assessment(
                 merged_detections_gdf, LABELS, CATEGORIES, METHOD, OUTPUT_DIR,
-                score='merged_score', additional_columns=['year_label', 'year_det', 'score'], no_class=NO_CLASS,
+                score='merged_score', additional_columns=['merged_id', 'year_label', 'year_det', 'score'], no_class=NO_CLASS,
                 tagged_results_filename='tagged_merged_results', reliability_diagram_filename='reliability_diagram_merged_results', 
                 global_metrics_filename='global_metrics_merged_rslts'
             )
