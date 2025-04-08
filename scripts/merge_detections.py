@@ -103,6 +103,7 @@ if __name__ == "__main__":
     for year in detections_gdf.year_det.unique():
         detections_gdf = detections_gdf.copy()
         detections_by_year_gdf = detections_gdf[detections_gdf['year_det']==year]
+
         detections_buffer_gdf = detections_by_year_gdf.copy()
         detections_buffer_gdf['geometry'] = detections_by_year_gdf.geometry.buffer(DISTANCE, resolution=2)
 
@@ -121,7 +122,7 @@ if __name__ == "__main__":
         else:
             detections_overlap_tiles_gdf.loc[:, 'geometry'] = detections_overlap_tiles_gdf.buffer(DISTANCE, resolution=2)
             detections_dissolve_gdf = detections_overlap_tiles_gdf[['det_id', 'geometry']].dissolve(as_index=False)
-            detections_merge_gdf = gpd.GeoDataFrame(geometry=[geom for geom in detections_dissolve_gdf.geometry], crs=detections_gdf.crs)
+            detections_merge_gdf = detections_dissolve_gdf.explode(ignore_index=True)
         del detections_dissolve_gdf, detections_overlap_tiles_gdf
 
         if detections_merge_gdf.isnull().values.any():
