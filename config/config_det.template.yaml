@@ -59,7 +59,7 @@ make_detections.py:
     enabled: True
     epsilon: 2.0        # cf. https://rdp.readthedocs.io/en/latest/
   score_lower_threshold: 0.05
-  remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained
+  remove_det_overlap: True  # if several detections overlap (IoU > 0.5), only the one with the highest confidence score is retained. Not recommended for use with a single class.
 
 # Assess the final results
 merge_detections.py:
