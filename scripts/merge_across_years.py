@@ -68,6 +68,7 @@ def main(all_years_dets_gdf, assess=False, no_class=True, method=None, labels_pa
             )
         )
 
+    return written_files
 
 if __name__ == "__main__":
 
@@ -108,6 +109,10 @@ if __name__ == "__main__":
         METHOD, NO_CLASS, LABELS, CATEGORIES = (None, False, None, None)
 
     written_files = main(detections_gdf, ASSESS, NO_CLASS, METHOD, LABELS, CATEGORIES, OUTPUT_DIR)
+
+    logger.info(f"{DONE_MSG} The following files were written. Let's check them out!")
+    for written_file in written_files:
+        logger.info(written_file)
 
     # Stop chronometer  
     logger.info(f"Nothing left to be done: exiting. Elapsed time: {(time.time()-tic):.2f} seconds")

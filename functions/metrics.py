@@ -69,10 +69,10 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
     # Filter detections and labels with area less than a thd value 
     if area_threshold:
         _dets_gdf['area'] = _dets_gdf.area
-        filter_dets_gdf = _dets_gdf[_dets_gdf['area']<area_threshold]
+        filter_dets_gdf = _dets_gdf[_dets_gdf['area']<area_threshold].copy()
         _dets_gdf = _dets_gdf[_dets_gdf['area']>=area_threshold].copy()
         _labels_gdf['area'] = _labels_gdf.area
-        filter_labels_gdf = _labels_gdf[_labels_gdf['area']<area_threshold]
+        filter_labels_gdf = _labels_gdf[_labels_gdf['area']<area_threshold].copy()
         _labels_gdf = _labels_gdf[_labels_gdf['area']>=area_threshold].copy()
         small_poly_gdf = pd.concat([filter_dets_gdf, filter_labels_gdf])
 
@@ -84,7 +84,7 @@ def get_fractional_sets(dets_gdf, labels_gdf, iou_threshold=0.25, area_threshold
 
     # Keep only matching years
     if 'year_label' in candidates_tp_gdf.keys():
-        candidates_tp_gdf = candidates_tp_gdf[candidates_tp_gdf.year_label.astype(int) == candidates_tp_gdf.year_det.astype(int)]
+        candidates_tp_gdf = candidates_tp_gdf[candidates_tp_gdf.year_label.astype(int) == candidates_tp_gdf.year_det.astype(int)].copy()
 
     # IoU computation between labels and detections
     geom1 = candidates_tp_gdf['geometry'].to_numpy().tolist()
@@ -316,7 +316,7 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
 
             for dataset in datasets_list:
                 dets_gdf_dict[dataset] = clipped_detections_gdf[clipped_detections_gdf.dataset == dataset].copy()
-                clipped_labels_gdf_dict[dataset] = clipped_labels_gdf[clipped_labels_gdf.dataset==dataset]
+                clipped_labels_gdf_dict[dataset] = clipped_labels_gdf[clipped_labels_gdf.dataset==dataset].copy()
 
             del split_tiles_gdf, tiles_gdf, clipped_detections_gdf
         
