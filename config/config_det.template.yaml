@@ -4,7 +4,7 @@ prepare_aoi.py:
   canton: CANTON
   year: SWISSIMAGE_YEAR
   srs: EPSG:2056
-  img_footprint_shp: swissimage_footprints/swissimage_footprint_SWISSIMAGE_YEAR.shp 
+  img_footprint_shp: swissimage_footprints/SWISSIMAGE_YEAR.shp 
 
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py: 
