@@ -1,16 +1,13 @@
 # Folders
-data/*
-!data/category_ids.json
-!data/AoI/swissimage_footprints/swissimage_footprint_2015*
-!data/AoI/swissimage_footprints/swissimage_footprint_2016*
-!data/AoI/swissimage_footprints/swissimage_footprint_2017*
-!data/AoI/swissimage_footprints/swissimage_footprint_2018*
-!data/AoI/swissimage_footprints/swissimage_footprint_2019*
-!data/AoI/swissimage_footprints/swissimage_footprint_202*
-!data/AoI/ticino
-!data/AoI/vaud
-!data/ground_truth/sda_ground_truth.gpkg
-!data/FP
+data/AoI/*
+data/DEM/
+data/layers/**/
+!data/AoI/ticino/AoI_test_TI.gpkg
+!data/AoI/ticino/limiti_cantone_2012_MN95.*
+!data/AoI/vaud/AoI_test_VD.*
+!data/AoI/vaud/MN95_CAD_TPR_LAD_MO_VD.shp
+!data/layers/vaud/lakes_VD.gpkg
+!data/layers/ticino/MU_Acque_TI_dissolved.gpkg
 input*/
 output*/
 model*/

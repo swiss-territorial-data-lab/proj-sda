@@ -102,12 +102,13 @@ Below, the description of input data used for this project.
 
 - images: [_SWISSIMAGE Journey_](https://map.geo.admin.ch/#/map?lang=fr&center=2660000,1190000&z=1&bgLayer=ch.swisstopo.pixelkarte-farbe&topic=ech&layers=ch.swisstopo.swissimage-product@year=2024;ch.swisstopo.swissimage-product.metadata@year=2024) is an annual dataset of aerial images of Switzerland from 1946 to today. The images are downloaded from the [geo.admin.ch](https://www.geo.admin.ch/fr) server using [XYZ](https://api3.geo.admin.ch/services/sdiservices.html#xyz) connector. 
 - area of interest (AoI):
-    - swissimage footprints: image acquisition footprints by year (swissimage_footprint_*.shp) can be [consulted online](https://map.geo.admin.ch/#/map?lang=fr&center=2660000,1190000&z=1&bgLayer=ch.swisstopo.pixelkarte-farbe&topic=ech&layers=ch.swisstopo.zeitreihen@year=1864,f;ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.astra.wanderland-sperrungen_umleitungen,f;ch.swisstopo.swissimage-product@year=2021;ch.swisstopo.swissimage-product.metadata@year=2021&timeSlider=2021). The shapefiles of _SWISSIMAGE_ acquisition footprint from 2015 to 2023 are provided in this repository under data/AoI/swissimage_footprints.
-    - canton: shapefile of the cantonal borders used to define the AoI. The limits of Canton of Ticino and Canton of Vaud are provided under data/AoI.
+    - swissimage footprints: image acquisition footprints by year (swissimage_footprint_*.shp) can be [consulted online](https://map.geo.admin.ch/#/map?lang=fr&center=2660000,1190000&z=1&bgLayer=ch.swisstopo.pixelkarte-farbe&topic=ech&layers=ch.swisstopo.zeitreihen@year=1864,f;ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.astra.wanderland-sperrungen_umleitungen,f;ch.swisstopo.swissimage-product@year=2021;ch.swisstopo.swissimage-product.metadata@year=2021&timeSlider=2021) and downloaded from the [relevant geocat page](https://www.geocat.ch/geonetwork/srv/fre/catalog.search#/metadata/1fc43fd9-f43f-4779-aa59-51e8f4833372). The files are to be placed in the folder `data/AoI/swissimage_footprint`.
 - ground truth: labels vectorised by the domain experts. <br>
 **Disclaimer:** the ground truth dataset is unofficial and has been produced specifically for the purposes of this project.
+- water layer: water bodies over which no tiles should be produced. They are available in the folder `data/layers/<canton>/`.
+- digital elevation model: raster limiting the height of the considered tiles and filtering the detections at the end, based on the requirements of the domain experts.
 - layers: list of vector layers provided by the domain experts to spatially intersect with the results to either exclude detections or to add intersection information in the final attribute table. The data is available on the cantonal geoportals ([Ticino](https://www4.ti.ch/dt/sg/sai/ugeo/temi/geoportale-ticino/geoportale/geodati) and [Vaud](https://www.geo.vd.ch/)) or are available on request.
-- category_ids.json: categories attributed to the detections.
+- category_ids.json: correspondence between category names, supercategories and ids.
 - models: the trained models used to produce the results presented in the documentation are available on request.
 
 ## Scripts
@@ -119,6 +120,7 @@ The `proj-sda` repository contains scripts to prepare and post-process the data 
 <br />
 </p>
 
+0. `get_dem.sh` & `get_swissimage_footprint.sh`: download the Swiss DEM and the SWISSIMAGE footprints.
 1. `prepare_aoi.py`: produce an AOI shapefile compatible with a SWISSIMAGE year and desired geographical boundaries.
 2. `prepare_data.py`: format labels and produce tiles to be processed in the OD.
 3. `results_analysis.py`: plot some parameters of the detections to help understand the results (optional).
@@ -127,9 +129,8 @@ The `proj-sda` repository contains scripts to prepare and post-process the data 
 6. `merge_multi_results.py`: merge the results from different models into one dataset of selected detections.
 7. `merge_across_years`: dissolve overlapping detections of different years.
 6. `filter_detections.py`: filter detections by overlap with other vector layers. The overlapping portion of the detection can be removed or a new attribute is created to indicate the overlapping ratio with the layer of interest. Other information such as score, elevation, or slope are also displayed.
-7. `get_dem.sh`: download the DEM of Switzerland.
-8. `batch_process.sh`: batch script to perform the inference workflow over several years with one model.
-9. `batch_process_multi_models.sh`: batch script to perform the inference workflow over several years with several models.
+7. `batch_process.sh`: batch script to perform the inference workflow over several years with one model.
+8. `batch_process_multi_models.sh`: batch script to perform the inference workflow over several years with several models.
 
 Object detection is performed with tools present in the [`object-detector`](https://github.com/swiss-territorial-data-lab/object-detector) git repository. 
 
@@ -142,6 +143,7 @@ The workflow can be executed by running the following list of actions and comman
 
 Prepare the data:
 ```
+$ scripts/get_dem.sh
 $ python scripts/prepare_data.py config/config_trne.yaml
 $ stdl-objdet generate_tilesets config/config_trne.yaml
 ```
@@ -192,6 +194,8 @@ $ cp output/trne/logs/<selected_model_pth> models
 
 Process images:
 ```
+$ scripts/get_dem.sh
+$ scripts/get_swissimage_footprint.sh
 $ python scripts/prepare_aoi.py config/config_det.yaml
 $ python scripts/prepare_data.py config/config_det.yaml
 $ stdl-objdet generate_tilesets config/config_det.yaml
@@ -206,7 +210,6 @@ $ python scripts/merge_multi_results.py config/config_det.yaml
 
 Apply the final filter:
 ```
-$ scripts/get_dem.sh
 $ python scripts/filter_detections.py config/config_det.yaml
 ```
 
@@ -219,6 +222,7 @@ $ scripts/batch_process.sh
 It can also be run automatically for several models (to be specified in the script) by executing these commands:
 ```
 $ scripts/get_dem.sh
+$ scripts/get_swissimage_footprint.sh
 $ scripts/batch_process_multi_models.sh
 ```
 
