@@ -89,6 +89,7 @@ merge_across_years.py:
   working_directory: output/det/{canton}/single_year
   output_directory: merged_results
   detections: merged_results/merged_detections_across_models.gpkg
+  iou_threshold: 0.1
   categories: category_ids.json
   assess: 
     enable: False

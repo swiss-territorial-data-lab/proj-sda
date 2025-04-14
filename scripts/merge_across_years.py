@@ -18,7 +18,7 @@ from merge_multi_results import group_detections
 
 logger = format_logger(logger)
 
-def main(all_years_dets_gdf, assess=False, no_class=True, method=None, labels_path=None, categories_path=None, output_dir='output'):
+def main(all_years_dets_gdf, iou_threshold, assess=False, no_class=True, method=None, labels_path=None, categories_path=None, output_dir='output'):
     written_files = []
 
     last_written_file = os.path.join(output_dir, 'merged_detections_across_years.gpkg')
@@ -31,10 +31,10 @@ def main(all_years_dets_gdf, assess=False, no_class=True, method=None, labels_pa
     encoded_geoms = all_years_dets_gdf.geometry.to_wkb()
     all_years_dets_gdf['wkb_geom'] = encoded_geoms.apply(lambda x: md5(x))
 
-    logger.info('Merge overlapping components while ignoring the year...')
+    logger.info(f'Merge overlapping components with a IoU over {iou_threshold} while ignoring the year...')
     dets_to_merge_gdf = all_years_dets_gdf.drop(columns='group_id')
     dets_to_merge_gdf.loc[:, 'geometry'] = dets_to_merge_gdf.buffer(5)
-    intersecting_detections_gdf = group_detections(dets_to_merge_gdf, 0.5, ignore_year=True, assess=ASSESS)
+    intersecting_detections_gdf = group_detections(dets_to_merge_gdf, iou_threshold, ignore_year=True, assess=ASSESS)
     intersecting_detections_gdf.sort_values('merged_score', ascending=False, inplace=True)
     intersecting_detections_gdf.drop(columns='wkb_geom', inplace=True)
 
@@ -91,6 +91,7 @@ if __name__ == "__main__":
     OUTPUT_DIR = cfg['output_directory']
 
     DETECTIONS = cfg['detections']
+    IOU_THRESHOLD = cfg['iou_threshold']
 
     written_files = []
     os.chdir(WORKING_DIR)
@@ -108,7 +109,7 @@ if __name__ == "__main__":
     else:
         METHOD, NO_CLASS, LABELS, CATEGORIES = (None, False, None, None)
 
-    written_files = main(detections_gdf, ASSESS, NO_CLASS, METHOD, LABELS, CATEGORIES, OUTPUT_DIR)
+    written_files = main(detections_gdf, IOU_THRESHOLD, ASSESS, NO_CLASS, METHOD, LABELS, CATEGORIES, OUTPUT_DIR)
 
     logger.info(f"{DONE_MSG} The following files were written. Let's check them out!")
     for written_file in written_files:

@@ -1,11 +1,11 @@
 # Merge results from various models
 merge_multi_results.py:
-  working_directory: C:/Users/gwena/Documents/STDL/2_En_cours/sda/outputs/det/both/
+  working_directory: output/det/both
   output_directory: best_threshold
   glob_det_path: "**/yearly_dets_*.gpkg"
-  labels: ../../trne/labels.geojson
+  labels: ../../trne/labels_250410.geojson
   categories: ../../trne/category_ids.json
-  score_type: optimal
+  score_type: optimal    #  supported values: 1. conservative (= 0.05), 2. optimal (best for the model f1-score as defined in functions/constants.py)
   threshold: 0.1
   number_models: 5
   assess: 
@@ -18,6 +18,7 @@ merge_across_years.py:
   working_directory: C:/Users/gwena/Documents/STDL/2_En_cours/sda/outputs
   output_directory: det/both/best_threshold
   detections: det/both/best_threshold/merged_detections_across_models.gpkg
+  iou_threshold: 0.1
   labels: trne/labels_across_years.geojson
   categories: trne/category_ids.json
   assess: 

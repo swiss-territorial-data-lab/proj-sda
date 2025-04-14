@@ -300,7 +300,7 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
         dets_gdf_dict = {}
         clipped_labels_gdf_dict = {}
         if KEEP_DATASET_SPLIT:
-            split_tiles_gdf = gpd.read_file(os.path.join(os.path.dirname(labels_path), 'split_aoi_tiles.geojson'))
+            split_tiles_gdf = gpd.read_file(os.path.join(os.path.dirname(labels_path), f'split_aoi_tiles{"_250410" if "_250410" in labels_path else ""}.geojson'))
             split_tiles_gdf = split_tiles_gdf.to_crs(2056)
             tiles_gdf = split_tiles_gdf.dissolve(['dataset'] + ([] if drop_year else ['year_tile']), as_index=False)
 
