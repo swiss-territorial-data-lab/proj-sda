@@ -153,9 +153,7 @@ merge_across_years.py:
   output_directory: best_threshold
   detections: best_threshold/merged_detections_across_models.gpkg
   iou_threshold: 0.1
-  labels: labels_across_years.geojson
-  categories: category_ids.json
   assess: 
-    enable: True
+    enable: False
     no_class: True
     metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average

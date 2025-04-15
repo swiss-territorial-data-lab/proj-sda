@@ -104,7 +104,7 @@ if __name__ == "__main__":
     if ASSESS:
         METHOD = cfg['assess']['metrics_method']
         NO_CLASS = cfg['assess']['no_class']
-        LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
+        LABELS = cfg['labels']
         CATEGORIES = cfg['categories']
     else:
         METHOD, NO_CLASS, LABELS, CATEGORIES = (None, False, None, None)

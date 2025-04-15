@@ -1,3 +1,25 @@
+# This configuration was used to assess the results produced by an inference over all the year in which the cantons of Vaud and Tessin were overflown.
+# Inference is performed separately for each canton with the bash scripts.
+# Cantonal results are coppied in a folder with the following structure.
+# .
+# ├── model68_only
+# |   ├── ticino
+# |   └── vaud
+# ├── ticino
+# |   ├── model XX
+# |   ├── ...
+# |   └── model YY
+# └──vaud
+#     ├── model XX
+#     ├── ...
+#     └── model YY
+
+# The ground truth used for this assessment was slightly modified compared with the ground truth made available in this repo. The year of certain detections was
+# corrected to correspond exactly to the year in which the canton was overflown.
+# The file `labels_across_years.geojson` only keep one label per object. The label with the largest footprint was selected in case labels were produced for 
+# several years.
+
+
 # Merge results from various models
 merge_multi_results.py:
   working_directory: output/det/both
