@@ -6,5 +6,5 @@ WORKDIR /docker_mount
 USER root:root
 RUN apt update && apt install -y git && apt clean
 
-ADD requirements.txt proj-borderpoints/requirements.txt
-RUN pip install -r proj-borderpoints/requirements.txt
+ADD requirements.txt proj-sda/requirements.txt
+RUN pip install -r proj-sda/requirements.txt
