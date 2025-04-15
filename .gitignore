@@ -8,10 +8,11 @@ data/layers/**/
 !data/AoI/vaud/MN95_CAD_TPR_LAD_MO_VD.shp
 !data/layers/vaud/lakes_VD.gpkg
 !data/layers/ticino/MU_Acque_TI_dissolved.gpkg
+config/**/config_det_*.yaml
 input*/
+object-detector/
 output*/
 model*/
-config/**/config_det_*.yaml
 .vscode/
 
 # Byte-compiled / optimized / DLL files

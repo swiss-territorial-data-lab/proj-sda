@@ -1,0 +1,19 @@
+services:
+  sda:
+    build: .
+    volumes:
+      - ./config:/docker_mount/proj-sda/config
+      - ./data:/docker_mount/proj-sda/data
+      - ./functions:/docker_mount/proj-sda/functions
+      - ./output:/docker_mount/proj-sda/output
+      - ./scripts:/docker_mount/proj-sda/scripts
+      # - ./object-detector/scripts:/docker_mount/object-detector/scripts
+      # - ./object-detector/helpers:/docker_mount/object-detector/helpers
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: /bin/bash

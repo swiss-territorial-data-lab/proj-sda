@@ -33,6 +33,8 @@ The project has been run on a 32 GiB RAM machine with a 16 GiB GPU (NVIDIA Tesla
 - GDAL 3.0.4
 - object-detector [2.3.2](https://github.com/swiss-territorial-data-lab/object-detector/releases/tag/v2.3.2)
 
+To avoid installation conflicts, we recommend running the process in a Docker container. The steps necessary to the creation of the Docker image are described in the next section.
+
 ### Installation
 
 Install GDAL and OpenCV:
@@ -41,6 +43,37 @@ Install GDAL and OpenCV:
 sudo apt-get install -y python3-gdal gdal-bin libgdal-dev gcc g++ python3.8-dev
 sudo apt-get install -y python3-opencv
 ```
+
+#### With docker
+
+The installation is performed from this folder with the following steps:
+
+* The dockerfile of this project supposes the existence on the machine of an image called `object-detector-stdl-objdet`. 
+    * You can control the image existence by listing the available images with `docker images ls`. If it does not exist:
+        * Clone the [STDL object detector](https://github.com/swiss-territorial-data-lab/object-detector),
+        * Get into the `object-detector` folder,
+        * Build the image for the object detector with `docker compose build`.
+        * You can control the installation by running `docker compose run --rm stdl-objdet stdl-objdet -h`.
+* Go back to the folder `proj-sda`,
+* Build docker,
+* Run docker,
+* Go to `proj-sda` directory in docker.
+
+The corresponding command lines are
+
+```
+docker images ls
+git clone https://github.com/swiss-territorial-data-lab/object-detector.git
+cd object-detector
+docker compose build
+cd -
+docker compose build
+docker compose run --rm sda
+cd proj-sda            # Command to run in the docker bash
+```
+
+
+#### Without docker
 
 Python dependencies can be installed with `pip` or `conda` using the `requirements.txt` file provided. We advise using a [Python virtual environment](https://docs.python.org/3/library/venv.html).
 
