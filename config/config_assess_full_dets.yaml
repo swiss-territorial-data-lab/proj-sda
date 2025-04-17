@@ -15,7 +15,8 @@
 #     └── model YY
 
 # The ground truth used for this assessment was slightly modified compared with the ground truth made available in this repo. The year of certain detections was
-# corrected to correspond exactly to the year in which the canton was overflown.
+# corrected to correspond exactly to the year in which the canton was overflown. It concerns the canton of Tessin at the following years: 1990 & 1991 -> 1989, 
+# 2000 -> 1999, 2016 -> 2015, 2020 -> 2018.
 # The file `labels_across_years.geojson` only keep one label per object. The label with the largest footprint was selected in case labels were produced for 
 # several years.
 
