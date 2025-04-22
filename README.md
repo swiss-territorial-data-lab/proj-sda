@@ -149,7 +149,7 @@ Below, the description of input data used for this project.
 The `proj-sda` repository contains scripts to prepare and post-process the data and results. Hereafter a short description of each script and a workflow graph:
 
 <p align="center">
-<img src="./images/sda_workflow_graph.png?raw=true" width="100%">
+<img src="./images/workflow_GitHub.webp" width="100%">
 <br />
 </p>
 
