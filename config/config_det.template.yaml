@@ -90,7 +90,7 @@ merge_multi_results.py:
   glob_det_path: "**/yearly_dets_0dot*_threshold.gpkg"  # asterisk in the layer name get replaced based on the score type
   score_type: conservative   #  supported values: 1. conservative (= 0.05), 2. optimal (best for the model f1-score as defined in constants)
   categories: category_ids.json
-  threshold: 0.1
+  merged_score_threshold: 0.1
   assess: 
     enable: False
 

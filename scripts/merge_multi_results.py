@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
     GLOB_DET_PATH = cfg['glob_det_path']
     SCORE_TYPE = cfg['score_type']
-    THRESHOLD = cfg['threshold']
+    MERGED_SCORE_THRESHOLD = cfg['merged_score_threshold']
     NUMBER_MODELS = cfg['number_models'] if 'number_models' in cfg.keys() else None
     ASSESS = cfg['assess']['enable']
     if ASSESS:
@@ -200,7 +200,7 @@ if __name__ == "__main__":
     removed_dets_gdf = groupped_detections_gdf[~condition_to_keep]
 
     logger.info('Remove detections based on score...')
-    condition_to_keep = (multi_presence_dets_gdf.merged_score > THRESHOLD) \
+    condition_to_keep = (multi_presence_dets_gdf.merged_score > MERGED_SCORE_THRESHOLD) \
         & ((multi_presence_dets_gdf.merged_score > 0.5) | (multi_presence_dets_gdf.area < 100000))\
         & (multi_presence_dets_gdf.area < 275000)
     filtered_groupped_dets_gdf = multi_presence_dets_gdf[condition_to_keep]

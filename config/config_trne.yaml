@@ -141,7 +141,7 @@ merge_multi_results.py:
   labels: labels.geojson
   categories: category_ids.json
   score_type: optimal   #  supported values: 1. conservative (= 0.05), 2. optimal (best for the model f1-score as defined in constants)
-  threshold: 0.1
+  merged_score_threshold: 0.1
   assess: 
     enable: True
     no_class: False
