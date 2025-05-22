@@ -2,9 +2,13 @@
 # Inference workflow
 
 echo 'Run batch process to perfrom inference over several SWISSIMAGE years with 5 different models'
+mkdir -p config/batch_process
 
-canton=CANTON                     # provide canton name in lowercase
-for year in YEAR1 YEAR2 YEAR3     # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)
+canton=ticino                     # provide canton name in lowercase
+dl_models=$(echo 68 72)               # provide the model number, the model file name should be 'model_XX.path'
+years_list=2003,1993               # year list to process, python list separator 
+years=$(echo $years_list | tr ',' ' ')
+for year in $years    # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)
 
 do
     echo '-----------'
@@ -13,6 +17,7 @@ do
     sed 's/#YEAR#/$year/g' config/config_det.template.yaml > config/batch_process/config_det_${year}_${canton}.yaml
     sed -i "s/SWISSIMAGE_YEAR/$year/g" config/batch_process/config_det_${year}_${canton}.yaml
     sed -i "s/CANTON/$canton/g" config/batch_process/config_det_${year}_${canton}.yaml
+    sed -i "s/YEARS_LIST/$years_list/g" config/batch_process/config_det_${year}_${canton}.yaml
     echo ' '
     echo 'prepare_aoi.py'
     python ./scripts/prepare_aoi.py config/batch_process/config_det_${year}_${canton}.yaml
@@ -28,7 +33,7 @@ do
             echo 'generate_tilesets.py'
             stdl-objdet generate_tilesets config/batch_process/config_det_${year}_${canton}.yaml
             echo ' '
-            for dl_model in 68 72 75 92 102
+            for dl_model in $dl_models
             do
                 echo Model = $dl_model
                 sed 's/#MODEL#/$dl_model/g' config/batch_process/config_det_${year}_${canton}.yaml > config/batch_process/config_det_${year}_${canton}_${dl_model}.yaml
@@ -47,7 +52,7 @@ do
     fi
 done
 
-for dl_model in 68 72 75 92 102
+for dl_model in $dl_models
 
 do
     echo 'compile_years.py'

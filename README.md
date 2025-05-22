@@ -1,7 +1,7 @@
 # Automatic detection of agricultural soils degraded by anthropogenic activities
 
 The aim of the project is to automatically detect anthropogenic activities that have degraded agricultural soils in the past. Two main categories have been defined: "non-agricultural activity" and "land movement". The results will make it possible to identify potentially rehabilitable soils that can be used to establish a land crop rotation map. <br>
-This project was developed in collaboration with the Canton of Ticino and of the Canton of Vaud. A detailed documentation of the project and results can be found on the [STDL technical website](https://tech.stdl.ch/PROJ-SDA/).
+This project was developed in collaboration with the Canton of Ticino and the Canton of Vaud. A detailed documentation of the project and results can be found on the [STDL technical website](https://tech.stdl.ch/PROJ-SDA/).
 
 **Table of content**
 
@@ -10,7 +10,7 @@ This project was developed in collaboration with the Canton of Ticino and of the
     - [Software](#software)
     - [Installation](#installation)
 - [Getting started](#getting-started)
-    - [Files structure](#files-structure)
+    - [File structure](#file-structure)
     - [Data](#data)
     - [Scripts](#scripts)
     - [Workflow instructions](#workflow-instructions)
@@ -55,9 +55,9 @@ The installation is performed from this folder with the following steps:
         * Build the image for the object detector with `docker compose build`.
         * You can control the installation by running `docker compose run --rm stdl-objdet stdl-objdet -h`.
 * Go back to the folder `proj-sda`,
-* Build docker,
-* Run docker,
-* Go to `proj-sda` directory in docker.
+* Build docker `docker compose build`,
+* Run docker `docker compose run --rm sda`,
+* Go to `proj-sda` directory in the docker container.
 
 The corresponding command lines are
 
@@ -72,6 +72,7 @@ docker compose run --rm sda
 cd proj-sda            # Command to run in the docker bash
 ```
 
+NB: if using Docker, run bash (SH) scripts in the Ubuntu terminal within Docker with the 'bash' command. 
 
 #### Without docker
 
@@ -95,7 +96,7 @@ $ pip-compile requirements.in
 
 ## Getting started
 
-### Files structure
+### File structure
 
 The project `proj-sda` (in combination with the `object-detector`) is organised as follows. Path names and values can be customised by the user:
 
@@ -131,7 +132,7 @@ The project `proj-sda` (in combination with the `object-detector`) is organised 
 
 ## Data
 
-Below, the description of input data used for this project. 
+Here is a the description of the input data used for this project. 
 
 - images: [_SWISSIMAGE Journey_](https://map.geo.admin.ch/#/map?lang=fr&center=2660000,1190000&z=1&bgLayer=ch.swisstopo.pixelkarte-farbe&topic=ech&layers=ch.swisstopo.swissimage-product@year=2024;ch.swisstopo.swissimage-product.metadata@year=2024) is an annual dataset of aerial images of Switzerland from 1946 to today. The images are downloaded from the [geo.admin.ch](https://www.geo.admin.ch/fr) server using [XYZ](https://api3.geo.admin.ch/services/sdiservices.html#xyz) connector. 
 - area of interest (AoI):
@@ -263,13 +264,14 @@ $ scripts/batch_process_multi_models.sh
 
 Additional scripts can be used to process images. Their use is optional.
 
-1. `clip.py`: clip a vector layer with another one.
-2. `gt_analysis.py`: plot GT characteristics.
-3. `match_colour.py`: normalise the colour histogram to the one of a reference image. 
-4. `mosaic.py`: mosaic images. 
-5. `rgb_to_greyscale.py`: convert RGB images to greyscale images with rasterio. 
-6. `rgb_to_greyscale.sh`: convert RGB images to greyscale images with GDAL. 
-7. `tiff2geotiff.py`: convert tiff to geotiff files.
+1. `build_vrt.py`: build a VRT for the TIFF file in the given input folder. 
+2. `clip.py`: clip a vector layer with another one.
+3. `gt_analysis.py`: plot GT characteristics.
+4. `match_colour.py`: normalise the colour histogram to the one of a reference image. 
+5. `mosaic.py`: mosaic images. 
+6. `rgb_to_greyscale.py`: convert RGB images to greyscale images with rasterio. 
+7. `rgb_to_greyscale.sh`: convert RGB images to greyscale images with GDAL. 
+8. `tiff2geotiff.py`: convert tiff to geotiff files.
 
 This project uses a multi-year dataset comprising greyscale and RGB images. The method developed by [Farella et al. 2022](https://doi.org/10.3390/jimaging8100269), for which the code is available [here](https://github.com/3DOM-FBK/Hyper_U_Net), was also tested for the colourisation of the historical greyscale images
 
