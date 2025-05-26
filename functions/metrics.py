@@ -295,7 +295,9 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
         if no_class:
             labels_w_id_gdf['label_class'] = 1  # label classes start at 1
             dets_gdf['det_class'] = 0           # det classes start at 0
-            labels_w_id_gdf['CATEGORY'] = 'human activity'        
+            labels_w_id_gdf['CATEGORY'] = 'human activity'
+
+        ONE_CLASS = len(categories_info_df) == 1 or no_class
 
         dets_gdf_dict = {}
         clipped_labels_gdf_dict = {}
@@ -345,7 +347,7 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
             global_metrics_dict[dataset] = {'dataset': dataset}
 
             # Geometric assessment
-            if len(categories_info_df) == 1 or no_class:
+            if ONE_CLASS:
                 unary_dets = dets_gdf_dict[dataset].unary_union
                 unary_labels = clipped_labels_gdf_dict[dataset].unary_union
 
@@ -398,7 +400,7 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
             ].to_file(feature, driver='GPKG', index=False)
             written_files.append(feature)
 
-            if by_class:
+            if by_class and not ONE_CLASS:
                 # label classes starting at 1 and detection classes starting at 0.
                 for id_cl in id_classes:
                     metrics_dict_by_cl[dataset].append({
@@ -433,7 +435,7 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
                 [score, 'det_class', 'det_category', 'label_class', 'label_category', 'tag']
             ]
 
-            if not no_class:
+            if not ONE_CLASS:
                 file_to_write = os.path.join(output_dir_by_dst[dataset], reliability_diagram_filename + '.jpeg')
                 reliability_diagram(tmp_dets_gdf, score, file_to_write)
                 written_files.append(file_to_write)
