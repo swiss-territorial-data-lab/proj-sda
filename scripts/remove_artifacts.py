@@ -3,12 +3,9 @@ import os
 import sys
 import time
 import yaml
-from tqdm import tqdm
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
-import rasterio
 
 sys.path.insert(0, '.')
 import functions.metrics as metrics
@@ -26,7 +23,7 @@ if __name__ == "__main__":
     logger.info('Starting...')
 
     # Argument and parameter specification
-    parser = argparse.ArgumentParser(description="The script removes artifacts by comparing dets and tiles.")
+    parser = argparse.ArgumentParser(description="The script removes detections with a geometry close to the one of the overlapped tile.")
     parser.add_argument('config_file', type=str, help='input geojson path')
     args = parser.parse_args()
 
@@ -81,9 +78,6 @@ if __name__ == "__main__":
     intersecting_dets_tiles_gdf['IoU'] = iou
     sorted_intersecting_dets_tiles_gdf = intersecting_dets_tiles_gdf.sort_values('IoU', ascending=False).drop_duplicates([ID], ignore_index=True).round({'IoU': 2})
 
-    assert sorted_intersecting_dets_tiles_gdf.IoU.max() <= 1, \
-        f"Incoherent IoU over 1 for {sorted_intersecting_dets_tiles_gdf[sorted_intersecting_dets_tiles_gdf.IoU>1].shape[0]} detections."
-
     condition = sorted_intersecting_dets_tiles_gdf['IoU'] >= IOU_THRESHOLD
     artifacts_gdf = sorted_intersecting_dets_tiles_gdf[condition].drop(columns='tile_geom')
     non_artifact_dets_gdf = pd.concat([
@@ -93,22 +87,6 @@ if __name__ == "__main__":
     del pot_artifact_dets_gdf, intersecting_dets_tiles_gdf, sorted_intersecting_dets_tiles_gdf
 
     logger.success(f"{DONE_MSG} {len(artifacts_gdf)} detections were removed as artifacts.")
-    if False:
-        logger.info(f"Try to recreate sharp angles on detections...")
-        condition = non_artifact_dets_gdf.area > MIN_ARTIFACT_AREA
-        pot_artifact_dets_gdf = non_artifact_dets_gdf[condition].copy()
-
-        intersecting_dets_tiles_gdf = gpd.sjoin(pot_artifact_dets_gdf, tiles_gdf[['id', 'geometry', 'tile_geom']])
-        duplicated_ids = intersecting_dets_tiles_gdf.loc[intersecting_dets_tiles_gdf.duplicated(ID), ID].unique()
-        intersecting_dets_tiles_gdf = intersecting_dets_tiles_gdf[~intersecting_dets_tiles_gdf[ID].isin(duplicated_ids)]
-
-        intersecting_dets_tiles_gdf.loc[:, 'geometry'] = intersecting_dets_tiles_gdf.buffer(20)
-        intersecting_dets_tiles_gdf.loc[:, 'geometry'] = [det.geometry.intersection(det.tile_geom) for det in intersecting_dets_tiles_gdf.itertuples()]
-        sharp_dets_gdf = intersecting_dets_tiles_gdf[non_artifact_dets_gdf.columns].reset_index(drop=True)
-
-        filepath = os.path.join(OUTPUT_DIR, 'test_angles.gpkg')
-        sharp_dets_gdf.to_file(filepath)
-        written_files.append(filepath)
 
     logger.info("Export results...")
 

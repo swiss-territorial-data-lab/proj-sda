@@ -101,7 +101,6 @@ if __name__ == "__main__":
 
     # Process detection by year
     for year in detections_gdf.year_det.unique():
-        detections_gdf = detections_gdf.copy()
         detections_by_year_gdf = detections_gdf[detections_gdf['year_det']==year]
 
         detections_buffer_gdf = detections_by_year_gdf.copy()

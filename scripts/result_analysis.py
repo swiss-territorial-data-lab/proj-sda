@@ -201,7 +201,7 @@ def plot_barchart(df, cat, min_year, max_year, class_dict, data, output_dir):
     labels = df[year][::5]
     title = class_dict[cat] if class_dict else cat
     plot_path = os.path.join(output_dir, f'{data}_{title}.png'.replace(' ', '_'))
-    format_barplot(df, ax, fig, labels, title, 'all_cantons', plot_path)
+    format_barplot(df, ax, fig, labels, title, plot_path)
 
     return plot_path
 

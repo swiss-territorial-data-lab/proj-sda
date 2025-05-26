@@ -110,6 +110,7 @@ assess_detections.py:
 # Plots (optional)
 result_analysis.py:
   working_directory: output/trne/run68
+  output_directory: plots
   detections: tagged_detections.gpkg
   min_year: 1950
   max_year: 2023

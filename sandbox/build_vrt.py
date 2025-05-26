@@ -27,7 +27,7 @@ for year in range(1980, 1981):
         list_im.append(os.path.join(SOURCE_FOLDER, file))
 
     if len(list_im) == 0:
-        print(f"The folder {SOURCE_FOLDER} is empty.")
+        print(f"The folder {SOURCE_FOLDER} does not contain any image.")
         continue
 
     vrt_options = gdal.BuildVRTOptions(resampleAlg='cubic', addAlpha=False, outputSRS=EPSG)

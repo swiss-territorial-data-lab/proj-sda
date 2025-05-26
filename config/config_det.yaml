@@ -4,7 +4,7 @@ prepare_aoi.py:
   canton: {canton}
   year: {year}
   srs: EPSG:2056
-  img_footprint_shp: swissimage_footprints/{year}.shp
+  img_footprint_shp: swissimage_footprints/{year}.gpkg
 
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
@@ -77,7 +77,7 @@ merge_detections.py:
 merge_multi_results.py:
   working_directory: output/det/{canton}/single_year
   output_directory: merged_results
-  glob_det_path: "**/merged_detections_at_0dot05_threshold.gpkg"
+  glob_det_path: "**/merged_detections_at_0dot*_threshold.gpkg"  # asterisk in the layer name get replaced based on the score type
   score_type: optimal   #  supported values: 1. conservative (= 0.05), 2. optimal (best for the model f1-score as defined in constants)
   categories: category_ids.json
   merged_score_threshold: 0.1
