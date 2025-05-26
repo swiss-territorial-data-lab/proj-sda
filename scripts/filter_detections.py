@@ -109,7 +109,6 @@ if __name__ == "__main__":
     ZONE_NON_COMPATIBLE_LPN = none_if_undefined(CANTON_PARAMS, 'zone_non_compatible_LPN')
 
     ATTRIBUTE_NAMES = cfg['attribute_names']
-    SCORE_THD = cfg['score_threshold']
     AREA_THD = cfg['area_threshold']
     AREA_RATIO_THD = cfg['area_ratio_threshold']
     COMPACTNESS_THD = cfg['compactness_threshold']
@@ -213,15 +212,6 @@ if __name__ == "__main__":
     tdem = len(detections_gdf)
     logger.info(f"{dic - tdem} detections were removed by elevation threshold: elevation < {ELEVATION_THD} m and elevation != 0 m.")
 
-    # Filter dataframe by score value
-    check_gdf_len(detections_gdf)
-    SCORE = 'merged_score' if 'merged_score' in detections_gdf.columns else 'score'
-    detections_score_gdf = detections_gdf[detections_gdf[SCORE] > SCORE_THD]
-    sc = len(detections_score_gdf)
-    logger.info(f"{tdem - sc} detections were removed by score filtering (score threshold = {SCORE_THD})")
-
-    detections_gdf = detections_score_gdf.copy()
-
     # Overlay detections with exclusion area polygons
     check_gdf_len(detections_gdf)
     if EXCLUSION and len(EXCLUSION) > 0:
@@ -240,7 +230,7 @@ if __name__ == "__main__":
         detections_gdf = detections_gdf.overlay(exclu_gdf, how='difference', keep_geom_type=False)
         logger.info(f'{bd - len(detections_gdf)} detections were removed.')
 
-        del exclu_gdf, detections_score_gdf
+        del exclu_gdf
 
     # Spatial join between detections and other vector layers
     check_gdf_len(detections_gdf)
@@ -306,7 +296,7 @@ if __name__ == "__main__":
     # Formatting the output name of the filtered detection  
     feature = os.path.join(
         os.path.dirname(DETECTIONS), 
-        f'dets_{SCORE}-{SCORE_THD}_A-{int(AREA_THD)}_A_ratio-{AREA_RATIO_THD}_C-{COMPACTNESS_THD}_elev-{int(ELEVATION_THD)}'.replace('0.', '0dot') + '.gpkg'
+        f'dets_A-{int(AREA_THD)}_A_ratio-{AREA_RATIO_THD}_C-{COMPACTNESS_THD}_elev-{int(ELEVATION_THD)}'.replace('0.', '0dot') + '.gpkg'
     )
     detections_infos_gdf.round(3).to_file(feature)
     written_files.append(feature)
@@ -318,7 +308,7 @@ if __name__ == "__main__":
         written_files.extend(
             metrics.perform_assessment(
                 detections_infos_gdf, LABELS, CATEGORIES, METHOD, os.path.dirname(DETECTIONS),
-                score=SCORE, drop_year=True, additional_columns=['valid_area', 'area_ratio', 'compactness'],
+                score=0.05, drop_year=True, additional_columns=['valid_area', 'area_ratio', 'compactness'],     # No additional filtering on score performed here. Put lowest possible score (=keep all dets)
                 tagged_results_filename='tagged_final_dets', reliability_diagram_filename='final_reliability_diagram'
             )
         )

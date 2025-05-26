@@ -28,7 +28,6 @@ merge_multi_results.py:
   glob_det_path: "**/yearly_dets_*.gpkg"
   labels: ../../trne/labels_250410.geojson
   categories: ../../trne/category_ids.json
-  score_type: optimal    #  supported values: 1. conservative (= 0.05), 2. optimal (best for the model f1-score as defined in functions/constants.py)
   merged_score_threshold: 0.1
   number_models: 5
   assess: 
