@@ -78,21 +78,25 @@ if __name__ == "__main__":
     intersecting_dets_tiles_gdf['IoU'] = iou
     sorted_intersecting_dets_tiles_gdf = intersecting_dets_tiles_gdf.sort_values('IoU', ascending=False).drop_duplicates([ID], ignore_index=True).round({'IoU': 2})
 
-    condition = sorted_intersecting_dets_tiles_gdf['IoU'] >= IOU_THRESHOLD
-    artifacts_gdf = sorted_intersecting_dets_tiles_gdf[condition].drop(columns='tile_geom')
-    non_artifact_dets_gdf = pd.concat([
-        non_artifact_dets_gdf, sorted_intersecting_dets_tiles_gdf.loc[~condition, non_artifact_dets_gdf.columns]
-    ], ignore_index=True)
-    assert nbr_dets == len(artifacts_gdf) + len(non_artifact_dets_gdf), "Tiles went missing when identifying square artifacts."
-    del pot_artifact_dets_gdf, intersecting_dets_tiles_gdf, sorted_intersecting_dets_tiles_gdf
+    if sorted_intersecting_dets_tiles_gdf.empty:
+        artifacts_gdf = non_artifact_dets_gdf.copy()
+        logger.info("There are no artifacts.")
 
-    logger.success(f"{DONE_MSG} {len(artifacts_gdf)} detections were removed as artifacts.")
+    else:
+        condition = sorted_intersecting_dets_tiles_gdf['IoU'] >= IOU_THRESHOLD
+        artifacts_gdf = sorted_intersecting_dets_tiles_gdf[condition].drop(columns='tile_geom')
+        non_artifact_dets_gdf = pd.concat([
+            non_artifact_dets_gdf, sorted_intersecting_dets_tiles_gdf.loc[~condition, non_artifact_dets_gdf.columns]
+        ], ignore_index=True)
+        assert nbr_dets == len(artifacts_gdf) + len(non_artifact_dets_gdf), "Tiles went missing when identifying square artifacts."
+        del pot_artifact_dets_gdf, intersecting_dets_tiles_gdf, sorted_intersecting_dets_tiles_gdf
 
-    logger.info("Export results...")
+        logger.success(f"{DONE_MSG} {len(artifacts_gdf)} detections were removed as artifacts.")
+        logger.info("Export results...")
 
-    filepath = os.path.join(OUTPUT_DIR, f'artifacts_A-{CLOSE_AREA_MIN}-{CLOSE_AREA_MAX}_IoU-{IOU_THRESHOLD}.gpkg')
-    artifacts_gdf.to_file(filepath, index=False)
-    written_files.append(filepath)
+        filepath = os.path.join(OUTPUT_DIR, f'artifacts_A-{CLOSE_AREA_MIN}-{CLOSE_AREA_MAX}_IoU-{IOU_THRESHOLD}.gpkg')
+        artifacts_gdf.to_file(filepath, index=False)
+        written_files.append(filepath)
 
     filepath = os.path.join(OUTPUT_DIR, 'actual_dets_across_years.gpkg')
     non_artifact_dets_gdf.to_file(filepath)

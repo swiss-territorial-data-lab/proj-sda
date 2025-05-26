@@ -10,7 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, '.')
 import functions.misc as misc
-from functions.constants import DONE_MSG
+from functions.constants import DONE_MSG, SCORE_THRESHOLD_TYPE, UnknownScoreType
 
 from loguru import logger
 logger = misc.format_logger(logger)
@@ -47,10 +47,14 @@ if __name__ == "__main__":
     written_files = [] 
     detections_final_gdf = gpd.GeoDataFrame()
 
-    if '*' in LAYER:
+    if SCORE_THRESHOLD_TYPE == 'conservative':
+        LAYER = LAYER.replace('*', '0dot05')
+    elif SCORE_THRESHOLD_TYPE == 'optimal':
         LAYER = LAYER.replace(
             '*', str(misc.find_right_threshold(WORKING_DIR)).replace('.', 'dot')
         )
+    else:
+        UnknownScoreType(SCORE_THRESHOLD_TYPE)
 
     LAYER_END = LAYER.split('_')[-2:]
     feature = f'yearly_dets_{LAYER_END[0]}_{LAYER_END[1]}'

@@ -17,7 +17,7 @@ from loguru import logger
 logger = misc.format_logger(logger)
 
 
-def main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_SHP):
+def main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_GPKG):
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')
@@ -34,7 +34,7 @@ def main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_SHP):
     canton_aoi_gdf = gpd.read_file(CANTON_SHP)
     canton_aoi_gdf = misc.convert_crs(canton_aoi_gdf, epsg=SRS)
     logger.info("Loading images footprint.")
-    img_fp_gdf = gpd.read_file(IMG_FOOTPRINT_SHP)
+    img_fp_gdf = gpd.read_file(IMG_FOOTPRINT_GPKG)
     img_fp_gdf = misc.convert_crs(img_fp_gdf, epsg=SRS)
     img_fp_gdf['flight_year'] = YEAR
 
@@ -43,7 +43,7 @@ def main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_SHP):
     aoi_intersection_gdf = aoi_intersection_gdf[['geometry', 'flight_year']] 
     aoi_intersection_gdf['canton'] = CANTON
     aoi_intersection_gdf['shp1'] = os.path.basename(CANTON_SHP)
-    aoi_intersection_gdf['shp2'] = os.path.basename(IMG_FOOTPRINT_SHP)
+    aoi_intersection_gdf['shp2'] = os.path.basename(IMG_FOOTPRINT_GPKG)
 
     # Save shapefile
     if len(aoi_intersection_gdf) > 0:
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     CANTON = cfg['canton']
     YEAR = cfg['year']
     SRS = cfg['srs']
-    IMG_FOOTPRINT_SHP = cfg['img_footprint_shp'].replace('{year}', str(YEAR))
+    IMG_FOOTPRINT_GPKG = cfg['img_footprint_gpkg'].replace('{year}', str(YEAR))
     if CANTON == 'vaud':
         CANTON_SHP = 'vaud/MN95_CAD_TPR_LAD_MO_VD.shp'
     elif CANTON == 'ticino':
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     logger.info(f'Using cantonal parameters:')
     logger.info(f'    - cantonal boundaries: {CANTON_SHP}')
 
-    main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_SHP)
+    main(WORKING_DIR, CANTON, YEAR, SRS, CANTON_SHP, IMG_FOOTPRINT_GPKG)
 
     # Stop chronometer  
     toc = time.time()

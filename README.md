@@ -158,16 +158,16 @@ The `proj-sda` repository contains scripts to prepare and post-process the data 
 2. `prepare_data.py`: format labels and produce tiles to be processed in the OD.
 3. `results_analysis.py`: plot some parameters of the detections to help understand the results (optional).
 4. `merge_detections.py`: merge adjacent detections cut by tiles into a single detection and attribute the class based on the largest area.
-    * At this step, the detections with a confidence score lower than the threshold are filtered out. The used threshold is saved in the output name.
+    * At this step, the detections with a confidence score lower than the threshold are filtered out. The used threshold is indicated in the constant file `functions/constants.py` and saved in the output name. There are two possibilities:
+        a. optimal: a threshold maximising the f1-score is expected. The value of this threshold for each model is saved in the constant file.
+        b. conservative: a threshold of 0.05 maximising the recall is expected.
 5. `compile_years.py`: merge all the detection layers obtained during inference by year.
 6. `merge_multi_results.py`: merge the results from different models into one dataset of selected detections.
-    * The right results will be selected based on the path template and the score type. There are two possibilities
-        a. optimal: a threshold maximising the f1-score is expected. The value of this threshold for each model is saved in the constant file `functions/constants.py`.
-        b. conservative: a threshold of 0.05 maximising the recall is expected.
+    * The right results will be selected based on the path template and the type of score threhsold.
 7. `merge_across_years`: dissolve overlapping detections of different years.
-6. `filter_detections.py`: filter detections by overlap with other vector layers. The overlapping portion of the detection can be removed or a new attribute is created to indicate the overlapping ratio with the layer of interest. Other information such as score, elevation, or slope are also displayed.
-7. `batch_process.sh`: batch script to perform the inference workflow over several years with one model.
-8. `batch_process_multi_models.sh`: batch script to perform the inference workflow over several years with several models.
+8. `filter_detections.py`: filter detections by overlap with other vector layers. The overlapping portion of the detection can be removed or a new attribute is created to indicate the overlapping ratio with the layer of interest. Other information such as score, elevation, or slope are also displayed.
+9. `batch_process.sh`: batch script to perform the inference workflow over several years with one model.
+10. `batch_process_multi_models.sh`: batch script to perform the inference workflow over several years with several models.
 
 Object detection is performed with tools present in the [`object-detector`](https://github.com/swiss-territorial-data-lab/object-detector) git repository. 
 
@@ -263,7 +263,7 @@ $ scripts/get_swissimage_footprint.sh
 $ scripts/batch_process_multi_models.sh
 ```
 
-The template configuration file should not be modified, except for the line 81 where the right years should be specified in a list.
+The template configuration file should not be modified. Duplicates of the file are automatically created with the right parameters passed in the batch file at the start of the process.
 
 ## Sandbox
 

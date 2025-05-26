@@ -128,7 +128,6 @@ merge_detections.py:
     tst: run68/tst_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
   iou_threshold: 0.1
-  score_threshold: 0.05
   assess: 
     enable: True
     no_class: False
@@ -138,10 +137,9 @@ merge_detections.py:
 merge_multi_results.py:
   working_directory: output/trne
   output_directory: best_threshold
-  glob_det_path: "**/dst_merged_detections_at_*_threshold.gpkg"
+  glob_det_path: "**/dst_merged_detections_at_*_threshold.gpkg" # asterisk in the layer name get replaced based on the type of score threshold
   labels: labels.geojson
   categories: category_ids.json
-  score_type: optimal   #  supported values: 1. conservative (= 0.05), 2. optimal (best for the model f1-score as defined in constants)
   merged_score_threshold: 0.1
   assess: 
     enable: True

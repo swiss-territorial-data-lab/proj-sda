@@ -15,7 +15,7 @@ sys.path.insert(0, '.')
 import functions.graphs as graphs
 import functions.metrics as metrics
 import functions.misc as misc
-from functions.constants import DONE_MSG, KEEP_DATASET_SPLIT, OVERWRITE
+from functions.constants import DONE_MSG, KEEP_DATASET_SPLIT, OVERWRITE, SCORE_THRESHOLD_TYPE, UnknownScoreType
 
 from loguru import logger
 logger = misc.format_logger(logger)
@@ -111,7 +111,6 @@ if __name__ == "__main__":
     OUTPUT_DIR = cfg['output_directory']
 
     GLOB_DET_PATH = cfg['glob_det_path']
-    SCORE_TYPE = cfg['score_type']
     MERGED_SCORE_THRESHOLD = cfg['merged_score_threshold']
     NUMBER_MODELS = cfg['number_models'] if 'number_models' in cfg.keys() else None
     ASSESS = cfg['assess']['enable']
@@ -138,13 +137,12 @@ if __name__ == "__main__":
     if len(detections_list) == 0:
         logger.critical(f'No detections found for path {GLOB_DET_PATH}.')
         sys.exit(1)
-    if SCORE_TYPE == 'conservative':
+    if SCORE_THRESHOLD_TYPE == 'conservative':
         filtered_detections_list = [file for file in detections_list if '0dot05' in file]
-    elif SCORE_TYPE == 'optimal':
+    elif SCORE_THRESHOLD_TYPE == 'optimal':
         filtered_detections_list = [file for file in detections_list if '0dot05' not in file]
     else:
-        logger.error(f'Unknown score type: {SCORE_TYPE}')
-        logger.error(f'Keeping all found paths.')
+        UnknownScoreType(SCORE_THRESHOLD_TYPE)
     del detections_list
 
     nbr_dets_list = []

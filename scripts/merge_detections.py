@@ -11,7 +11,7 @@ import pandas as pd
 sys.path.insert(0, '.')
 import functions.metrics as metrics
 import functions.misc as misc
-from functions.constants import DONE_MSG, KEEP_DATASET_SPLIT, OVERWRITE
+from functions.constants import DONE_MSG, KEEP_DATASET_SPLIT, OVERWRITE, SCORE_THRESHOLD_TYPE, UnknownScoreType
 
 from loguru import logger
 logger = misc.format_logger(logger)
@@ -39,9 +39,15 @@ if __name__ == "__main__":
     LABELS = cfg['labels'] if 'labels' in cfg.keys() else None
     DETECTION_FILES = cfg['detections']
     DISTANCE = cfg['distance']
-    SCORE_THD = cfg['score_threshold'] if 'score_threshold' in cfg.keys() else None
     IOU_THD = cfg['iou_threshold']
     AREA_THD = cfg['area_threshold'] if 'area_threshold' in cfg.keys() else None
+    if SCORE_THRESHOLD_TYPE == 'conservative':
+        SCORE_THD = 0.05
+    elif SCORE_THRESHOLD_TYPE == 'optimal':
+        SCORE_THD = misc.find_right_threshold(WORKING_DIR, OUTPUT_DIR)
+    else:
+        UnknownScoreType(SCORE_THRESHOLD_TYPE)
+
     ASSESS = cfg['assess']['enable']
     if ASSESS:
         NO_CLASS = cfg['assess']['no_class']
@@ -51,9 +57,7 @@ if __name__ == "__main__":
 
     os.chdir(WORKING_DIR)
     logger.info(f'Working directory set to {WORKING_DIR}')
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    if not SCORE_THD:
-        SCORE_THD = misc.find_right_threshold(WORKING_DIR, OUTPUT_DIR)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)        
 
     written_files = [] 
 

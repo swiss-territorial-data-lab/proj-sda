@@ -4,7 +4,7 @@ prepare_aoi.py:
   canton: CANTON
   year: SWISSIMAGE_YEAR
   srs: EPSG:2056
-  img_footprint_shp: swissimage_footprints/SWISSIMAGE_YEAR.gpkg
+  img_footprint_gpkg: swissimage_footprints/SWISSIMAGE_YEAR.gpkg
 
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py: 
@@ -69,7 +69,6 @@ merge_detections.py:
     oth: ../modelMODEL/SWISSIMAGE_YEAR/merged_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
   iou_threshold: 0.1
-  score_threshold: 0.05
   assess: 
     enable: False
     metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
@@ -78,8 +77,8 @@ merge_detections.py:
 compile_years.py:
   canton: CANTON
   working_directory: output/det/{canton}/modelMODEL
-  years: [YEAR1, YEAR2, YEAR3]          # choose years
-  layer: merged_detections_at_0dot05_threshold.gpkg  # if * in path, will be replaced with the best threshold for the model based on constant parameters
+  years: [YEARS_LIST]          # choose years
+  layer: merged_detections_at_0dot*_threshold.gpkg  # the layers with a conservative or optimal threshold are based on the type of score threshold passed in the constant parameters
   overwrite: True
   file: concatenate   # supported values: 1. layers, 2. concatenate
 
@@ -87,8 +86,7 @@ compile_years.py:
 merge_multi_results.py:
   working_directory: output/det/CANTON
   output_directory: threshold_0dot05
-  glob_det_path: "**/yearly_dets_0dot*_threshold.gpkg"  # asterisk in the layer name get replaced based on the score type
-  score_type: conservative   #  supported values: 1. conservative (= 0.05), 2. optimal (best for the model f1-score as defined in constants)
+  glob_det_path: "**/yearly_dets_0dot*_threshold.gpkg"  # asterisk in the layer name get replaced based on the type of score threshold
   categories: category_ids.json
   merged_score_threshold: 0.1
   assess: 
