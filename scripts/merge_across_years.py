@@ -11,7 +11,7 @@ import pandas as pd
 from hashlib import md5
 
 sys.path.insert(0, '.')
-from functions.constants import DONE_MSG, KEEP_DATASET_SPLIT, OVERWRITE
+from functions.constants import DONE_MSG, OVERWRITE
 from functions.metrics import perform_assessment
 from functions.misc import format_logger
 from merge_multi_results import group_detections
@@ -41,7 +41,7 @@ def main(all_years_dets_gdf, iou_threshold, assess=False, no_class=True, method=
     merged_dets_across_years_gdf = intersecting_detections_gdf.dissolve('group_id', aggfunc='first', as_index=False)
     min_year_df = intersecting_detections_gdf[['group_id', 'year_det']].groupby('group_id', as_index=False).min().rename(columns={'year_det': 'first_year'})
     max_year_df = intersecting_detections_gdf[['group_id', 'year_det']].groupby('group_id', as_index=False).max().rename(columns={'year_det': 'last_year'})
-    count_year_df = intersecting_detections_gdf.group_id.value_counts().reset_index().rename(columns={'count': 'count_years'})
+    count_year_df = intersecting_detections_gdf.drop_duplicates(subset=['group_id', 'year_det']).group_id.value_counts().reset_index().rename(columns={'count': 'count_years'})
 
     for df in  [min_year_df, max_year_df, count_year_df]:
         merged_dets_across_years_gdf = pd.merge(merged_dets_across_years_gdf, df, on='group_id', how='left')
