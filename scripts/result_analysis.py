@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
+from seaborn import scatterplot
 
 sys.path.insert(0, '.')
 import functions.misc as misc
@@ -377,7 +378,8 @@ if __name__ == "__main__":
         plot_path = os.path.join(OUTPUT_DIR, f'detections_per_year_{CANTON}.jpg')
         format_barplot(all_count_per_year_df, ax, fig, labels, 'Number of detections per year', plot_path)
 
-        logger.info('Plot the amount of dets present in multiple years...')
+        logger.info('Plot the amount of dets present in multiple years and their lifespan...')
+        # Barplot of the number of appearance
         all_count_per_year_df = count_values(detections_gdf, 'count_years', 'number of detections')
         plt.rcParams["figure.figsize"] = (len(all_years)*0.1, 5)
         fig, ax = plt.subplots(1, 1)
@@ -391,6 +393,21 @@ if __name__ == "__main__":
         )
         written_files.append(plot_path)
         del all_count_per_year_df
+
+        # Scatterplot of the lifespan per number of appearance
+        detections_gdf['lifespan'] = detections_gdf['last_year'] - detections_gdf['first_year']
+        count_duo = detections_gdf.groupby(['count_years', 'lifespan']).size().reset_index(name='count')
+        tmp_gdf = pd.merge(detections_gdf, count_duo, how='left', left_on=['count_years', 'lifespan'], right_on=['count_years', 'lifespan'])
+
+        palette=plt.get_cmap('coolwarm').reversed()
+        plt.rcParams["figure.figsize"] = (12, 5)
+        fig, ax = plt.subplots(1, 1)
+        ax = scatterplot(data=tmp_gdf[tmp_gdf['count_years'] > 1], x='count_years', y='lifespan', hue='count', palette='coolwarm')
+        plt.grid(True)
+        written_files.append(format_scatterplot(
+            fig, CANTON, 'Lifespan per number of appearance', ylabel='Difference between first and last year', xlabel='Number of appearances', output_dir=OUTPUT_DIR
+        ))
+        del count_duo, tmp_gdf
 
         logger.info('Plot the number of dets per elevation bin...')
         detections_gdf['rounded_elevation'] = [25*round(elev/25) for elev in detections_gdf.elevation]
