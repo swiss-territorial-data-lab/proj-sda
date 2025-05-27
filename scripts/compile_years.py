@@ -47,6 +47,7 @@ if __name__ == "__main__":
     written_files = [] 
     detections_final_gdf = gpd.GeoDataFrame()
 
+    logger.info(f"Type of score threshold: {SCORE_THRESHOLD_TYPE}")
     if SCORE_THRESHOLD_TYPE == 'conservative':
         LAYER = LAYER.replace('*', '0dot05')
     elif SCORE_THRESHOLD_TYPE == 'optimal':

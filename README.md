@@ -269,13 +269,14 @@ The template configuration file should not be modified. Duplicates of the file a
 
 Additional scripts can be used to process images. Their use is optional.
 
-1. `clip.py`: clip a vector layer with another one.
-2. `gt_analysis.py`: plot GT characteristics.
-3. `match_colour.py`: normalise the colour histogram to the one of a reference image. 
-4. `mosaic.py`: mosaic images. 
-5. `rgb_to_greyscale.py`: convert RGB images to greyscale images with rasterio. 
-6. `rgb_to_greyscale.sh`: convert RGB images to greyscale images with GDAL. 
-7. `tiff2geotiff.py`: convert tiff to geotiff files.
+* `build_vrt.py`: build a virtual raster dataset from all images in a folder.
+* `clip.py`: clip a vector layer with another one.
+* `gt_analysis.py`: plot GT characteristics.
+* `match_colour.py`: normalise the colour histogram to the one of a reference image. 
+* `mosaic.py`: mosaic images. 
+* `rgb_to_greyscale.py`: convert RGB images to greyscale images with rasterio. 
+* `rgb_to_greyscale.sh`: convert RGB images to greyscale images with GDAL. 
+* `tiff2geotiff.py`: convert tiff to geotiff files.
 
 This project uses a multi-year dataset comprising greyscale and RGB images. The method developed by [Farella et al. 2022](https://doi.org/10.3390/jimaging8100269), for which the code is available [here](https://github.com/3DOM-FBK/Hyper_U_Net), was also tested for the colourisation of the historical greyscale images
 
