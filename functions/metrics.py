@@ -429,7 +429,7 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
                 ].sort_values(by=['class']).to_csv(file_to_write, index=False)
                 written_files.append(file_to_write)
 
-            # Get bin accuracy
+            # Get bin precision
             tmp_dets_gdf = tagged_dets_gdf.loc[
                 tagged_dets_gdf.tag.isin(['FP', 'TP', 'wrong class']),
                 [score, 'det_class', 'det_category', 'label_class', 'label_category', 'tag']
@@ -440,7 +440,7 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
                 reliability_diagram(tmp_dets_gdf, score, file_to_write)
                 written_files.append(file_to_write)
 
-            # Get bin accuracy
+            # Get bin precision
             tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'det_category'] = 'human activity'
             tmp_dets_gdf.loc[tmp_dets_gdf.tag.isin(['wrong class', 'TP']), 'label_category'] = 'human activity'
 
@@ -460,14 +460,15 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
 
 
 def reliability_diagram(dets_gdf, score='score', output_path='reliability_diagram.jpeg', det_number=True):
-    threshold_bins = np.arange(0, 1.05, 0.05)
+    step = 0.05
+    threshold_bins = np.arange(0, 1, step)
     bin_values = []
     threshold_values = []
     det_count = []
     for threshold in threshold_bins:
         dets_in_bin = dets_gdf[
-            (dets_gdf[score] > threshold-0.05)
-            & (dets_gdf[score] <= threshold)
+            (dets_gdf[score] > threshold)
+            & (dets_gdf[score] <= threshold + step)
         ]
 
         if not dets_in_bin.empty:
@@ -475,15 +476,15 @@ def reliability_diagram(dets_gdf, score='score', output_path='reliability_diagra
             bin_values.append(
                 dets_in_bin[dets_in_bin.det_category == dets_in_bin.label_category].shape[0] / dets_in_bin.shape[0]
             )
-            threshold_values.append(threshold)
+            threshold_values.append(threshold + step / 2)
 
-    # Make the bin accuracy
+    # Make the bin precision
     plt.rcParams["figure.figsize"] = (5, 5)
     if det_number:
         fig, ax = plt.subplots(1, 1)
 
         # Create the barplot
-        ax.bar(threshold_values, det_count, alpha=0.5, label='Number of dets', width=0.03)
+        ax.bar(threshold_values, det_count, alpha=0.5, label='Number of dets', width=step-0.005)
         ax.set_ylabel('Number of dets in bin')
         # ax.legend(loc='center left')
 
@@ -502,7 +503,7 @@ def reliability_diagram(dets_gdf, score='score', output_path='reliability_diagra
     ax2.legend(loc='upper left')
 
     plt.xlabel(score.replace("_", " "))
-    plt.ylabel('bin accuracy')
+    plt.ylabel('bin precision')
     plt.title(f'Calibration curve of the {score.replace("_", " ")}')
     plt.grid(True, alpha=0.5)
     

@@ -8,6 +8,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 from matplotlib.ticker import MultipleLocator
 from seaborn import scatterplot
 
@@ -399,10 +400,11 @@ if __name__ == "__main__":
         count_duo = detections_gdf.groupby(['count_years', 'lifespan']).size().reset_index(name='count')
         tmp_gdf = pd.merge(detections_gdf, count_duo, how='left', left_on=['count_years', 'lifespan'], right_on=['count_years', 'lifespan'])
 
-        palette=plt.get_cmap('coolwarm').reversed()
         plt.rcParams["figure.figsize"] = (12, 5)
         fig, ax = plt.subplots(1, 1)
-        ax = scatterplot(data=tmp_gdf[tmp_gdf['count_years'] > 1], x='count_years', y='lifespan', hue='count', palette='coolwarm')
+        ax = scatterplot(data=tmp_gdf[tmp_gdf['count_years'] > 1], x='count_years', y='lifespan', hue='count', hue_norm=LogNorm(), palette='coolwarm')
+        ticks = range(2, max(tmp_gdf['count_years'])+1, round(max(tmp_gdf['count_years'])/10))
+        ax.set_xticks(ticks, ticks, rotation=0, fontsize=10, ha='center')
         plt.grid(True)
         written_files.append(format_scatterplot(
             fig, CANTON, 'Lifespan per number of appearance', ylabel='Difference between first and last year', xlabel='Number of appearances', output_dir=OUTPUT_DIR

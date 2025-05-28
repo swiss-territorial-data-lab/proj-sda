@@ -137,6 +137,8 @@ if __name__ == "__main__":
     if len(detections_list) == 0:
         logger.critical(f'No detections found for path {GLOB_DET_PATH}.')
         sys.exit(1)
+
+    logger.info(f"Type of score threshold: {SCORE_THRESHOLD_TYPE}")
     if SCORE_THRESHOLD_TYPE == 'conservative':
         filtered_detections_list = [file for file in detections_list if '0dot05' in file]
     elif SCORE_THRESHOLD_TYPE == 'optimal':

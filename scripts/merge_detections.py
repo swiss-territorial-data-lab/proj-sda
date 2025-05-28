@@ -41,6 +41,8 @@ if __name__ == "__main__":
     DISTANCE = cfg['distance']
     IOU_THD = cfg['iou_threshold']
     AREA_THD = cfg['area_threshold'] if 'area_threshold' in cfg.keys() else None
+
+    logger.info(f"Type of score threshold: {SCORE_THRESHOLD_TYPE}")
     if SCORE_THRESHOLD_TYPE == 'conservative':
         SCORE_THD = 0.05
     elif SCORE_THRESHOLD_TYPE == 'optimal':
