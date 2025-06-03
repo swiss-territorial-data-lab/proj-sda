@@ -64,7 +64,7 @@ def clip_objects(objects_gdf, tiles_gdf, fact=0.99):
         
     assert(objects_gdf.crs == tiles_gdf.crs)
     
-    objects_tiles_sjoined_gdf = sjoin(objects_gdf, tiles_gdf, how='inner', predicate='overlaps')
+    objects_tiles_sjoined_gdf = sjoin(objects_gdf, tiles_gdf, how='inner', predicate='intersects')
 
     if 'year_label' in objects_gdf.keys():
         objects_tiles_sjoined_gdf = objects_tiles_sjoined_gdf[objects_tiles_sjoined_gdf.year_label == objects_tiles_sjoined_gdf.year_tile]

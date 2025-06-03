@@ -460,7 +460,7 @@ def perform_assessment(dets_gdf, labels_path, categories_path, method, output_di
 
 
 def reliability_diagram(dets_gdf, score='score', output_path='reliability_diagram.jpeg', det_number=True):
-    step = 0.05
+    step = 0.1
     threshold_bins = np.arange(0, 1, step)
     bin_values = []
     threshold_values = []
@@ -497,10 +497,12 @@ def reliability_diagram(dets_gdf, score='score', output_path='reliability_diagra
     ax2.scatter(threshold_values, bin_values, marker='o', color='red')
     ax2.plot(threshold_values, bin_values, color='red', label='Detection accuracy')
 
-    ax2.scatter(threshold_bins, threshold_bins, marker='+', color='green')
-    ax2.plot(threshold_bins, threshold_bins, color='green', label='Reference line')
+    ax2.scatter(threshold_bins + step, threshold_bins + step, marker='+', color='green')
+    ax2.plot(threshold_bins + step, threshold_bins + step, color='green', label='Reference line')
 
     ax2.legend(loc='upper left')
+    ax2.set_ylim(bottom=0)
+    ax2.set_xlim(left=0)
 
     plt.xlabel(score.replace("_", " "))
     plt.ylabel('bin precision')
