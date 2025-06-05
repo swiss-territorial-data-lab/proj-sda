@@ -192,8 +192,7 @@ $ stdl-objdet train_model config/config_trne.yaml
 $ tensorboard --logdir output/trne/logs
 ```
 
-Open the following link with a web browser: `http://localhost:6006` and identify the iteration minimising the validation loss and select the model accordingly (`model_*.pth`) in `config_trne`. For the provided parameters, `model_0002999.pth` is the default one.
-#Mention here renaming convention for the modelpath?
+Open the following link with a web browser: `http://localhost:6006` and identify the iteration minimising the validation loss and select the model accordingly (`model_*.pth`) in `config_trne`. The path to the trained model is `output/trne/logs/model_<number of iterations>.pth`. As several models can be trained, the models was copied to the file `models/model_<training number>.pth` and the output folder was named `output/trne/run<training number>`. Those are the current default configuration. <br>
 
 Perform and assess detections:
 ```
