@@ -6,8 +6,10 @@ mkdir -p config/batch_process
 
 SECOND=0
 canton=CANTON                     # provide canton name in lower case
-dl_model=68
-for year in YEAR1 YEAR2 YEAR3     # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)  
+dl_model=68                       # provide the model number, the model file name should be 'model_XX.path'
+years_list=YEAR1,YEAR2,YEAR3             # year list to process, python list separator 
+years=$(echo $years_list | tr ',' ' ')
+for year in $years                # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)  
 
 do
     echo '-----------'
@@ -17,6 +19,7 @@ do
     sed -i "s/SWISSIMAGE_YEAR/$year/g" config/batch_process/config_det_${year}_${canton}.yaml
     sed -i "s/CANTON/$canton/g" config/batch_process/config_det_${year}_${canton}.yaml
     sed -i "s/MODEL/$dl_model/g" config/batch_process/config_det_${year}_${canton}.yaml
+    sed -i "s/YEARS_LIST/$years_list/g" config/batch_process/config_det_${year}_${canton}.yaml
     echo ' '
     echo 'prepare_aoi.py'
     python scripts/prepare_aoi.py config/batch_process/config_det_${year}_${canton}.yaml
@@ -49,10 +52,13 @@ python scripts/merge_multi_results.py config/batch_process/config_det_${year}_${
 echo ' '
 echo 'merge_across_years.py'
 python scripts/merge_across_years.py config/batch_process/config_det_${year}_${canton}.yaml
+echo ' '
 echo 'remove_artifacts.py'
 python ./scripts/remove_artifacts.py config/batch_process/config_det_${year}_${canton}.yaml
+echo ' '
 echo 'filter_detections.py'
 python ./scripts/filter_detections.py config/batch_process/config_det_${year}_${canton}.yaml
+echo ' '
 
 duration=$SECONDS
 echo "$((duration / 60)) minutes and $((duration % 60)) seconds elapsed."
