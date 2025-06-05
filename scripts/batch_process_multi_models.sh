@@ -4,9 +4,9 @@
 echo 'Run batch process to perfrom inference over several SWISSIMAGE years with 5 different models'
 mkdir -p config/batch_process
 
-canton=ticino                     # provide canton name in lowercase
+canton=CANTON                     # provide canton name in lowercase
 dl_models=$(echo 68 72)               # provide the model number, the model file name should be 'model_XX.path'
-years_list=2003,1993               # year list to process, python list separator 
+years_list=YEAR1,YEAR2,YEAR3             # year list to process, python list separator 
 years=$(echo $years_list | tr ',' ' ')
 for year in $years    # list of years to process (no comma: YEAR1 YEAR2 YEAR3...)
 

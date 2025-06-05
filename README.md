@@ -55,8 +55,8 @@ The installation is performed from this folder with the following steps:
         * Build the image for the object detector with `docker compose build`.
         * You can control the installation by running `docker compose run --rm stdl-objdet stdl-objdet -h`.
 * Go back to the folder `proj-sda`,
-* Build docker `docker compose build`,
-* Run docker `docker compose run --rm sda`,
+* Build docker,
+* Run docker,
 * Go to `proj-sda` directory in the docker container.
 
 The corresponding command lines are
@@ -189,6 +189,7 @@ $ tensorboard --logdir output/trne/logs
 ```
 
 Open the following link with a web browser: `http://localhost:6006` and identify the iteration minimising the validation loss and select the model accordingly (`model_*.pth`) in `config_trne`. For the provided parameters, `model_0002999.pth` is the default one.
+#Mention here renaming convention for the modelpath?
 
 Perform and assess detections:
 ```
@@ -264,14 +265,13 @@ $ scripts/batch_process_multi_models.sh
 
 Additional scripts can be used to process images. Their use is optional.
 
-1. `build_vrt.py`: build a VRT for the TIFF file in the given input folder. 
-2. `clip.py`: clip a vector layer with another one.
-3. `gt_analysis.py`: plot GT characteristics.
-4. `match_colour.py`: normalise the colour histogram to the one of a reference image. 
-5. `mosaic.py`: mosaic images. 
-6. `rgb_to_greyscale.py`: convert RGB images to greyscale images with rasterio. 
-7. `rgb_to_greyscale.sh`: convert RGB images to greyscale images with GDAL. 
-8. `tiff2geotiff.py`: convert tiff to geotiff files.
+1. `clip.py`: clip a vector layer with another one.
+2. `gt_analysis.py`: plot GT characteristics.
+3. `match_colour.py`: normalise the colour histogram to the one of a reference image. 
+4. `mosaic.py`: mosaic images. 
+5. `rgb_to_greyscale.py`: convert RGB images to greyscale images with rasterio. 
+6. `rgb_to_greyscale.sh`: convert RGB images to greyscale images with GDAL. 
+7. `tiff2geotiff.py`: convert tiff to geotiff files.
 
 This project uses a multi-year dataset comprising greyscale and RGB images. The method developed by [Farella et al. 2022](https://doi.org/10.3390/jimaging8100269), for which the code is available [here](https://github.com/3DOM-FBK/Hyper_U_Net), was also tested for the colourisation of the historical greyscale images
 
