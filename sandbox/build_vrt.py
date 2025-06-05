@@ -10,11 +10,11 @@ os.chdir(WORKING_DIRECTORY)
 
 print('Create VRT file for each year')
 for year in range(1980, 1981):
-    SOURCE_FOLDER = str(year)
+    SOURCE_FOLDER = os.path.join(str(year), 'all-images')
     if not os.path.exists(SOURCE_FOLDER):
         continue
 
-    VRT_NAME =  os.path.join(SOURCE_FOLDER, SOURCE_FOLDER + '.vrt')
+    VRT_NAME =  os.path.join(SOURCE_FOLDER, str(year) + '.vrt')
     EPSG = 'EPSG:3857'
 
     list_im = []
