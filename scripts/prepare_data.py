@@ -7,16 +7,18 @@ import time
 import argparse
 import yaml
 import re
+from tqdm import tqdm
 
 import geopandas as gpd
 import morecantile
 import numpy as np
 import pandas as pd
+import rasterio as rio
 from shapely.geometry import Polygon
 
 sys.path.insert(0, '.')
 import functions.misc as misc
-from functions.constants import DONE_MSG
+from functions.constants import DONE_MSG, OVERWRITE
 
 from loguru import logger
 logger = misc.format_logger(logger)
@@ -55,12 +57,12 @@ def aoi_tiling(gdf, tms='WebMercatorQuad'):
     tms = morecantile.tms.get(tms)    # epsg:3857
 
     tiles_all = [] 
-    for boundary in gdf.itertuples():
+    for boundary in tqdm(gdf.itertuples(), desc='Tiling AOI parts', total=len(gdf)):
         coords = (boundary.minx, boundary.miny, boundary.maxx, boundary.maxy)      
         tiles = gpd.GeoDataFrame.from_features([tms.feature(x, projected=False) for x in tms.tiles(*coords, zooms=[ZOOM_LEVEL])]) 
         tiles.set_crs(epsg=4326, inplace=True)
         tiles_all.append(tiles)
-    tiles_all_gdf = gpd.GeoDataFrame(pd.concat(tiles_all, ignore_index=True))
+    tiles_all_gdf = gpd.GeoDataFrame(pd.concat(tiles_all, ignore_index=True)).drop_duplicates(subset=['title'], keep='first')
 
     return tiles_all_gdf
 
@@ -135,23 +137,41 @@ if __name__ == "__main__":
         cfg = yaml.load(fp, Loader=yaml.FullLoader)[os.path.basename(__file__)]
 
     # Load input parameters
+    DATASET_KEYS = cfg['datasets'].keys()
+    CANTON = cfg['canton'] if 'canton' in cfg.keys() else None
+    CATEGORY = cfg['datasets']['category'] if 'category' in DATASET_KEYS else False
     OUTPUT_DIR = cfg['output_folder']
     SHPFILE = cfg['datasets']['shapefile']
-    FP_SHPFILE = cfg['datasets']['fp_shapefile'] if 'fp_shapefile' in cfg['datasets'].keys() else None
-    EPT_YEAR = cfg['datasets']['empty_tiles_year'] if 'empty_tiles_year' in cfg['datasets'].keys() else None
-    if 'empty_tiles_aoi' in cfg['datasets'].keys() and 'empty_tiles_shp' in cfg['datasets'].keys():
+    FP_SHPFILE = cfg['datasets']['fp_shapefile'] if 'fp_shapefile' in DATASET_KEYS else None
+    EPT_YEAR = cfg['datasets']['empty_tiles_year'] if 'empty_tiles_year' in DATASET_KEYS else None
+    DEM = cfg['dem'] if 'dem' in cfg.keys() else None
+
+    EPT_SHPFILE = None
+    EPT = None
+    if 'empty_tiles_aoi' in DATASET_KEYS and 'empty_tiles_shp' in DATASET_KEYS:
         logger.error("Choose between supplying an AoI shapefile ('empty_tiles_aoi') in which empty tiles will be selected, or a shapefile with selected empty tiles ('empty_tiles_shp')")
         sys.exit(1)    
-    elif 'empty_tiles_aoi' in cfg['datasets'].keys():
+    elif 'empty_tiles_aoi' in DATASET_KEYS:
         EPT_SHPFILE = cfg['datasets']['empty_tiles_aoi']
         EPT = 'aoi'
-    elif 'empty_tiles_shp' in cfg['datasets'].keys():
+    elif 'empty_tiles_shp' in DATASET_KEYS:
         EPT_SHPFILE = cfg['datasets']['empty_tiles_shp'] 
         EPT = 'shp'
-    else:
-        EPT_SHPFILE = None
-        EPT = None
-    CATEGORY = cfg['datasets']['category'] if 'category' in cfg['datasets'].keys() else False
+
+    WATERS = None
+    ELEVATION_THD = None
+    if CANTON == 'vaud':
+        WATERS = 'data/layers/vaud/lakes_VD.gpkg'
+    elif CANTON == 'ticino':
+        WATERS = 'data/layers/ticino/MU_Acque_TI_dissolved.gpkg'
+        ELEVATION_THD = 1000
+    elif CANTON:
+        logger.critical(f'Unknown canton: {CANTON}')
+        sys.exit(1)
+    logger.info(f'Using cantonal parameters:')
+    logger.info(f'    - water bodies: {WATERS}')
+    logger.info(f'    - elevation threshold: {ELEVATION_THD}')
+    
     ZOOM_LEVEL = cfg['zoom_level']
 
     # Create an output directory in case it doesn't exist
@@ -159,6 +179,13 @@ if __name__ == "__main__":
         os.makedirs(OUTPUT_DIR)
 
     written_files = []
+
+    label_filepath = os.path.join(OUTPUT_DIR, 'labels.geojson')
+    tile_filepath = os.path.join(OUTPUT_DIR, 'tiles.geojson')
+    fp_filepath = os.path.join(OUTPUT_DIR, 'FP.geojson')
+    if os.path.exists(tile_filepath) and (not FP_SHPFILE or os.path.exists(fp_filepath)) and not OVERWRITE:           
+        logger.success(f"{DONE_MSG} All files already exist in folder {OUTPUT_DIR}. Exiting.")
+        sys.exit(0)
     
     # Prepare the tiles
 
@@ -185,8 +212,6 @@ if __name__ == "__main__":
 
     gt_labels_4326_gdf = labels_4326_gdf.copy()
     
-    label_filename = 'labels.geojson'
-    label_filepath = os.path.join(OUTPUT_DIR, label_filename)
     gt_labels_4326_gdf.to_file(label_filepath, driver='GeoJSON')
     written_files.append(label_filepath)  
     logger.success(f"{DONE_MSG} A file was written: {label_filepath}")
@@ -207,18 +232,21 @@ if __name__ == "__main__":
         nb_fp_labels = len(fp_labels_4326_gdf)
         logger.info(f"There are {nb_fp_labels} polygons in {FP_SHPFILE}")
 
-        filename = 'FP.geojson'
-        filepath = os.path.join(OUTPUT_DIR, filename)
-        fp_labels_4326_gdf.to_file(filepath, driver='GeoJSON')
-        written_files.append(filepath)  
-        logger.success(f"{DONE_MSG} A file was written: {filepath}")
+        fp_labels_4326_gdf.to_file(fp_filepath, driver='GeoJSON')
+        written_files.append(fp_filepath)  
+        logger.success(f"{DONE_MSG} A file was written: {fp_filepath}")
         labels_4326_gdf = pd.concat([labels_4326_gdf, fp_labels_4326_gdf], ignore_index=True)
 
     # Tiling of the AoI
     logger.info("- Get the label boundaries")  
     boundaries_df = labels_4326_gdf.bounds
     logger.info("- Tiling of the AoI")  
-    tiles_4326_aoi_gdf = aoi_tiling(boundaries_df)
+    PRE_EXISTING_TILING = f'data/layers/{CANTON}/tiles_z{ZOOM_LEVEL}_w_dets.geojson'
+    if os.path.exists(PRE_EXISTING_TILING):
+        logger.info(f'Using existing tiling: {PRE_EXISTING_TILING}')
+        tiles_4326_aoi_gdf = gpd.read_file(PRE_EXISTING_TILING)
+    else:
+        tiles_4326_aoi_gdf = aoi_tiling(boundaries_df)
     tiles_4326_labels_gdf = gpd.sjoin(tiles_4326_aoi_gdf, labels_4326_gdf, how='inner', predicate='intersects')
 
     # Tiling of the AoI from which empty tiles will be selected
@@ -280,13 +308,39 @@ if __name__ == "__main__":
         tiles_4326_fp_gdf.drop_duplicates(['id'], inplace=True)
         logger.info(f"- Number of tiles intersecting FP labels = {len(tiles_4326_fp_gdf)}")
 
+    if WATERS:
+        logger.info('Remove tiles in water...')
+        waters_gdf = gpd.read_file(WATERS).to_crs(2056)
+        waters_gdf.loc[:, 'geometry'] = waters_gdf.buffer(-420)     # Remove borders for the size of a tile
+        waters_poly = waters_gdf[~waters_gdf.geometry.is_empty].unary_union
+
+        tiles_2056_all_gdf = tiles_4326_all_gdf.to_crs(epsg=2056)
+        tiles_2056_all_gdf.loc[:, 'geometry'] = tiles_2056_all_gdf.centroid
+        tiles_in_waters = tiles_2056_all_gdf.loc[tiles_2056_all_gdf.intersects(waters_poly), 'id'].tolist()
+        tiles_4326_all_gdf = tiles_4326_all_gdf[~tiles_4326_all_gdf.id.isin(tiles_in_waters)]
+
+    if ELEVATION_THD:
+        logger.info("Control altitude...")
+        dem = rio.open(DEM)
+        tiles_4326_all_gdf = misc.check_validity(tiles_4326_all_gdf, correct=True)
+        tiles_2056_all_gdf = tiles_4326_all_gdf.to_crs(epsg=2056)
+
+        row, col = dem.index(tiles_2056_all_gdf.centroid.x, tiles_2056_all_gdf.centroid.y)
+        elevation = dem.read(1)[row, col]
+        tiles_4326_all_gdf['elevation'] = elevation
+        tiles_4326_all_gdf = tiles_4326_all_gdf[tiles_4326_all_gdf.elevation < ELEVATION_THD]
+
     # Save tile shapefile
-    logger.info("Export tiles to GeoJSON (EPSG:4326)...")  
-    tile_filename = 'tiles.geojson'
-    tile_filepath = os.path.join(OUTPUT_DIR, tile_filename)
-    tiles_4326_all_gdf.to_file(tile_filepath, driver='GeoJSON')
-    written_files.append(tile_filepath)  
-    logger.success(f"{DONE_MSG} A file was written: {tile_filepath}")
+    if tiles_4326_all_gdf.empty:
+        logger.warning('No tile generated for the designated area.')
+        tile_filepath = os.path.join(OUTPUT_DIR, 'area_without_tiles.gpkg')
+        labels_gdf.to_file(tile_filepath)
+        written_files.append(tile_filepath)  
+    else:
+        logger.info("Export tiles to GeoJSON (EPSG:4326)...") 
+        tiles_4326_all_gdf.to_file(tile_filepath, driver='GeoJSON')
+        written_files.append(tile_filepath)  
+        logger.success(f"{DONE_MSG} A file was written: {tile_filepath}")
 
     print()
     logger.info("The following files were written. Let's check them out!")

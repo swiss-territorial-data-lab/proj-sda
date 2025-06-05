@@ -1,13 +1,13 @@
 # Produce tile geometries based on the AoI extent and zoom level
 prepare_data.py:  
   datasets:
-    shapefile: ./data/ground_truth/sda_ground_truth.gpkg  # GT labels
-    # fp_shapefile: ./data/FP/FP_labels.gpkg              # FP labels
-    # empty_tiles_aoi: ./data/AoI/<AOI_SHPFILE>           # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
-    # empty_tiles_year: <YEAR>                            # If "empty_tiles_aoi" selected then provide a year. Choice: (1) numeric (i.e. 2020), (2) [year1, year2] (random selection of a year within a given year range) 
-    # empty_tiles_shp: ./data/empty_tiles/<EMPTY_TILES_SHPFILE>    # Provided shapefile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
-    category: Classe
-  output_folder: ./output/trne/
+    shapefile: data/ground_truth/sda_ground_truth_250410.gpkg           # GT labels
+    # fp_shapefile: data/FP/<FP_SHPFILE>                # FP labels
+    # empty_tiles_aoi: data/AoI/<AOI_SHPFILE>           # AOI in which additional empty tiles can be selected. Only one 'empty_tiles' option can be selected  
+    # empty_tiles_year: 2023                              # If "empty_tiles_aoi" selected then provide a year. Choice: (1) numeric (i.e. 2020), (2) [year1, year2] (random selection of a year within a given year range) 
+    # empty_tiles_shp: data/empty_tiles/<EMPTY_TILES_SHPFILE>    # Provided shapefile of selected empty tiles. Only one 'empty_tiles' option can be selected                     
+    category: 'Classe'
+  output_folder: output/trne/
   zoom_level: 16 
 
 # Fetch of tiles (online server) and split into 3 datasets: train, test, validation
@@ -25,8 +25,8 @@ generate_tilesets.py:
     image_source:
       # ############# 
       # type: FOLDER
-      # year: multi-year                     # Optional, supported values: 1. multi-year (tiles of different year), 2. <year> (i.e. 2020)
-      # location: <IMG_FOLDER_PATH>
+      # year: multi-year
+      # location: output/trne/all-images_src
       # srs: "EPSG:3857"
       # ############# 
       # type: WMS                               # supported values: 1. MIL = Map Image Layer 2. WMS 3. XYZ 4. FOLDER
@@ -59,7 +59,7 @@ generate_tilesets.py:
 
 # Train the model with the detectron2 algorithm 
 train_model.py:
-  working_directory: ./output/trne/
+  working_directory: output/trne/
   log_subfolder: logs
   sample_tagged_img_subfolder: sample_tagged_images
   COCO_files: # relative paths, w/ respect to the working_folder
@@ -72,16 +72,17 @@ train_model.py:
 
 # Object detection with the optimised trained model
 make_detections.py:
-  working_directory: ./output/trne/
+  working_directory: output/trne
+  output_folder: run68
   log_subfolder: logs
-  sample_tagged_img_subfolder: sample_tagged_images
+  sample_tagged_img_subfolder: run68/sample_tagged_images
   COCO_files:           # relative paths, w/ respect to the working_folder
     trn: COCO_trn.json
     val: COCO_val.json
     tst: COCO_tst.json
   detectron2_config_file: ../../config/detectron2_config.yaml # path relative to the working_folder
   model_weights:
-    pth_file: ./logs/model_0002999.pth # trained model minimising the validation loss curve, monitor the training process via tensorboard (tensorboard --logdir </logs>)
+    pth_file: ../../models/model_68.pth # trained model minimising the validation loss curve
   image_metadata_json: img_metadata.json
   rdp_simplification:   # rdp = Ramer-Douglas-Peucker
     enabled: True
@@ -91,41 +92,67 @@ make_detections.py:
 
 # Evaluate the detection quality for the different datasets by calculating metrics
 assess_detections.py:
-  working_directory: ./output/trne/
+  working_directory: output/trne
   datasets:
     ground_truth_labels: labels.geojson
     split_aoi_tiles: split_aoi_tiles.geojson # aoi = Area of Interest
     categories: category_ids.json
     detections:
-      trn: trn_detections_at_0dot05_threshold.gpkg
-      val: val_detections_at_0dot05_threshold.gpkg
-      tst: tst_detections_at_0dot05_threshold.gpkg
-  output_folder: .
+      trn: run68/trn_detections_at_0dot05_threshold.gpkg
+      val: run68/val_detections_at_0dot05_threshold.gpkg
+      tst: run68/tst_detections_at_0dot05_threshold.gpkg
+  output_folder: run68
   iou_threshold: 0.1
   area_threshold: 50       # area under which the polygons are discarded from assessment
   metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
+  # confidence_threshold: 0.05
 
 # Plots (optional)
 result_analysis.py:
-  working_directory: ./output/trne/
+  working_directory: output/trne/run68
+  output_directory: plots
   detections: tagged_detections.gpkg
   min_year: 1950
   max_year: 2023
   class_dict: {'Activité non agricole': 'Non-agricultural activity', # Provide a customed legend
                 'Mouvement de terrain': 'Land movement'}
 
-
-# Assess the final results
+# Merge detections across tiles
 merge_detections.py:
-  working_directory: ./output/trne/
+  working_directory: output/trne
+  output_dir: run68
   labels: labels.geojson
   detections:
-    trn: trn_detections_at_0dot05_threshold.gpkg
-    val: val_detections_at_0dot05_threshold.gpkg
-    tst: tst_detections_at_0dot05_threshold.gpkg
+    trn: run68/trn_detections_at_0dot05_threshold.gpkg
+    val: run68/val_detections_at_0dot05_threshold.gpkg
+    tst: run68/tst_detections_at_0dot05_threshold.gpkg
   distance: 10 # m, distance use as a buffer to merge close polygons (likely to belong to the same object) together
   iou_threshold: 0.1
-  score_threshold: 0.05
   assess: 
     enable: True
-    metrics_method: micro-average   # 1: macro-average ; 2: macro-weighted-average ; 3: micro-average
+    no_class: False
+    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
+
+# Merge results from various models
+merge_multi_results.py:
+  working_directory: output/trne
+  output_directory: best_threshold
+  glob_det_path: "**/dst_merged_detections_at_*_threshold.gpkg" # asterisk in the layer name get replaced based on the type of score threshold
+  labels: labels.geojson
+  categories: category_ids.json
+  merged_score_threshold: 0.1
+  assess: 
+    enable: True
+    no_class: False
+    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
+
+# Merge results across years
+merge_across_years.py:
+  working_directory: output/trne
+  output_directory: best_threshold
+  detections: best_threshold/merged_detections_across_models.gpkg
+  iou_threshold: 0.1
+  assess: 
+    enable: False
+    no_class: True
+    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average

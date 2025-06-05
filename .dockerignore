@@ -1,0 +1,3 @@
+object-detector/.*
+object-detector/examples
+object-detector/*ocker*

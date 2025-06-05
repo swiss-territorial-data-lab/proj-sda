@@ -3,6 +3,13 @@ import sys
 from loguru import logger
 from shapely.validation import make_valid
 
+import json
+import pandas as pd
+from geopandas import sjoin
+from shapely.affinity import scale
+
+from functions.constants import THRESHOLD_PER_MODEL
+        
 
 def check_validity(poly_gdf, correct=False):
     '''
@@ -17,12 +24,8 @@ def check_validity(poly_gdf, correct=False):
 
     invalid_condition = ~poly_gdf.is_valid
 
-    try:
-        assert(poly_gdf[invalid_condition].shape[0]==0), \
-            f"{poly_gdf[invalid_condition].shape[0]} geometries are invalid on" + \
-                    f" {poly_gdf.shape[0]} detections."
-    except Exception as e:
-        logger.warning(e)
+    if poly_gdf[invalid_condition].shape[0]!=0:
+        logger.warning(f"{poly_gdf[invalid_condition].shape[0]} geometries are invalid on {poly_gdf.shape[0]} detections.")
         if correct:
             logger.info("Correction of the invalid geometries with the shapely function 'make_valid'...")
             
@@ -39,6 +42,52 @@ def check_validity(poly_gdf, correct=False):
             sys.exit(1)
 
     return poly_gdf
+
+
+def clip_objects(objects_gdf, tiles_gdf, fact=0.99):
+    """
+    Clips the objects in the `objects_gdf` GeoDataFrame to the tiles in the `tiles_gdf` GeoDataFrame.
+    
+    Args:
+        objects_gdf (geopandas.GeoDataFrame): The GeoDataFrame containing the objects to be clipped.
+        tiles_gdf (geopandas.GeoDataFrame): The GeoDataFrame containing the tiles to clip the objects to.
+        fact (float, optional): The scaling factor to apply to the tiles when clipping the objects. Defaults to 0.99.
+    
+    Returns:
+        geopandas.GeoDataFrame: The clipped objects GeoDataFrame.
+        
+    Raises:
+        AssertionError: If the CRS of `objects_gdf` is not equal to the CRS of `tiles_gdf`.
+    """
+
+    tiles_gdf['tile_geometry'] = tiles_gdf['geometry']
+        
+    assert(objects_gdf.crs == tiles_gdf.crs)
+    
+    objects_tiles_sjoined_gdf = sjoin(objects_gdf, tiles_gdf, how='inner', predicate='intersects')
+
+    if 'year_label' in objects_gdf.keys():
+        objects_tiles_sjoined_gdf = objects_tiles_sjoined_gdf[objects_tiles_sjoined_gdf.year_label == objects_tiles_sjoined_gdf.year_tile]
+
+    if 'year_det' in objects_gdf.keys():
+        objects_tiles_sjoined_gdf = objects_tiles_sjoined_gdf[objects_tiles_sjoined_gdf.year_det == objects_tiles_sjoined_gdf.year_tile]
+    
+    def clip_row(row, fact=fact):
+        
+        old_geo = row.geometry
+        scaled_tile_geo = scale(row.tile_geometry, xfact=fact, yfact=fact)
+        new_geo = old_geo.intersection(scaled_tile_geo)
+        row['geometry'] = new_geo
+
+        return row
+
+    clipped_objects_gdf = objects_tiles_sjoined_gdf.apply(lambda row: clip_row(row, fact), axis=1)
+    clipped_objects_gdf.crs = objects_gdf.crs
+
+    clipped_objects_gdf.drop(columns=['tile_geometry', 'index_right'], inplace=True)
+    clipped_objects_gdf.rename(columns={'id': 'tile_id'}, inplace=True)
+
+    return clipped_objects_gdf
 
 
 def convert_crs(gdf, epsg=2056):
@@ -79,6 +128,21 @@ def ensure_dir_exists(dirpath):
     return dirpath
 
 
+def find_right_threshold(path, second_path=None):
+    for key, value in THRESHOLD_PER_MODEL.items():
+        if 'model' + str(key) in path or 'run' + str(key) in path:
+            return value
+        
+    if second_path:
+        for key, value in THRESHOLD_PER_MODEL.items():
+            if 'model' + str(key) in second_path or 'run' + str(key) in second_path:
+                return value
+
+    logger.error('No indication of the model used found in the path.')
+    logger.error('The best score threshold could not be determined.')
+    sys.exit(1)
+        
+
 def format_logger(logger):
     """Format the logger from loguru
 
@@ -101,6 +165,21 @@ def format_logger(logger):
 
     return logger
 
+
+def get_categories(filepath):
+    file = open(filepath)
+    categories_json = json.load(file)
+    file.close()
+    categories_info_df = pd.DataFrame()
+    for key in categories_json.keys():
+        categories_tmp = {sub_key: [value] for sub_key, value in categories_json[key].items()}
+        categories_info_df = pd.concat([categories_info_df, pd.DataFrame(categories_tmp)], ignore_index=True)
+    categories_info_df.sort_values(by=['id'], inplace=True, ignore_index=True)
+    categories_info_df.drop(['supercategory'], axis=1, inplace=True)
+    categories_info_df.rename(columns={'name':'CATEGORY', 'id': 'label_class'},inplace=True)
+    id_classes = range(len(categories_json))
+
+    return categories_info_df, id_classes
 
 def overlap(polygon1_shape, polygon2_shape):
     """Determine the overlap area of one polygon with another one

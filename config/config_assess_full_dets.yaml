@@ -1,0 +1,49 @@
+# This configuration was used to assess the results produced by an inference over all the years in which the cantons of Vaud and Tessin were overflown.
+# Inference is performed separately for each canton with the bash scripts.
+# Cantonal results are coppied in a folder with the following structure.
+# .
+# ├── model68_only
+# |   ├── ticino
+# |   └── vaud
+# ├── ticino
+# |   ├── model XX
+# |   ├── ...
+# |   └── model YY
+# └──vaud
+#     ├── model XX
+#     ├── ...
+#     └── model YY
+
+# The ground truth used for this assessment was slightly modified compared with the ground truth made available in this repo. The year of some detections was
+# corrected to correspond exactly to the year in which the canton was overflown. It concerns the canton of Tessin at the following years: 1990 & 1991 -> 1989, 
+# 2000 -> 1999, 2016 -> 2015, 2020 -> 2018.
+# The file `labels_across_years.geojson` only keep one label per object. The label with the largest footprint was selected in case labels were produced for 
+# several years.
+
+
+# Merge results from various models
+merge_multi_results.py:
+  working_directory: output/det/both
+  output_directory: best_threshold
+  glob_det_path: "**/yearly_dets_*.gpkg"
+  labels: ../../trne/labels_250410.geojson
+  categories: ../../trne/category_ids.json
+  merged_score_threshold: 0.1
+  number_models: 5
+  assess: 
+    enable: True
+    no_class: True
+    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
+
+# Merge results across years
+merge_across_years.py:
+  working_directory: C:/Users/gwena/Documents/STDL/2_En_cours/sda/outputs
+  output_directory: det/both/best_threshold
+  detections: det/both/best_threshold/merged_detections_across_models.gpkg
+  iou_threshold: 0.1
+  labels: trne/labels_across_years.geojson
+  categories: trne/category_ids.json
+  assess: 
+    enable: True
+    no_class: True
+    metrics_method: micro-average   # 1: macro-average ; 3: macro-weighted-average ; 2: micro-average
