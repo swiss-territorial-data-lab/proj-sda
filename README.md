@@ -1,6 +1,6 @@
-# Automatic detection of agricultural soils degraded by anthropogenic activities
+# Detection of anthropic soils potentially suitable for rehabilitation
 
-The aim of the project is to automatically detect anthropogenic activities that have degraded agricultural soils in the past. Two main categories have been defined: "non-agricultural activity" and "land movement". The results will make it possible to identify potentially rehabilitable soils that can be used to establish a land crop rotation map. <br>
+The aim of the project is to automatically detect anthropogenic activities on natural soils in the past. Two main categories have been defined: "non-agricultural activity" and "land movement". The results will make it possible to identify potentially rehabilitable soils that can be used to establish a land crop rotation map. <br>
 This project was developed in collaboration with the Canton of Ticino and the Canton of Vaud. A detailed documentation of the project and results can be found on the [STDL technical website](https://tech.stdl.ch/PROJ-SDA/).
 
 **Table of content**

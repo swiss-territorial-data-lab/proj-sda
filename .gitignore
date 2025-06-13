@@ -1,7 +1,6 @@
 # Data and folders
 data/AoI/*
 data/DEM/
-data/ground_truth/sda_ground_truth_250410.gpkg
 data/layers/**/
 !data/AoI/ticino/AoI_test_TI.gpkg
 !data/AoI/ticino/limiti_cantone_2012_MN95.*

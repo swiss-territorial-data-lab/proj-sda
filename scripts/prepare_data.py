@@ -14,7 +14,6 @@ import morecantile
 import numpy as np
 import pandas as pd
 import rasterio as rio
-from shapely.geometry import Polygon
 
 sys.path.insert(0, '.')
 import functions.misc as misc
@@ -81,43 +80,21 @@ def assert_year(gdf1, gdf2, ds, year):
     gdf2_has_year = 'year' in gdf2.keys()
     param_gives_year = year != None
 
-    if gdf1_has_year or (gdf2_has_year and param_gives_year):   # year for label or double year info oth
-        if ds == 'FP':
-            if not (gdf1_has_year and gdf2_has_year):   
-                logger.error("One input label (GT or FP) shapefile contains a 'year' column while the other one does not. Please, standardize the label shapefiles supplied as input data.")
-                sys.exit(1)
+    if gdf1_has_year or gdf2_has_year or param_gives_year:   # if any info about year exists, control
+        if ds == 'FP' and gdf1_has_year != gdf2_has_year:   
+            logger.error("One input label (GT or FP) shapefile contains a 'year' column while the other one does not. Please, standardize the label shapefiles supplied as input data.")
+            sys.exit(1)
         elif ds == 'empty_tiles':
-            if gdf1_has_year:
+            if gdf1_has_year and not (gdf2_has_year or param_gives_year):
                 if not gdf2_has_year:
                     logger.error("A 'year' column is provided in the GT shapefile but not for the empty tiles. Please, standardize the label shapefiles supplied as input data.")
                     sys.exit(1)
-                elif  not param_gives_year:
+                if  not param_gives_year:
                     logger.error("A 'year' column is provided in the GT shapefile but no year info for the empty tiles. Please, provide a value to 'empty_tiles_year' in the configuration file.")
                     sys.exit(1)
-            elif gdf2_has_year or param_gives_year: # "not gdf1_has_year" is implied by elif-statement
+            elif not gdf1_has_year and (gdf2_has_year or param_gives_year):
                 logger.error("A year is provided for the empty tiles while no 'year' column is provided in the groud truth shapefile. Please, standardize the shapefiles or the year value in the configuration file.")
-                sys.exit(1)   
-
-
-def bbox(bounds):
-    """Get a vector bounding box of a 2D shape
-
-    Args:
-        bounds (array): minx, miny, maxx, maxy of the bounding box
-
-    Returns:
-        geometry (Polygon): polygon geometry of the bounding box
-    """
-
-    minx = bounds[0]
-    miny = bounds[1]
-    maxx = bounds[2]
-    maxy = bounds[3]
-
-    return Polygon([[minx, miny],
-                    [maxx, miny],
-                    [maxx, maxy],
-                    [minx, maxy]])
+                sys.exit(1)
 
 
 if __name__ == "__main__":
