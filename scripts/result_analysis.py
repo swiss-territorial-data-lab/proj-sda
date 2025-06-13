@@ -380,22 +380,23 @@ if __name__ == "__main__":
         format_barplot(all_count_per_year_df, ax, fig, labels, 'Number of detections per year', plot_path)
 
         logger.info('Plot the amount of dets present in multiple years and their lifespan...')
-        # Barplot of the number of appearance
+        # Barplot of the number of occurrence
         all_count_per_year_df = count_values(detections_gdf, 'count_years', 'number of detections')
         plt.rcParams["figure.figsize"] = (len(all_years)*0.1, 5)
         fig, ax = plt.subplots(1, 1)
         ax = all_count_per_year_df.plot(x='steps', y='number of detections', kind='bar', rot=0, log=True, width=0.5, grid=True)
 
         labels = all_count_per_year_df.steps[::5].astype(int)
-        plot_path = os.path.join(OUTPUT_DIR, f'several_appearance_through_years_{CANTON}.jpg')
+        plot_path = os.path.join(OUTPUT_DIR, f'several_occurrence_through_years_{CANTON}.jpg')
         format_barplot(
             all_count_per_year_df, ax, fig, labels, 'Number of detections detected one or several times', plot_path,
-            xlabel='Number of appearance', rotation=0
+            xlabel='Number of occurrence', rotation=0
         )
+        ax.set_ylim(bottom=0)
         written_files.append(plot_path)
         del all_count_per_year_df
 
-        # Scatterplot of the lifespan per number of appearance
+        # Scatterplot of the lifespan per number of occurrence
         detections_gdf['lifespan'] = detections_gdf['last_year'] - detections_gdf['first_year']
         count_duo = detections_gdf.groupby(['count_years', 'lifespan']).size().reset_index(name='count')
         tmp_gdf = pd.merge(detections_gdf, count_duo, how='left', left_on=['count_years', 'lifespan'], right_on=['count_years', 'lifespan'])
@@ -407,7 +408,7 @@ if __name__ == "__main__":
         ax.set_xticks(ticks, ticks, rotation=0, fontsize=10, ha='center')
         plt.grid(True)
         written_files.append(format_scatterplot(
-            fig, CANTON, 'Lifespan per number of appearance', ylabel='Difference between first and last year', xlabel='Number of appearances', output_dir=OUTPUT_DIR
+            fig, CANTON, 'Lifespan per number of occurrence', ylabel='Difference between first and last year', xlabel='Number of occurrences', output_dir=OUTPUT_DIR
         ))
         del count_duo, tmp_gdf
 
