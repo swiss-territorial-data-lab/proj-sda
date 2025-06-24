@@ -138,7 +138,7 @@ Here is a the description of the input data used for this project.
 - area of interest (AoI):
     - swissimage footprints: image acquisition footprints by year can be [consulted online](https://map.geo.admin.ch/#/map?lang=fr&center=2660000,1190000&z=1&bgLayer=ch.swisstopo.pixelkarte-farbe&topic=ech&layers=ch.swisstopo.zeitreihen@year=1864,f;ch.bfs.gebaeude_wohnungs_register,f;ch.bav.haltestellen-oev,f;ch.swisstopo.swisstlm3d-wanderwege,f;ch.astra.wanderland-sperrungen_umleitungen,f;ch.swisstopo.swissimage-product@year=2021;ch.swisstopo.swissimage-product.metadata@year=2021&timeSlider=2021) and downloaded from the [relevant geocat page](https://www.geocat.ch/geonetwork/srv/fre/catalog.search#/metadata/1fc43fd9-f43f-4779-aa59-51e8f4833372). The files are to be placed in the folder `data/AoI/swissimage_footprints`. A bash file is available to download and unzip the data: `scripts/get_swissimage_footprint.sh`.
 - ground truth: labels vectorised by the domain experts. <br>
-**Disclaimer:** the ground truth dataset is unofficial and has been produced specifically for the purposes of this project.
+**Disclaimer:** the ground truth dataset is unofficial and has no legal value. It has been produced specifically for the purposes of this project.
 - water layer: water bodies over which no tiles should be produced. They are available in the folder `data/layers/<canton>/`.
 - digital elevation model: raster mosaic of the Swiss DEM downloaded from [GitHub](https://github.com/lukasmartinelli/swissdem). A bash file is available to download the data: `scripts/get_dem.sh`. It is used to limit the height of the considered tiles and filter the detections at the end, based on the requirements of the domain experts.
 - layers: list of vector layers provided by the domain experts to spatially intersect with the results to either exclude detections or to add intersection information in the final attribute table. The data is available on the cantonal geoportals ([Ticino](https://www4.ti.ch/dt/sg/sai/ugeo/temi/geoportale-ticino/geoportale/geodati) and [Vaud](https://www.geo.vd.ch/)) or are available on request.
@@ -164,7 +164,7 @@ The `proj-sda` repository contains scripts to prepare and post-process the data 
         b. conservative: a threshold of 0.05 maximising the recall is expected.
 5. `compile_years.py`: merge all the detection layers obtained during inference by year.
 6. `merge_multi_results.py`: merge the results from different models into one dataset of selected detections.
-    * The right results will be selected based on the path template and the type of score threhsold.
+    * The right results will be selected based on the path template and the type of score threshold.
 7. `merge_across_years`: dissolve overlapping detections of different years.
 8. `filter_detections.py`: filter detections by overlap with other vector layers. The overlapping portion of the detection can be removed or a new attribute is created to indicate the overlapping ratio with the layer of interest. Other information such as score, elevation, or slope are also displayed.
 9. `batch_process.sh`: batch script to perform the inference workflow over several years with one model.
